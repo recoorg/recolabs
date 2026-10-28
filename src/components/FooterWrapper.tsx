@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import DoodleCrewFooter from "@/components/ui/doodle-crew-footer"
+import { SponsorSection } from "@/components/SponsorSection"
 
 export function FooterWrapper() {
   const [isDark, setIsDark] = React.useState(false)
@@ -21,8 +22,10 @@ export function FooterWrapper() {
   }, [])
 
   return (
-    <footer className="relative w-full overflow-hidden border-t editorial-hairline bg-white dark:bg-[#09090b]">
-      <DoodleCrewFooter
+    <>
+      <SponsorSection />
+      <footer className="relative w-full overflow-hidden border-t editorial-hairline bg-white dark:bg-[#09090b]">
+        <DoodleCrewFooter
         wordmark="RECOLABS"
         brand="reco labs"
         blurb="The Skill Exchange for curious Mind. Started as a Grade 10 project to fix daily problems, now a global open-source collective for young builders."
@@ -109,7 +112,8 @@ export function FooterWrapper() {
         interactive={true}
         backToTop={false}
       />
-    </footer>
+      </footer>
+    </>
   )
 }
 
