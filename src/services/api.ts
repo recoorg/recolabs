@@ -45,6 +45,26 @@ export interface HackathonEvent {
   apac?: boolean
 }
 
+export interface GoogleJobItem {
+  job_id: string
+  title: string
+  company_name: string
+  location: string
+  via?: string
+  description?: string
+  thumbnail?: string
+  extensions?: string[]
+  detected_extensions?: {
+    posted_at?: string
+    schedule_type?: string
+    work_from_home?: boolean
+    salary?: string
+  }
+  category?: string
+  highlights?: string[]
+  apply_link?: string
+}
+
 export interface JobRole {
   id: string
   title: string
@@ -301,6 +321,65 @@ export const api = {
    */
   async getHackathons(): Promise<HackathonEvent[]> {
     return this.getUpcomingHackathons()
+  },
+
+  /**
+   * Search jobs using SerpApi Google Jobs endpoint or curated developer roles.
+   * Endpoint: https://serpapi.com/search?engine=google_jobs
+   */
+  async getGoogleJobs(query?: string): Promise<GoogleJobItem[]> {
+    const serpApiKey = (import.meta as any).env?.VITE_SERPAPI_KEY || ""
+    const q = query ? encodeURIComponent(query) : "developer"
+
+    // 1. If SerpApi key configured, attempt direct or proxy query
+    if (serpApiKey) {
+      try {
+        const res = await fetch(`/api/serpapi/search.json?engine=google_jobs&q=${q}&api_key=${serpApiKey}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.jobs_results && Array.isArray(data.jobs_results)) {
+            return data.jobs_results.map((j: any) => ({
+              job_id: j.job_id || Math.random().toString(),
+              title: j.title || "Software Engineer",
+              company_name: j.company_name || "Engineering Co",
+              location: j.location || "Remote",
+              via: j.via || "via Google Jobs",
+              description: j.description || "",
+              thumbnail: j.thumbnail,
+              extensions: j.extensions || [],
+              detected_extensions: j.detected_extensions || {},
+              category: "software",
+              highlights: j.job_highlights?.[0]?.items || [],
+              apply_link: j.related_links?.[0]?.link || "https://google.com/search?q=" + encodeURIComponent(j.title),
+            }))
+          }
+        }
+      } catch (err) {
+        console.warn("[api.getGoogleJobs] Live SerpApi query failed:", err)
+      }
+    }
+
+    // 2. Fallback to pre-populated jobs catalog in /data/jobs.json
+    try {
+      const res = await fetch("/data/jobs.json")
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          if (!query || !query.trim()) return data
+          const needle = query.toLowerCase().trim()
+          return data.filter((item: GoogleJobItem) =>
+            item.title.toLowerCase().includes(needle) ||
+            item.company_name.toLowerCase().includes(needle) ||
+            item.description?.toLowerCase().includes(needle) ||
+            item.location.toLowerCase().includes(needle)
+          )
+        }
+      }
+    } catch (e) {
+      console.warn("[api.getGoogleJobs] Fallback failed:", e)
+    }
+
+    return []
   },
 
   /**

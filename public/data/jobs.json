@@ -1,0 +1,186 @@
+[
+  {
+    "job_id": "reco_eng_01",
+    "title": "Junior Full-Stack Web Engineer",
+    "company_name": "Reco Labs Guild",
+    "location": "Remote",
+    "via": "via Reco Guild",
+    "description": "Work directly on open-source web tooling, canvas graphics engines, and micro-applications using React 19, TypeScript, and Tailwind CSS. Help beginner developers navigate codebases and ship real tools.",
+    "thumbnail": "/logo-black.png",
+    "extensions": ["Full-time / Sprint", "Remote", "$70K – $90K or Guild Bounty"],
+    "detected_extensions": {
+      "posted_at": "Just now",
+      "schedule_type": "Full-time",
+      "work_from_home": true,
+      "salary": "$70K – $90K"
+    },
+    "category": "software",
+    "highlights": [
+      "Fluency with React, TypeScript, and modern build tooling (Vite)",
+      "Appreciation for minimalist editorial UI (Instrument Serif, Geist)",
+      "Open source contributions or self-built projects"
+    ],
+    "apply_link": "https://discord.com/invite/7dk4w37BhP"
+  },
+  {
+    "job_id": "reco_hw_02",
+    "title": "Embedded Systems & Firmware Developer",
+    "company_name": "Hardware Workbench Lab",
+    "location": "Remote / Lab Hybrid",
+    "via": "via Reco Labs",
+    "description": "Design custom PCB schematics, component BOMs, and RTOS firmware routines for daily automation microcontrollers (ESP32, RP2040, STM32). Work with Aditya to build open hardware boards.",
+    "thumbnail": "/logo-black.png",
+    "extensions": ["Contract / Residency", "Remote", "$80K – $110K + Hardware Grants"],
+    "detected_extensions": {
+      "posted_at": "1 day ago",
+      "schedule_type": "Full-time",
+      "work_from_home": true,
+      "salary": "$80K – $110K"
+    },
+    "category": "hardware",
+    "highlights": [
+      "Hands-on experience with KiCAD or Altium Designer",
+      "Bare-metal C/C++ or embedded Rust firmware development",
+      "Circuit testing, logic analysis, and hardware bring-up"
+    ],
+    "apply_link": "https://discord.com/invite/7dk4w37BhP"
+  },
+  {
+    "job_id": "ext_supa_03",
+    "title": "Front-End Developer (Open Source)",
+    "company_name": "Supabase Partner Ecosystem",
+    "location": "Remote (Worldwide)",
+    "via": "via Greenhouse",
+    "description": "Help scale open-source dashboard interfaces, developer documentation sandboxes, and client SDKs. Collaborate with worldwide developers in public GitHub issues and PRs.",
+    "thumbnail": "https://supabase.com/favicon/favicon-32x32.png",
+    "extensions": ["Full-time", "100% Remote", "$95K – $130K"],
+    "detected_extensions": {
+      "posted_at": "2 days ago",
+      "schedule_type": "Full-time",
+      "work_from_home": true,
+      "salary": "$95K – $130K"
+    },
+    "category": "software",
+    "highlights": [
+      "Deep understanding of modern JavaScript, Next.js, and state management",
+      "Comfortable with public peer review and open source workflows",
+      "Focus on web accessibility and responsive performance"
+    ],
+    "apply_link": "https://supabase.com/careers"
+  },
+  {
+    "job_id": "ext_frame_04",
+    "title": "Hardware Electrical Design Engineer",
+    "company_name": "Framework Computer",
+    "location": "San Francisco, CA / Remote",
+    "via": "via Lever",
+    "description": "Build upgradeable, repairable consumer electronics. Design schematic architectures, power distribution networks, and high-speed bus interfaces for modular laptop motherboards.",
+    "thumbnail": "https://frame.work/favicon.ico",
+    "extensions": ["Full-time", "Hybrid / Remote", "$120K – $160K"],
+    "detected_extensions": {
+      "posted_at": "3 days ago",
+      "schedule_type": "Full-time",
+      "work_from_home": false,
+      "salary": "$120K – $160K"
+    },
+    "category": "hardware",
+    "highlights": [
+      "High-speed board layout (USB-C, PCIe, DDR4/DDR5)",
+      "Schematic capture, simulation, and thermal analysis",
+      "Dedication to open hardware repairability"
+    ],
+    "apply_link": "https://frame.work/careers"
+  },
+  {
+    "job_id": "reco_tut_05",
+    "title": "Beginner Curriculum & Tutorial Architect",
+    "company_name": "Reco Labs Education",
+    "location": "Remote",
+    "via": "via Reco Guild",
+    "description": "In line with Aditya's founding Grade 10 mission, design step-by-step interactive coding walkthroughs. Bridge the gap between zero experience and shipping your first functional project without paying for courses.",
+    "thumbnail": "/logo-black.png",
+    "extensions": ["Fellowship / Bounty", "Remote", "$40/hr or $600 per milestone"],
+    "detected_extensions": {
+      "posted_at": "4 days ago",
+      "schedule_type": "Fellowship",
+      "work_from_home": true,
+      "salary": "$600 per guide"
+    },
+    "category": "tutorials",
+    "highlights": [
+      "Zero-fluff technical writing in English with runnable snippets",
+      "Ability to explain pointers, API routes, or soldering clearly",
+      "Active presence in beginner developer Discord channels"
+    ],
+    "apply_link": "https://discord.com/invite/7dk4w37BhP"
+  },
+  {
+    "job_id": "ext_vercel_06",
+    "title": "Systems Infrastructure Engineer",
+    "company_name": "Vercel Ecosystem",
+    "location": "Remote",
+    "via": "via LinkedIn",
+    "description": "Optimize global edge runtimes, routing caches, and serverless compilation pipelines. Work with Rust, Go, and distributed systems handling millions of daily deployments.",
+    "thumbnail": "https://vercel.com/favicon.ico",
+    "extensions": ["Full-time", "Remote", "$130K – $175K"],
+    "detected_extensions": {
+      "posted_at": "5 days ago",
+      "schedule_type": "Full-time",
+      "work_from_home": true,
+      "salary": "$130K – $175K"
+    },
+    "category": "systems",
+    "highlights": [
+      "Production Rust or Go networking and systems programming",
+      "Deep understanding of HTTP/2, HTTP/3, and edge compute",
+      "Experience with Kubernetes and microservice observability"
+    ],
+    "apply_link": "https://vercel.com/careers"
+  },
+  {
+    "job_id": "reco_des_07",
+    "title": "Visual Interface & Design Systems Hacker",
+    "company_name": "Reco Labs Creative",
+    "location": "Remote",
+    "via": "via Reco Guild",
+    "description": "Craft unique visual identities, custom SVG illustrations, interactive canvas animations, and design tokens for Reco Labs platforms and collaborative hackathons.",
+    "thumbnail": "/logo-black.png",
+    "extensions": ["Sprint Bounty / Part-time", "Remote", "$65K – $85K Pro-rated"],
+    "detected_extensions": {
+      "posted_at": "1 week ago",
+      "schedule_type": "Contract",
+      "work_from_home": true,
+      "salary": "$65K – $85K"
+    },
+    "category": "design",
+    "highlights": [
+      "Strong portfolio of web products or experimental web art",
+      "Mastery of typography, negative space, and micro-interactions",
+      "Working knowledge of Tailwind CSS and React JSX structure"
+    ],
+    "apply_link": "https://discord.com/invite/7dk4w37BhP"
+  },
+  {
+    "job_id": "ext_hackclub_08",
+    "title": "Hacker Fellowship & Club Steward",
+    "company_name": "Hack Club Fellowship",
+    "location": "Remote",
+    "via": "via Hack Club",
+    "description": "Help high school and youth programmers start clubs, organize in-person hackathons, and build projects. Mentor young hackers building physical hardware and software tools.",
+    "thumbnail": "https://assets.hackclub.com/icon-rounded.png",
+    "extensions": ["Fellowship / Full-time", "Remote", "$60K – $80K Grant"],
+    "detected_extensions": {
+      "posted_at": "1 week ago",
+      "schedule_type": "Fellowship",
+      "work_from_home": true,
+      "salary": "$60K – $80K"
+    },
+    "category": "fellowship",
+    "highlights": [
+      "Passion for youth hacker culture and community building",
+      "Self-directed builder with open-source project track record",
+      "Great oral and written communication skills"
+    ],
+    "apply_link": "https://hackclub.com/jobs"
+  }
+]
