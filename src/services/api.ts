@@ -324,27 +324,30 @@ export const api = {
   },
 
   /**
-   * Search jobs using SerpApi Google Jobs endpoint or curated developer roles.
+   * Search jobs using SerpApi Google Jobs endpoint, live developer feeds, or curated guild roles.
    * Endpoint: https://serpapi.com/search?engine=google_jobs
    */
   async getGoogleJobs(query?: string): Promise<GoogleJobItem[]> {
-    const serpApiKey = (import.meta as any).env?.VITE_SERPAPI_KEY || ""
-    const q = query ? encodeURIComponent(query) : "developer"
+    const localKey = typeof window !== "undefined" ? localStorage.getItem("reco_serpapi_key") : null
+    const serpApiKey = localKey || (import.meta as any).env?.VITE_SERPAPI_KEY || ""
+    const q = query && query.trim() ? query.trim() : "developer"
+    const results: GoogleJobItem[] = []
 
-    // 1. If SerpApi key configured, attempt direct or proxy query
+    // 1. If SerpApi key is present, search Google Jobs via SerpApi
     if (serpApiKey) {
       try {
-        const res = await fetch(`/api/serpapi/search.json?engine=google_jobs&q=${q}&api_key=${serpApiKey}`)
+        const url = `/api/serpapi/search.json?engine=google_jobs&q=${encodeURIComponent(q)}&api_key=${serpApiKey}`
+        const res = await fetch(url)
         if (res.ok) {
           const data = await res.json()
           if (data?.jobs_results && Array.isArray(data.jobs_results)) {
-            return data.jobs_results.map((j: any) => ({
-              job_id: j.job_id || Math.random().toString(),
+            const mapped = data.jobs_results.map((j: any) => ({
+              job_id: j.job_id || "serp_" + Math.random().toString(36).substring(2, 9),
               title: j.title || "Software Engineer",
               company_name: j.company_name || "Engineering Co",
               location: j.location || "Remote",
               via: j.via || "via Google Jobs",
-              description: j.description || "",
+              description: j.description ? j.description.slice(0, 360) + "..." : "",
               thumbnail: j.thumbnail,
               extensions: j.extensions || [],
               detected_extensions: j.detected_extensions || {},
@@ -352,34 +355,90 @@ export const api = {
               highlights: j.job_highlights?.[0]?.items || [],
               apply_link: j.related_links?.[0]?.link || "https://google.com/search?q=" + encodeURIComponent(j.title),
             }))
+            results.push(...mapped)
           }
         }
       } catch (err) {
-        console.warn("[api.getGoogleJobs] Live SerpApi query failed:", err)
+        console.warn("[api.getGoogleJobs] Live SerpApi query error:", err)
       }
     }
 
-    // 2. Fallback to pre-populated jobs catalog in /data/jobs.json
+    // 2. Fetch live real-time developer jobs from open public technical API
     try {
-      const res = await fetch("/data/jobs.json")
+      const remotiveUrl = `https://remotive.com/api/remote-jobs?limit=25&search=${encodeURIComponent(q)}`
+      const res = await fetch(remotiveUrl)
       if (res.ok) {
         const data = await res.json()
-        if (Array.isArray(data)) {
-          if (!query || !query.trim()) return data
-          const needle = query.toLowerCase().trim()
-          return data.filter((item: GoogleJobItem) =>
-            item.title.toLowerCase().includes(needle) ||
-            item.company_name.toLowerCase().includes(needle) ||
-            item.description?.toLowerCase().includes(needle) ||
-            item.location.toLowerCase().includes(needle)
-          )
+        if (data?.jobs && Array.isArray(data.jobs)) {
+          const mapped = data.jobs.map((r: any) => {
+            const cleanDesc = (r.description || "").replace(/<[^>]*>?/gm, "").slice(0, 320) + "..."
+            return {
+              job_id: "remotive_" + r.id,
+              title: r.title,
+              company_name: r.company_name,
+              location: r.candidate_required_location || "Remote Worldwide",
+              via: "via Remotive Feed",
+              description: cleanDesc,
+              thumbnail: r.company_logo || undefined,
+              extensions: [
+                r.job_type ? r.job_type.replace("_", " ") : "Full-time",
+                r.candidate_required_location || "Remote",
+                r.salary || "Competitive Pay",
+              ],
+              detected_extensions: {
+                posted_at: r.publication_date ? new Date(r.publication_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Recent",
+                schedule_type: r.job_type || "Full-time",
+                work_from_home: true,
+                salary: r.salary || undefined,
+              },
+              category: r.category?.toLowerCase().includes("dev") ? "software" : (r.category?.toLowerCase() || "software"),
+              highlights: r.tags || [],
+              apply_link: r.url,
+            } as GoogleJobItem
+          })
+          results.push(...mapped)
         }
       }
     } catch (e) {
-      console.warn("[api.getGoogleJobs] Fallback failed:", e)
+      console.warn("[api.getGoogleJobs] Live feed query error:", e)
     }
 
-    return []
+    // 3. Fallback / supplementary curated Reco Labs catalog
+    try {
+      const res = await fetch("/data/jobs.json")
+      if (res.ok) {
+        const localData = await res.json()
+        if (Array.isArray(localData)) {
+          const needle = q.toLowerCase()
+          const matched = localData.filter((item: GoogleJobItem) =>
+            item.title.toLowerCase().includes(needle) ||
+            item.company_name.toLowerCase().includes(needle) ||
+            item.description?.toLowerCase().includes(needle) ||
+            item.location.toLowerCase().includes(needle) ||
+            !query // If no query, include all default positions
+          )
+          results.push(...matched)
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 4. Deduplicate by job_id or title+company
+    const seen = new Set<string>()
+    const deduplicated = results.filter((j) => {
+      const key = `${j.title.toLowerCase()}_${j.company_name.toLowerCase()}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+
+    // 5. Anti-spam filter: eliminate low-quality unpaid internship spam
+    return deduplicated.filter((job) => {
+      const text = `${job.title} ${job.description || ""}`.toLowerCase()
+      const spamKeywords = ["unpaid internship", "commission only", "no pay", "unpaid volunteer"]
+      return !spamKeywords.some((w) => text.includes(w))
+    })
   },
 
   /**
