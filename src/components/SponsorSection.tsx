@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Heart, Mail, ArrowUpRight, Copy, Check, Sparkles } from "lucide-react"
+import { Link } from "react-router-dom"
+import { Heart, Mail, ArrowUpRight, Copy, Check, Sparkles, Plus } from "lucide-react"
 
 export function SponsorSection() {
   const [copied, setCopied] = React.useState(false)
@@ -12,6 +13,13 @@ export function SponsorSection() {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  const previewSlots = [
+    { label: "Partner Slot 01", desc: "Founding Tier" },
+    { label: "Partner Slot 02", desc: "Hardware Lab" },
+    { label: "Partner Slot 03", desc: "Cloud & Compute" },
+    { label: "Partner Slot 04", desc: "Community Tier" },
+  ]
 
   return (
     <section className="relative w-full py-20 sm:py-24 px-6 sm:px-8 border-t editorial-hairline bg-[#fafafa] dark:bg-[#0c0d12]">
@@ -71,6 +79,37 @@ export function SponsorSection() {
           </div>
 
         </div>
+
+        {/* Sponsor Placeholder Logo Strip */}
+        <div className="mt-14 pt-8 border-t editorial-hairline">
+          <div className="flex items-center justify-between mb-4 font-mono text-xs text-zinc-400">
+            <span className="uppercase tracking-wider">OFFICIAL SPONSOR SLOTS</span>
+            <Link
+              to="/sponsors"
+              className="text-[#FA5D00] font-bold hover:underline inline-flex items-center gap-1"
+            >
+              <span>View All Tiers & Guidelines</span>
+              <ArrowUpRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {previewSlots.map((slot, i) => (
+              <Link
+                key={i}
+                to="/sponsors"
+                className="group p-4 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/30 hover:border-[#FA5D00] transition-all flex flex-col items-center justify-center text-center min-h-[90px]"
+              >
+                <div className="w-7 h-7 rounded-full border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-1.5">
+                  <Plus className="w-3.5 h-3.5" />
+                </div>
+                <div className="font-serif text-sm text-zinc-800 dark:text-zinc-200">{slot.label}</div>
+                <div className="font-mono text-[10px] text-zinc-400">{slot.desc}</div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
       </div>
     </section>
   )

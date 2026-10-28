@@ -10,6 +10,7 @@ import { AboutPage } from "@/pages/AboutPage"
 import { JobsPage } from "@/pages/JobsPage"
 import { ProjectsPage } from "@/pages/ProjectsPage"
 import { HackathonsPage } from "@/pages/HackathonsPage"
+import { SponsorsPage } from "@/pages/SponsorsPage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
 
 export function App() {
@@ -30,6 +31,8 @@ export function App() {
             <Route path="/project" element={<ProjectsPage />} />
             <Route path="/hackathons" element={<HackathonsPage />} />
             <Route path="/hackathon" element={<HackathonsPage />} />
+            <Route path="/sponsors" element={<SponsorsPage />} />
+            <Route path="/sponsor" element={<SponsorsPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
