@@ -399,8 +399,31 @@ export const api = {
 
   /**
    * Submit email for joining Reco Labs.
+   * Endpoint: https://formspree.io/f/mvkkrjez
    */
   async joinNewsletter(email: string): Promise<{ success: boolean; message: string }> {
+    const FORMSPREE_ENDPOINT = "https://formspree.io/f/mvkkrjez"
+    try {
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          _subject: "New Member Joined Reco Labs",
+          source: "Hero Section Pill",
+          timestamp: new Date().toISOString(),
+        }),
+      })
+      if (res.ok) {
+        return { success: true, message: "Welcome to Reco Labs! You're in." }
+      }
+    } catch (err) {
+      console.warn("[api.joinNewsletter] Formspree dispatch error:", err)
+    }
+
     if (API_BASE_URL) {
       try {
         const res = await fetch(`${API_BASE_URL}/api/join`, {

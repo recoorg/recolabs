@@ -3,23 +3,34 @@
 import * as React from "react"
 import { CrowdCanvas } from "@/components/CrowdCanvas"
 import confetti from "canvas-confetti"
+import { api } from "@/services/api"
 
 export function HeroSection() {
   const [email, setEmail] = React.useState("")
+  const [loading, setLoading] = React.useState(false)
   const [joined, setJoined] = React.useState(false)
 
-  const handleJoin = (e: React.FormEvent) => {
+  const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email) return
-    setJoined(true)
-    confetti({
-      particleCount: 70,
-      spread: 60,
-      origin: { y: 0.5 },
-      colors: ["#FA5D00", "#5865F2", "#000000", "#ffffff"],
-    })
-    setTimeout(() => setJoined(false), 3500)
-    setEmail("")
+    if (!email || loading) return
+    setLoading(true)
+    try {
+      await api.joinNewsletter(email)
+      setJoined(true)
+      confetti({
+        particleCount: 70,
+        spread: 60,
+        origin: { y: 0.5 },
+        colors: ["#FA5D00", "#5865F2", "#000000", "#ffffff"],
+      })
+      setTimeout(() => setJoined(false), 3500)
+      setEmail("")
+    } catch {
+      setJoined(true)
+      setTimeout(() => setJoined(false), 3500)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -55,9 +66,10 @@ export function HeroSection() {
             />
             <button
               type="submit"
-              className="flex-none px-5 py-1.5 rounded-full bg-white text-black font-mono text-xs font-bold hover:bg-zinc-100 active:scale-95 transition-all cursor-pointer"
+              disabled={loading || joined}
+              className="flex-none px-5 py-1.5 rounded-full bg-white text-black font-mono text-xs font-bold hover:bg-zinc-100 active:scale-95 transition-all cursor-pointer disabled:opacity-75"
             >
-              {joined ? "Joined!" : "Join!"}
+              {loading ? "..." : joined ? "Joined!" : "Join!"}
             </button>
           </form>
         </div>
