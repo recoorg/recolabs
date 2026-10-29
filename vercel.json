@@ -10,6 +10,10 @@
       "destination": "https://serpapi.com/$1"
     },
     {
+      "source": "/api/network/(.*)",
+      "destination": "/api/network/[...route]"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
