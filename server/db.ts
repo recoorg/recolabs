@@ -6,7 +6,7 @@ const { Pool } = pg
 
 const DATABASE_URL =
   process.env.DATABASE_URL ||
-  "postgresql://postgres:Aditya%401060A@db.zjpbrdbdkkzczdwsgizj.supabase.co:6543/postgres"
+  "postgresql://postgres.zjpbrdbdkkzczdwsgizj:Aditya%401060A@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
 const JWT_SECRET = process.env.JWT_SECRET || "recolabs_jwt_secret_key_2026_super_secure"
 
 export const pool = new Pool({

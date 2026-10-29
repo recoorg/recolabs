@@ -6,7 +6,7 @@ import pg from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 var { Pool } = pg;
-var DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:Aditya%401060A@db.zjpbrdbdkkzczdwsgizj.supabase.co:6543/postgres";
+var DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.zjpbrdbdkkzczdwsgizj:Aditya%401060A@aws-0-eu-west-1.pooler.supabase.com:6543/postgres";
 var JWT_SECRET = process.env.JWT_SECRET || "recolabs_jwt_secret_key_2026_super_secure";
 var pool = new Pool({
   connectionString: DATABASE_URL,
