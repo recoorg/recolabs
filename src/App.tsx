@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom"
 import { Navbar } from "@/components/Navbar"
 import { FooterWrapper } from "@/components/FooterWrapper"
 import { ScrollToTop } from "@/components/ScrollToTop"
@@ -14,11 +14,31 @@ import { SponsorsPage } from "@/pages/SponsorsPage"
 import { NetworkPage } from "@/pages/NetworkPage"
 import { BuilderProfilePage } from "@/pages/BuilderProfilePage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
+import { networkApi } from "@/services/networkApi"
+
+function GlobalOAuthListener() {
+  const navigate = useNavigate()
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
+      networkApi.handleOAuthCallback().then((res) => {
+        if (res?.user) {
+          if (window.location.pathname === "/" || window.location.pathname === "") {
+            navigate("/network")
+          }
+        }
+      })
+    }
+  }, [navigate])
+
+  return null
+}
 
 export function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <GlobalOAuthListener />
       <div className="relative min-h-screen w-full bg-white dark:bg-[#09090b] font-sans selection:bg-[#FA5D00] selection:text-white flex flex-col justify-between">
         {/* Floating Pill Navigation */}
         <Navbar />

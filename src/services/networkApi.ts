@@ -34,6 +34,28 @@ const TOKEN_KEY = "reco_network_token"
 const USER_KEY = "reco_network_user"
 const SUPABASE_PROJECT_URL = "https://zjpbrdbdkkzczdwsgizj.supabase.co"
 
+async function safeJsonFetch<T = any>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+  const res = await fetch(input, init)
+  const text = await res.text()
+
+  let json: any
+  try {
+    json = text ? JSON.parse(text) : {}
+  } catch {
+    throw new Error(
+      res.ok
+        ? "Invalid JSON format returned by server."
+        : `Server error (${res.status}): ${text.slice(0, 150).trim() || res.statusText}`
+    )
+  }
+
+  if (!res.ok || json.error) {
+    throw new Error(json.error || `Request failed with status ${res.status}`)
+  }
+
+  return json as T
+}
+
 export const networkApi = {
   getToken(): string | null {
     if (typeof window === "undefined") return null
@@ -107,22 +129,20 @@ export const networkApi = {
       const preferredUsername = metadata.user_name || metadata.preferred_username || name.toLowerCase().replace(/[^a-z0-9]/g, "")
 
       // Sync with our PostgreSQL backend
-      const syncRes = await fetch("/api/network/oauth-sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          name,
-          avatarUrl,
-          provider,
-          preferredUsername,
-        }),
-      })
-
-      const syncJson = await syncRes.json()
-      if (!syncRes.ok || syncJson.error) {
-        throw new Error(syncJson.error || "OAuth sync failed.")
-      }
+      const syncJson = await safeJsonFetch<{ success: boolean; user: UserProfile; token: string }>(
+        "/api/network/oauth-sync",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            name,
+            avatarUrl,
+            provider,
+            preferredUsername,
+          }),
+        }
+      )
 
       this.setSession(syncJson.user, syncJson.token)
 
@@ -147,29 +167,27 @@ export const networkApi = {
     discord?: string
     github?: string
   }): Promise<{ user: UserProfile; token: string }> {
-    const res = await fetch("/api/network/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    })
-    const json = await res.json()
-    if (!res.ok || json.error) {
-      throw new Error(json.error || "Failed to sign up.")
-    }
+    const json = await safeJsonFetch<{ success: boolean; user: UserProfile; token: string }>(
+      "/api/network/signup",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }
+    )
     this.setSession(json.user, json.token)
     return { user: json.user, token: json.token }
   },
 
   async login(data: { email: string; password: string }): Promise<{ user: UserProfile; token: string }> {
-    const res = await fetch("/api/network/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    })
-    const json = await res.json()
-    if (!res.ok || json.error) {
-      throw new Error(json.error || "Failed to sign in.")
-    }
+    const json = await safeJsonFetch<{ success: boolean; user: UserProfile; token: string }>(
+      "/api/network/login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }
+    )
     this.setSession(json.user, json.token)
     return { user: json.user, token: json.token }
   },
@@ -177,15 +195,11 @@ export const networkApi = {
   async getProfile(): Promise<UserProfile> {
     const token = this.getToken()
     if (!token) throw new Error("Not authenticated")
-    const res = await fetch("/api/network/profile", {
+    const json = await safeJsonFetch<{ success: boolean; user: UserProfile }>("/api/network/profile", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
-    const json = await res.json()
-    if (!res.ok || json.error) {
-      throw new Error(json.error || "Failed to fetch profile.")
-    }
     if (json.user) {
       localStorage.setItem(USER_KEY, JSON.stringify(json.user))
     }
@@ -203,7 +217,7 @@ export const networkApi = {
   }): Promise<UserProfile> {
     const token = this.getToken()
     if (!token) throw new Error("Not authenticated")
-    const res = await fetch("/api/network/profile", {
+    const json = await safeJsonFetch<{ success: boolean; user: UserProfile }>("/api/network/profile", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -211,10 +225,6 @@ export const networkApi = {
       },
       body: JSON.stringify(data),
     })
-    const json = await res.json()
-    if (!res.ok || json.error) {
-      throw new Error(json.error || "Failed to update profile.")
-    }
     if (json.user) {
       localStorage.setItem(USER_KEY, JSON.stringify(json.user))
     }
@@ -222,11 +232,9 @@ export const networkApi = {
   },
 
   async getBuilderProfile(username: string): Promise<{ user: UserProfile; startups: StartupItem[] }> {
-    const res = await fetch(`/api/network/builder/${encodeURIComponent(username)}`)
-    const json = await res.json()
-    if (!res.ok || json.error) {
-      throw new Error(json.error || `Builder @${username} not found.`)
-    }
+    const json = await safeJsonFetch<{ success: boolean; user: UserProfile; startups: StartupItem[] }>(
+      `/api/network/builder/${encodeURIComponent(username)}`
+    )
     return { user: json.user, startups: json.startups || [] }
   },
 
@@ -236,11 +244,10 @@ export const networkApi = {
     if (params?.category && params.category !== "ALL") q.set("category", params.category)
     if (params?.username) q.set("username", params.username)
 
-    const res = await fetch(`/api/network/startups?${q.toString()}`)
-    const json = await res.json()
-    if (!res.ok || json.error) {
-      throw new Error(json.error || "Failed to fetch startups.")
-    }
+    const query = q.toString()
+    const json = await safeJsonFetch<{ success: boolean; startups: StartupItem[] }>(
+      `/api/network/startups${query ? `?${query}` : ""}`
+    )
     return json.startups || []
   },
 
@@ -265,15 +272,11 @@ export const networkApi = {
       headers["Authorization"] = `Bearer ${token}`
     }
 
-    const res = await fetch("/api/network/startups", {
+    const json = await safeJsonFetch<{ success: boolean; startup: StartupItem }>("/api/network/startups", {
       method: "POST",
       headers,
       body: JSON.stringify(data),
     })
-    const json = await res.json()
-    if (!res.ok || json.error) {
-      throw new Error(json.error || "Failed to post startup.")
-    }
     return json.startup
   },
 }

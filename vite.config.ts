@@ -32,6 +32,8 @@ export default defineConfig({
     },
   },
   server: {
+    port: 3000,
+    strictPort: false,
     proxy: {
       '/api/hackclub': {
         target: 'https://hackathons.hackclub.com',
