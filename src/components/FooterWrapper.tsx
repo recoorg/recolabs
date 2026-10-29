@@ -95,7 +95,7 @@ export function FooterWrapper() {
             ],
           },
         ]}
-        copyright="© 2026 Reco Labs · Founded by Aditya · Built by curious minds worldwide."
+        copyright="© 2026 Reco Labs · Founded by Aditya & Tanish · Built by curious minds worldwide."
         palette={
           isDark
             ? {

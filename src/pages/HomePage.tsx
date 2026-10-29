@@ -27,7 +27,7 @@ export function HomePage() {
             Built to fix real problems, share tutorials, and help beginners find their path<span className="text-[#FA5D00]">.</span>
           </h2>
           <p className="mt-6 font-sans text-base sm:text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-            Founded by Aditya in Grade 10, Reco Labs is a peer-driven collective where curious minds exchange skills across software, circuits, and open-source infrastructure.
+            Founded by Aditya and Tanish, Reco Labs is a peer-driven collective where curious minds exchange skills across software, circuits, and open-source infrastructure.
           </p>
 
           <div className="mt-10 flex flex-wrap justify-center items-center gap-4">
