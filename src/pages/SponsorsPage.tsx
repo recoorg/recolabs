@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Heart, Mail, ArrowUpRight, Copy, Check, Sparkles, Plus, Image as ImageIcon, ExternalLink, ShieldCheck, Cpu, Zap, Users } from "lucide-react"
+import { Heart, Mail, ArrowUpRight, Copy, Check, Plus, Image as ImageIcon, ExternalLink, ShieldCheck, Cpu, Zap, Users } from "lucide-react"
 
 // ==============================================================================
 // SPONSOR ROSTER CONFIGURATION
@@ -136,8 +136,14 @@ export function SponsorsPage() {
   const communitySponsors = sponsors.filter((s) => s.tier === "community")
 
   return (
-    <div className="w-full pt-32 sm:pt-36 pb-24 px-6 sm:px-8 bg-white dark:bg-[#09090b]">
-      <div className="mx-auto max-w-6xl">
+    <div className="relative w-full pt-32 sm:pt-36 pb-24 px-6 sm:px-8 bg-transparent overflow-hidden">
+      {/* Seamless ambient blurred glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/3 -left-40 w-[600px] h-[600px] bg-orange-500/[0.02] dark:bg-orange-500/[0.03] rounded-full blur-3xl pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-6xl">
         
         {/* Page Header */}
         <div className="text-center max-w-3xl mx-auto pb-12 border-b editorial-hairline">
@@ -184,7 +190,6 @@ export function SponsorsPage() {
           <div className="flex items-center justify-between pb-4 border-b editorial-hairline mb-8">
             <div>
               <span className="font-mono text-xs text-[#FA5D00] font-bold uppercase tracking-wider flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5" />
                 TIER 01 · FOUNDING PARTNERS
               </span>
               <h2 className="mt-1 font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal">

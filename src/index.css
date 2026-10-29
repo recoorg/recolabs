@@ -20,6 +20,11 @@
     --foreground: #fafafa;
   }
 
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }
+
   body {
     margin: 0;
     padding: 0;
@@ -48,6 +53,15 @@
 }
 .dark .editorial-hairline {
   border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Seamless section blur backdrop */
+.section-blur-glow {
+  position: absolute;
+  pointer-events: none;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
 }
 
 /* Custom smooth selection */

@@ -533,8 +533,8 @@ const DoodleIcon = ({ kind, size = 18 }: { kind: DoodleKind; size?: number }) =>
 type Metrics = { advances: number[]; cap: number }
 
 const FONT_SIZE = 200
-const DEFAULT_FONT = '"Arial Black", "Inter Display", Inter, "Helvetica Neue", Helvetica, Arial, sans-serif'
-const DEFAULT_SERIF = '"Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif'
+const DEFAULT_FONT = '"Geist Mono", monospace, ui-monospace'
+const DEFAULT_SERIF = '"Geist Mono", monospace, ui-monospace'
 
 const estimate = (word: string): Metrics => ({
   advances: Array.from(word).map((c) => (c === " " ? 0.3 : /[IJ1]/.test(c) ? 0.42 : /[MW]/.test(c) ? 0.98 : 0.76) * FONT_SIZE),
@@ -1218,7 +1218,7 @@ export default function DoodleCrewFooter({
 }
 
 const CSS =
-  ".dcf{position:relative;isolation:isolate;overflow:hidden;overflow:clip;width:100%;box-sizing:border-box;display:flex;flex-direction:column;background:var(--dcf-bg);color:var(--dcf-ink);font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Inter,Roboto,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;--dcf-soft:color-mix(in oklab,var(--dcf-ink) 62%,var(--dcf-bg));--dcf-line:color-mix(in oklab,var(--dcf-ink) 14%,var(--dcf-bg));--dcf-pad:clamp(16px,4vw,56px)}" +
+  ".dcf{position:relative;isolation:isolate;overflow:hidden;overflow:clip;width:100%;box-sizing:border-box;display:flex;flex-direction:column;background:var(--dcf-bg);color:var(--dcf-ink);font-family:'Geist Mono',monospace,ui-monospace,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;--dcf-soft:color-mix(in oklab,var(--dcf-ink) 62%,var(--dcf-bg));--dcf-line:color-mix(in oklab,var(--dcf-ink) 14%,var(--dcf-bg));--dcf-pad:clamp(16px,4vw,56px)}" +
   ":where(.dcf) *,:where(.dcf) *::before,:where(.dcf) *::after{box-sizing:border-box}" +
   ":where(.dcf) a{color:inherit;text-decoration:none}" +
   ":where(.dcf) button{appearance:none;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer}" +
@@ -1233,7 +1233,7 @@ const CSS =
   ".dcf-logo{display:flex;align-items:center;justify-content:center;height:38px;width:auto;background:transparent;border:none;transition:opacity .2s}" +
   ".dcf-brand:hover .dcf-logo{opacity:.8}" +
   ".dcf-brandname{font-weight:800;font-size:19px;letter-spacing:-.02em}" +
-  ".dcf-blurb{grid-column:1;grid-row:2;font-family:var(--dcf-serif);font-size:15px;line-height:1.55;color:var(--dcf-soft);max-width:34ch}" +
+  ".dcf-blurb{grid-column:1;grid-row:2;font-family:'Geist Mono',monospace;font-size:13.5px;line-height:1.6;color:var(--dcf-soft);max-width:34ch}" +
   ".dcf-cols{grid-column:2;grid-row:1/span 2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}" +
   ".dcf-coltitle{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}" +
   ".dcf-col li{margin:0 0 7px}" +
@@ -1283,10 +1283,10 @@ const CSS =
   ".dcf-paperfill{fill:var(--dcf-bg)}" +
   // cta
   ".dcf-cta{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;gap:20px;padding:clamp(20px,3vw,34px) 0 clamp(30px,4vw,48px);text-align:center}" +
-  ".dcf-tagline{font-family:var(--dcf-serif);font-size:clamp(17px,1.9vw,22px);line-height:1.4;letter-spacing:-.005em;max-width:44ch;text-wrap:balance}" +
+  ".dcf-tagline{font-family:'Geist Mono',monospace;font-size:clamp(14px,1.5vw,17px);line-height:1.45;letter-spacing:-.01em;max-width:46ch;text-wrap:balance}" +
   ".dcf-word{display:inline-block;white-space:pre}" +
   ".dcf-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}" +
-  ".dcf-btn{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 22px;border-radius:999px;font-family:var(--dcf-font);font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:all .15s ease;cursor:pointer;text-decoration:none}" +
+  ".dcf-btn{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 22px;border-radius:999px;font-family:'Geist Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:all .15s ease;cursor:pointer;text-decoration:none}" +
   ".dcf-btn.is-outline{background:transparent;color:var(--dcf-ink);border:1.5px solid var(--dcf-ink)}" +
   ".dcf-btn.is-solid{background:var(--dcf-ink);color:var(--dcf-bg);border:1.5px solid var(--dcf-ink)}" +
   ".dcf-btn.is-solid .dcf-icon{stroke:currentColor}" +

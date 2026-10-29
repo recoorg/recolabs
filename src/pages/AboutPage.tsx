@@ -1,13 +1,19 @@
 "use client"
 
 import * as React from "react"
-import { MessageSquare, Terminal, Heart, Sparkles, Compass, Lightbulb, Code } from "lucide-react"
+import { MessageSquare, Terminal, Heart, Compass, Lightbulb, Code } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 
 export function AboutPage() {
   return (
-    <div className="w-full pt-32 sm:pt-36 pb-20 px-6 sm:px-8 bg-white dark:bg-[#09090b]">
-      <div className="mx-auto max-w-5xl">
+    <div className="relative w-full pt-32 sm:pt-36 pb-20 px-6 sm:px-8 bg-transparent overflow-hidden">
+      {/* Seamless ambient blurred glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/3 -left-40 w-[600px] h-[600px] bg-orange-500/[0.02] dark:bg-orange-500/[0.03] rounded-full blur-3xl pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-5xl">
         
         {/* Page Tag & Title */}
         <div className="text-center max-w-3xl mx-auto pb-12 border-b editorial-hairline">
@@ -47,8 +53,7 @@ export function AboutPage() {
 
           {/* Letter from Aditya */}
           <div className="lg:col-span-7 flex flex-col justify-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-950/60 border border-orange-300 dark:border-orange-800 text-[#FA5D00] font-mono text-xs font-bold uppercase tracking-wider w-fit mb-6">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-100/70 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 text-[#FA5D00] font-mono text-xs font-semibold uppercase tracking-wider w-fit mb-6">
               <span>A NOTE FROM THE FOUNDER</span>
             </div>
 

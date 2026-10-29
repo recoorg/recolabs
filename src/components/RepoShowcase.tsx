@@ -15,8 +15,14 @@ export function RepoShowcase() {
   }
 
   return (
-    <section id="projects" className="relative w-full py-28 px-6 sm:px-8 border-t editorial-hairline bg-[#fcfcfd] dark:bg-[#0c0d11]">
-      <div className="mx-auto max-w-6xl">
+    <section id="projects" className="relative w-full py-28 px-6 sm:px-8 bg-transparent overflow-hidden">
+      {/* Seamless ambient blurred glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 -right-32 w-[600px] h-[500px] bg-[#FA5D00]/[0.02] dark:bg-[#FA5D00]/[0.03] rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 -left-32 w-[600px] h-[500px] bg-orange-500/[0.015] dark:bg-orange-500/[0.025] rounded-full blur-3xl pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-6xl">
         
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-16 border-b editorial-hairline">

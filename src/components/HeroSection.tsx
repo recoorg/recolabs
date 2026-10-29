@@ -78,6 +78,8 @@ export function HeroSection() {
       {/* Hero Bottom: Dense Comic Crowd of Peeps */}
       <div className="relative w-full h-[340px] sm:h-[420px] md:h-[480px] lg:h-[520px] mt-2 overflow-hidden">
         <CrowdCanvas className="absolute inset-0 w-full h-full pointer-events-none" />
+        {/* Soft bottom edge blend */}
+        <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-white dark:from-[#09090b] to-transparent pointer-events-none" />
       </div>
     </section>
   )

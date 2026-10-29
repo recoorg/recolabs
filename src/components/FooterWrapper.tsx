@@ -24,7 +24,10 @@ export function FooterWrapper() {
   return (
     <>
       <SponsorSection />
-      <footer className="relative w-full overflow-hidden border-t editorial-hairline bg-white dark:bg-[#09090b]">
+      <footer className="relative w-full overflow-hidden bg-transparent">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-[#FA5D00]/[0.02] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
+        </div>
         <DoodleCrewFooter
         wordmark="RECOLABS"
         brand="reco labs"
@@ -106,10 +109,10 @@ export function FooterWrapper() {
                 accent: "#FA5D00",
               }
         }
-        serifFamily="'Instrument Serif', Georgia, serif"
+        serifFamily="'Geist Mono', monospace"
         fontFamily="'Geist Mono', monospace"
-        doodles={["flame", "star", "bolt", "sparkle", "sandwich", "heart", "plane"]}
-        doodleCount={14}
+        doodles={["flame", "star", "bolt", "sandwich", "heart", "plane"]}
+        doodleCount={12}
         interactive={true}
         backToTop={false}
       />

@@ -4,7 +4,7 @@ import * as React from "react"
 import { Link } from "react-router-dom"
 import { HeroSection } from "@/components/HeroSection"
 import { RepoShowcase } from "@/components/RepoShowcase"
-import { ArrowUpRight, Sparkles, Terminal, Flame, Users, BookOpen } from "lucide-react"
+import { ArrowUpRight, Terminal, Flame, Users, BookOpen } from "lucide-react"
 
 export function HomePage() {
   return (
@@ -13,8 +13,13 @@ export function HomePage() {
       <HeroSection />
 
       {/* Brief Manifesto Bridge */}
-      <section className="relative w-full py-24 px-6 sm:px-8 border-t editorial-hairline bg-white dark:bg-[#09090b]">
-        <div className="mx-auto max-w-5xl text-center">
+      <section className="relative w-full py-24 px-6 sm:px-8 bg-transparent overflow-hidden">
+        {/* Seamless ambient blurred glow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-[#FA5D00]/[0.02] dark:bg-[#FA5D00]/[0.03] rounded-full blur-3xl pointer-events-none" />
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-5xl text-center">
           <span className="font-mono text-xs uppercase tracking-widest text-[#FA5D00] font-semibold">
             FROM HIGH SCHOOL EXPERIMENT TO GLOBAL GUILD
           </span>

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CheckCircle2, Sparkles, MessageSquare, Briefcase, Search, MapPin, ExternalLink, RefreshCw, Key, X } from "lucide-react"
+import { CheckCircle2, MessageSquare, Briefcase, Search, MapPin, ExternalLink, RefreshCw, Key, X } from "lucide-react"
 import { api, type GoogleJobItem } from "@/services/api"
 
 export function JobsPage() {
@@ -89,8 +89,14 @@ export function JobsPage() {
   }, [jobs, categoryFilter, remoteOnly])
 
   return (
-    <div className="w-full pt-32 sm:pt-36 pb-24 px-6 sm:px-8 bg-white dark:bg-[#09090b]">
-      <div className="mx-auto max-w-6xl">
+    <div className="relative w-full pt-32 sm:pt-36 pb-24 px-6 sm:px-8 bg-transparent overflow-hidden">
+      {/* Seamless ambient blurred glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/3 -left-40 w-[600px] h-[600px] bg-orange-500/[0.02] dark:bg-orange-500/[0.03] rounded-full blur-3xl pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-6xl">
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto pb-12 border-b editorial-hairline">

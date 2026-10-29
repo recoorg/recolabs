@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Link } from "react-router-dom"
-import { Heart, Mail, ArrowUpRight, Copy, Check, Sparkles, Plus } from "lucide-react"
+import { Heart, Mail, ArrowUpRight, Copy, Check, Plus } from "lucide-react"
 
 export function SponsorSection() {
   const [copied, setCopied] = React.useState(false)
@@ -22,14 +22,18 @@ export function SponsorSection() {
   ]
 
   return (
-    <section className="relative w-full py-20 sm:py-24 px-6 sm:px-8 border-t editorial-hairline bg-[#fafafa] dark:bg-[#0c0d12]">
-      <div className="mx-auto max-w-5xl">
+    <section className="relative w-full py-20 sm:py-24 px-6 sm:px-8 bg-transparent overflow-hidden">
+      {/* Seamless ambient blurred glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-5xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
           
           {/* Left Editorial Copy */}
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-950/60 border border-orange-300 dark:border-orange-800 text-[#FA5D00] font-mono text-xs font-bold uppercase tracking-wider mb-4">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100/70 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 text-[#FA5D00] font-mono text-xs font-semibold uppercase tracking-wider mb-4">
               <span>SPONSORSHIP & BUILD GRANTS</span>
             </div>
 
