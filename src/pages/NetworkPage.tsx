@@ -1,0 +1,874 @@
+"use client"
+
+import * as React from "react"
+import confetti from "canvas-confetti"
+import {
+  Rocket,
+  Search,
+  ExternalLink,
+  Plus,
+  Phone,
+  Globe,
+  Mail,
+  MessageSquare,
+  User,
+  LogIn,
+  LogOut,
+  X,
+  Check,
+  RefreshCw,
+  Sparkles,
+  ArrowUpRight,
+  ShieldCheck,
+  Building2,
+  Terminal,
+  Filter,
+} from "lucide-react"
+import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
+
+const CATEGORIES = ["ALL", "Software", "Hardware", "Security", "AI", "Education & Tooling"]
+
+export function NetworkPage() {
+  const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(null)
+  const [startups, setStartups] = React.useState<StartupItem[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [searchQuery, setSearchQuery] = React.useState("")
+  const [selectedCategory, setSelectedCategory] = React.useState("ALL")
+
+  // Modals & Panels
+  const [showAuthModal, setShowAuthModal] = React.useState(false)
+  const [authMode, setAuthMode] = React.useState<"login" | "signup">("signup")
+  const [showPostModal, setShowPostModal] = React.useState(false)
+  const [showProfileModal, setShowProfileModal] = React.useState(false)
+
+  // Auth Form State
+  const [authForm, setAuthForm] = React.useState({
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
+    website: "",
+    bio: "",
+    discord: "",
+  })
+  const [authLoading, setAuthLoading] = React.useState(false)
+  const [authError, setAuthError] = React.useState("")
+
+  // Startup Post Form State
+  const [startupForm, setStartupForm] = React.useState({
+    name: "",
+    url: "",
+    problem_solving: "",
+    category: "Software",
+    stage: "Prototype",
+    founder_name: "",
+    founder_phone: "",
+    founder_website: "",
+    founder_discord: "",
+  })
+  const [postLoading, setPostLoading] = React.useState(false)
+  const [postError, setPostError] = React.useState("")
+
+  // Profile Edit State
+  const [profileForm, setProfileForm] = React.useState({
+    name: "",
+    phone: "",
+    website: "",
+    bio: "",
+    discord: "",
+  })
+  const [profileLoading, setProfileLoading] = React.useState(false)
+  const [profileSuccess, setProfileSuccess] = React.useState(false)
+
+  // Load Session and Startups
+  React.useEffect(() => {
+    const user = networkApi.getCurrentUser()
+    if (user) {
+      setCurrentUser(user)
+      setProfileForm({
+        name: user.name || "",
+        phone: user.phone || "",
+        website: user.website || "",
+        bio: user.bio || "",
+        discord: user.discord || "",
+      })
+      setStartupForm((prev) => ({
+        ...prev,
+        founder_name: user.name || "",
+        founder_phone: user.phone || "",
+        founder_website: user.website || "",
+        founder_discord: user.discord || "",
+      }))
+    }
+    loadStartups()
+  }, [])
+
+  const loadStartups = async () => {
+    try {
+      setLoading(true)
+      const data = await networkApi.getStartups({
+        search: searchQuery,
+        category: selectedCategory,
+      })
+      setStartups(data)
+    } catch (err: any) {
+      console.error("Failed to load startups:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Trigger search on query/category change
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      loadStartups()
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [searchQuery, selectedCategory])
+
+  // Handle Auth
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAuthError("")
+    setAuthLoading(true)
+    try {
+      if (authMode === "signup") {
+        const res = await networkApi.signUp(authForm)
+        setCurrentUser(res.user)
+        confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } })
+      } else {
+        const res = await networkApi.login({
+          email: authForm.email,
+          password: authForm.password,
+        })
+        setCurrentUser(res.user)
+      }
+      setShowAuthModal(false)
+    } catch (err: any) {
+      setAuthError(err.message || "Authentication failed.")
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  // Handle Logout
+  const handleLogout = () => {
+    networkApi.logout()
+    setCurrentUser(null)
+  }
+
+  // Handle Post Startup
+  const handlePostStartup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPostError("")
+    if (!startupForm.name || !startupForm.url || !startupForm.problem_solving) {
+      setPostError("Please fill out Name, URL, and Problem Solving.")
+      return
+    }
+
+    setPostLoading(true)
+    try {
+      const created = await networkApi.createStartup({
+        ...startupForm,
+        founder_name: startupForm.founder_name || currentUser?.name || "Anonymous",
+        founder_phone: startupForm.founder_phone || currentUser?.phone || undefined,
+        founder_website: startupForm.founder_website || currentUser?.website || undefined,
+        founder_discord: startupForm.founder_discord || currentUser?.discord || undefined,
+      })
+      setStartups((prev) => [created, ...prev])
+      setShowPostModal(false)
+      confetti({ particleCount: 90, spread: 70, origin: { y: 0.5 } })
+      // Reset form
+      setStartupForm({
+        name: "",
+        url: "",
+        problem_solving: "",
+        category: "Software",
+        stage: "Prototype",
+        founder_name: currentUser?.name || "",
+        founder_phone: currentUser?.phone || "",
+        founder_website: currentUser?.website || "",
+        founder_discord: currentUser?.discord || "",
+      })
+    } catch (err: any) {
+      setPostError(err.message || "Failed to post startup.")
+    } finally {
+      setPostLoading(false)
+    }
+  }
+
+  // Handle Profile Update
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setProfileLoading(true)
+    try {
+      const updated = await networkApi.updateProfile(profileForm)
+      setCurrentUser(updated)
+      setProfileSuccess(true)
+      setTimeout(() => setProfileSuccess(false), 2000)
+    } catch (err: any) {
+      console.error(err)
+    } finally {
+      setProfileLoading(false)
+    }
+  }
+
+  return (
+    <div className="relative w-full pt-32 sm:pt-36 pb-24 px-5 sm:px-8 bg-transparent overflow-hidden">
+      {/* Seamless ambient blurred glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/3 -left-40 w-[600px] h-[600px] bg-orange-500/[0.02] dark:bg-orange-500/[0.03] rounded-full blur-3xl pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-6xl">
+        
+        {/* Page Header */}
+        <div className="text-center max-w-3xl mx-auto pb-10 border-b editorial-hairline">
+          <span className="font-mono text-xs uppercase tracking-widest text-[#FA5D00] font-semibold">
+            THE RECO FOUNDER NETWORK
+          </span>
+          <h1 className="mt-4 font-serif text-5xl sm:text-7xl lg:text-8xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight">
+            Founder & Startup Exchange<span className="text-[#FA5D00]">.</span>
+          </h1>
+          <p className="mt-4 font-sans text-base sm:text-lg text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed">
+            A public registry of student-built startups, toolchains, and hardware projects. Sign up, list what you're building, and share your direct contact details with the guild.
+          </p>
+
+          {/* Action Row */}
+          <div className="mt-8 flex flex-wrap justify-center items-center gap-3">
+            <button
+              onClick={() => {
+                if (!currentUser) {
+                  setAuthMode("signup")
+                  setShowAuthModal(true)
+                } else {
+                  setShowPostModal(true)
+                }
+              }}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+            >
+              <Rocket className="w-3.5 h-3.5 fill-black" />
+              <span>List Your Startup</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+
+            {currentUser ? (
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 font-mono text-xs text-zinc-700 dark:text-zinc-300 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="font-bold">{currentUser.name}</span>
+                <span className="text-zinc-400">·</span>
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="hover:text-[#FA5D00] transition-colors cursor-pointer"
+                >
+                  Edit Profile
+                </button>
+                <span className="text-zinc-400">·</span>
+                <button
+                  onClick={handleLogout}
+                  title="Sign out"
+                  className="text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-3 h-3 inline" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setAuthMode("login")
+                  setShowAuthModal(true)
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-900 font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:border-[#FA5D00] transition-colors cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5 text-[#FA5D00]" />
+                <span>Founder Sign In / Register</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Search & Category Filter Bar */}
+        <div className="mt-10 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
+          {/* Search Input */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search startups, problems, or founder names..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-full border editorial-hairline bg-white/70 dark:bg-zinc-900/60 font-mono text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#FA5D00]"
+            />
+          </div>
+
+          {/* Category Pills */}
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                  selectedCategory === cat
+                    ? "bg-black text-white dark:bg-white dark:text-black"
+                    : "border editorial-hairline bg-white/50 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:border-[#FA5D00]"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Startups Directory Grid */}
+        <div className="mt-8">
+          {loading ? (
+            <div className="py-24 text-center flex flex-col items-center justify-center">
+              <RefreshCw className="w-6 h-6 text-[#FA5D00] animate-spin mb-3" />
+              <p className="font-mono text-xs text-zinc-500">Loading registered startups...</p>
+            </div>
+          ) : startups.length === 0 ? (
+            <div className="py-20 text-center rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-8">
+              <div className="w-12 h-12 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 mx-auto mb-3">
+                <Rocket className="w-5 h-5 text-[#FA5D00]" />
+              </div>
+              <h3 className="font-serif text-2xl text-zinc-900 dark:text-zinc-100">No startups found</h3>
+              <p className="mt-1 font-sans text-xs text-zinc-500">
+                Be the first founder to post a startup in this category.
+              </p>
+              <button
+                onClick={() => {
+                  if (!currentUser) setShowAuthModal(true)
+                  else setShowPostModal(true)
+                }}
+                className="mt-5 inline-flex items-center gap-2 px-6 py-2 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>List a Startup</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {startups.map((item) => (
+                <div
+                  key={item.id}
+                  className="group relative p-6 rounded-3xl border editorial-hairline bg-white/60 dark:bg-zinc-900/40 hover:border-[#FA5D00] transition-all flex flex-col justify-between shadow-sm"
+                >
+                  <div>
+                    {/* Header: Name & External Link */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="inline-flex items-center gap-2 mb-1.5">
+                          <span className="px-2.5 py-0.5 rounded-full bg-orange-100/70 dark:bg-orange-950/40 text-[#FA5D00] font-mono text-[10px] font-bold uppercase tracking-wider">
+                            {item.category}
+                          </span>
+                          <span className="font-mono text-[10px] text-zinc-400 uppercase">
+                            {item.stage}
+                          </span>
+                        </div>
+                        <h2 className="font-serif text-2xl sm:text-3xl font-normal text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors">
+                          {item.name}
+                        </h2>
+                      </div>
+
+                      <a
+                        href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Visit Startup URL"
+                        className="p-2 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-800 text-zinc-500 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
+
+                    {/* URL Pill */}
+                    <div className="mt-2 font-mono text-xs text-zinc-400 truncate">
+                      <a
+                        href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-[#FA5D00] transition-colors underline underline-offset-2"
+                      >
+                        {item.url.replace(/^https?:\/\//, "")}
+                      </a>
+                    </div>
+
+                    {/* Problem Solving Block */}
+                    <div className="mt-4 p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/60 border editorial-hairline">
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 font-bold block mb-1">
+                        PROBLEM SOLVED:
+                      </span>
+                      <p className="font-sans text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                        {item.problem_solving}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Founder Contact Strip */}
+                  <div className="mt-6 pt-4 border-t editorial-hairline">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-800 dark:text-zinc-200 font-bold">
+                        <User className="w-3.5 h-3.5 text-[#FA5D00]" />
+                        <span>{item.founder_name}</span>
+                      </div>
+                      <span className="font-mono text-[10px] text-zinc-400">FOUNDER</span>
+                    </div>
+
+                    {/* Contact Badges */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1 font-mono text-[11px]">
+                      {item.founder_phone && (
+                        <a
+                          href={`tel:${item.founder_phone}`}
+                          title={`Call or WhatsApp: ${item.founder_phone}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
+                        >
+                          <Phone className="w-3 h-3 text-emerald-500" />
+                          <span>{item.founder_phone}</span>
+                        </a>
+                      )}
+
+                      {item.founder_website && (
+                        <a
+                          href={item.founder_website.startsWith("http") ? item.founder_website : `https://${item.founder_website}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="Founder Website"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
+                        >
+                          <Globe className="w-3 h-3 text-blue-500" />
+                          <span>Website</span>
+                        </a>
+                      )}
+
+                      {item.founder_email && (
+                        <a
+                          href={`mailto:${item.founder_email}`}
+                          title={`Email ${item.founder_email}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
+                        >
+                          <Mail className="w-3 h-3 text-[#FA5D00]" />
+                          <span>Email</span>
+                        </a>
+                      )}
+
+                      {item.founder_discord && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-500">
+                          <MessageSquare className="w-3 h-3 text-[#5865F2]" />
+                          <span>{item.founder_discord}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* MODAL 1: AUTH (SIGN UP / SIGN IN) */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#09090b] p-6 sm:p-8 shadow-2xl">
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-5 right-5 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-black dark:hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Tab switch */}
+            <div className="flex items-center gap-2 mb-6 p-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border editorial-hairline w-fit">
+              <button
+                type="button"
+                onClick={() => setAuthMode("signup")}
+                className={`px-4 py-1.5 rounded-full font-mono text-xs font-bold uppercase transition-all cursor-pointer ${
+                  authMode === "signup" ? "bg-[#FA5D00] text-black" : "text-zinc-500 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                Sign Up
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode("login")}
+                className={`px-4 py-1.5 rounded-full font-mono text-xs font-bold uppercase transition-all cursor-pointer ${
+                  authMode === "login" ? "bg-[#FA5D00] text-black" : "text-zinc-500 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                Sign In
+              </button>
+            </div>
+
+            <h2 className="font-serif text-3xl text-zinc-950 dark:text-zinc-50 font-normal">
+              {authMode === "signup" ? "Join the Founder Network" : "Welcome Back"}
+            </h2>
+            <p className="mt-1 font-sans text-xs text-zinc-500">
+              {authMode === "signup"
+                ? "Create your profile to list your startups and share contact info."
+                : "Enter your credentials to manage your listings and profile."}
+            </p>
+
+            {authError && (
+              <div className="mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 font-mono text-xs">
+                {authError}
+              </div>
+            )}
+
+            <form onSubmit={handleAuthSubmit} className="mt-5 space-y-3 font-mono text-xs">
+              {authMode === "signup" && (
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">YOUR NAME *</label>
+                  <input
+                    type="text"
+                    required
+                    value={authForm.name}
+                    onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
+                    placeholder="Aditya Prasad"
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">EMAIL ADDRESS *</label>
+                <input
+                  type="email"
+                  required
+                  value={authForm.email}
+                  onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                  placeholder="founder@example.com"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PASSWORD *</label>
+                <input
+                  type="password"
+                  required
+                  value={authForm.password}
+                  onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                  placeholder="••••••••"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                />
+              </div>
+
+              {authMode === "signup" && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PHONE / WHATSAPP</label>
+                      <input
+                        type="text"
+                        value={authForm.phone}
+                        onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
+                        placeholder="+91 98765 43210"
+                        className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-zinc-600 dark:text-zinc-400 mb-1">WEBSITE / PORTFOLIO</label>
+                      <input
+                        type="text"
+                        value={authForm.website}
+                        onChange={(e) => setAuthForm({ ...authForm, website: e.target.value })}
+                        placeholder="https://mysite.com"
+                        className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">DISCORD USERNAME</label>
+                    <input
+                      type="text"
+                      value={authForm.discord}
+                      onChange={(e) => setAuthForm({ ...authForm, discord: e.target.value })}
+                      placeholder="aditya_dev"
+                      className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                    />
+                  </div>
+                </>
+              )}
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full mt-4 py-3 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
+              >
+                {authLoading ? "Processing..." : authMode === "signup" ? "Complete Registration" : "Sign In"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: POST STARTUP */}
+      {showPostModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-lg rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#09090b] p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowPostModal(false)}
+              className="absolute top-5 right-5 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-black dark:hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <span className="font-mono text-xs text-[#FA5D00] font-bold uppercase tracking-wider">
+              NEW LISTING
+            </span>
+            <h2 className="mt-1 font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal">
+              List Your Startup<span className="text-[#FA5D00]">.</span>
+            </h2>
+            <p className="mt-1 font-sans text-xs text-zinc-500">
+              Submit your project so fellow builders, hackathon peers, and mentors can find and contact you.
+            </p>
+
+            {postError && (
+              <div className="mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 font-mono text-xs">
+                {postError}
+              </div>
+            )}
+
+            <form onSubmit={handlePostStartup} className="mt-5 space-y-3 font-mono text-xs">
+              <div>
+                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">
+                  1. STARTUP / PROJECT NAME *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={startupForm.name}
+                  onChange={(e) => setStartupForm({ ...startupForm, name: e.target.value })}
+                  placeholder="e.g. HexTrace, Reco Labs, Breadboard OS"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">
+                  2. WEBSITE / DEMO URL *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={startupForm.url}
+                  onChange={(e) => setStartupForm({ ...startupForm, url: e.target.value })}
+                  placeholder="https://yourstartup.com or https://github.com/..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">
+                  3. PROBLEM SOLVING *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={startupForm.problem_solving}
+                  onChange={(e) => setStartupForm({ ...startupForm, problem_solving: e.target.value })}
+                  placeholder="Describe the exact problem your startup solves for users..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">CATEGORY</label>
+                  <select
+                    value={startupForm.category}
+                    onChange={(e) => setStartupForm({ ...startupForm, category: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                  >
+                    <option value="Software">Software</option>
+                    <option value="Hardware">Hardware</option>
+                    <option value="Security">Security</option>
+                    <option value="AI">AI</option>
+                    <option value="Education & Tooling">Education & Tooling</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">STAGE</label>
+                  <select
+                    value={startupForm.stage}
+                    onChange={(e) => setStartupForm({ ...startupForm, stage: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                  >
+                    <option value="Idea">Idea</option>
+                    <option value="Prototype">Prototype</option>
+                    <option value="Beta">Beta</option>
+                    <option value="Live">Live in Production</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Founder Contact Info */}
+              <div className="pt-2 border-t editorial-hairline">
+                <span className="text-[10px] uppercase text-[#FA5D00] font-bold block mb-2">
+                  FOUNDER CONTACT DETAILS (FOR VISITORS TO REACH YOU)
+                </span>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-zinc-500 text-[10px] mb-1">FOUNDER NAME</label>
+                    <input
+                      type="text"
+                      value={startupForm.founder_name}
+                      onChange={(e) => setStartupForm({ ...startupForm, founder_name: e.target.value })}
+                      placeholder="Your Name"
+                      className="w-full px-3 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-500 text-[10px] mb-1">PHONE NUMBER</label>
+                    <input
+                      type="text"
+                      value={startupForm.founder_phone}
+                      onChange={(e) => setStartupForm({ ...startupForm, founder_phone: e.target.value })}
+                      placeholder="+91..."
+                      className="w-full px-3 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <label className="block text-zinc-500 text-[10px] mb-1">PERSONAL WEBSITE</label>
+                    <input
+                      type="text"
+                      value={startupForm.founder_website}
+                      onChange={(e) => setStartupForm({ ...startupForm, founder_website: e.target.value })}
+                      placeholder="https://..."
+                      className="w-full px-3 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-500 text-[10px] mb-1">DISCORD / SOCIAL</label>
+                    <input
+                      type="text"
+                      value={startupForm.founder_discord}
+                      onChange={(e) => setStartupForm({ ...startupForm, founder_discord: e.target.value })}
+                      placeholder="Discord Handle"
+                      className="w-full px-3 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={postLoading}
+                className="w-full mt-5 py-3 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
+              >
+                {postLoading ? "Publishing to Network..." : "POST STARTUP TO RECO NETWORK"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: EDIT PROFILE */}
+      {showProfileModal && currentUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#09090b] p-6 sm:p-8 shadow-2xl">
+            <button
+              onClick={() => setShowProfileModal(false)}
+              className="absolute top-5 right-5 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-black dark:hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <span className="font-mono text-xs text-[#FA5D00] font-bold uppercase tracking-wider">
+              FOUNDER PROFILE
+            </span>
+            <h2 className="mt-1 font-serif text-3xl text-zinc-950 dark:text-zinc-50 font-normal">
+              Edit Your Profile<span className="text-[#FA5D00]">.</span>
+            </h2>
+            <p className="mt-1 font-sans text-xs text-zinc-500">
+              Personal contact details visible on all your startups so anyone can reach you directly.
+            </p>
+
+            {profileSuccess && (
+              <div className="mt-3 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 font-mono text-xs flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-500" />
+                <span>Profile updated successfully!</span>
+              </div>
+            )}
+
+            <form onSubmit={handleProfileSubmit} className="mt-4 space-y-3 font-mono text-xs">
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">NAME</label>
+                <input
+                  type="text"
+                  value={profileForm.name}
+                  onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PHONE NUMBER</label>
+                <input
+                  type="text"
+                  value={profileForm.phone}
+                  onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                  placeholder="+91 98765 43210"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PERSONAL WEBSITE</label>
+                <input
+                  type="text"
+                  value={profileForm.website}
+                  onChange={(e) => setProfileForm({ ...profileForm, website: e.target.value })}
+                  placeholder="https://mysite.com"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">DISCORD USERNAME</label>
+                <input
+                  type="text"
+                  value={profileForm.discord}
+                  onChange={(e) => setProfileForm({ ...profileForm, discord: e.target.value })}
+                  placeholder="discord_tag"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">SHORT BIO</label>
+                <textarea
+                  rows={2}
+                  value={profileForm.bio}
+                  onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                  placeholder="Hardware hacker, web engineer, student..."
+                  className="w-full px-3.5 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={profileLoading}
+                className="w-full mt-4 py-3 rounded-full bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
+              >
+                {profileLoading ? "Saving Changes..." : "Save Profile Details"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+export default NetworkPage

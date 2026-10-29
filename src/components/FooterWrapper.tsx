@@ -78,10 +78,10 @@ export function FooterWrapper() {
           {
             title: "Participate",
             links: [
+              { label: "Founder Network", href: "/network" },
               { label: "Hackathons & Sprints", href: "/hackathons" },
               { label: "Sponsors & Partners", href: "/sponsors" },
               { label: "Guild Roles & Jobs", href: "/jobs" },
-              { label: "Open Bounties", href: "/hackathons" },
               { label: "Discord Build Calls", href: "https://discord.com/invite/7dk4w37BhP" },
             ],
           },

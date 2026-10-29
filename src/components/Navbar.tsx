@@ -33,6 +33,7 @@ export function Navbar() {
     { label: "JOBS", path: "/jobs" },
     { label: "PROJECTS", path: "/projects" },
     { label: "HACKATHONS", path: "/hackathons" },
+    { label: "NETWORK", path: "/network" },
     { label: "SPONSORS", path: "/sponsors" },
   ]
 
@@ -63,7 +64,7 @@ export function Navbar() {
           className="pointer-events-auto hidden sm:flex items-center gap-6 md:gap-8 px-7 py-2 rounded-full bg-[#FA5D00] border-2 border-black text-black font-mono text-[13px] font-bold tracking-wider uppercase shadow-sm"
           aria-label="Main Navigation"
         >
-          {navLinks.slice(0, 4).map((link) => (
+          {navLinks.slice(0, 5).map((link) => (
             <Link
               key={link.path}
               to={link.path}
