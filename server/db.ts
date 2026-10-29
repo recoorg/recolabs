@@ -4,7 +4,9 @@ import jwt from "jsonwebtoken"
 
 const { Pool } = pg
 
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:Aditya%401060A@db.zjpbrdbdkkzczdwsgizj.supabase.co:6543/postgres"
+const DATABASE_URL =
+  process.env.DATABASE_URL ||
+  "postgresql://postgres:Aditya%401060A@db.zjpbrdbdkkzczdwsgizj.supabase.co:6543/postgres"
 const JWT_SECRET = process.env.JWT_SECRET || "recolabs_jwt_secret_key_2026_super_secure"
 
 export const pool = new Pool({
@@ -15,6 +17,31 @@ export const pool = new Pool({
   connectionTimeoutMillis: 5000,
 })
 
+// Helper to sanitize username
+export function cleanUsername(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 30)
+}
+
+// Generate unique username fallback
+async function generateUniqueUsername(client: any, base: string): Promise<string> {
+  const clean = cleanUsername(base) || "builder"
+  let candidate = clean
+  let counter = 1
+
+  while (true) {
+    const res = await client.query(
+      "SELECT id FROM users WHERE LOWER(username) = LOWER($1)",
+      [candidate]
+    )
+    if (res.rows.length === 0) return candidate
+    candidate = `${clean}${counter}`
+    counter++
+  }
+}
+
 // Auto-init schema if not exists
 export async function initDb() {
   const client = await pool.connect()
@@ -22,8 +49,9 @@ export async function initDb() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE,
         email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
+        password_hash TEXT,
         name TEXT NOT NULL,
         phone TEXT,
         website TEXT,
@@ -31,6 +59,8 @@ export async function initDb() {
         twitter TEXT,
         github TEXT,
         discord TEXT,
+        auth_provider TEXT DEFAULT 'email',
+        avatar_url TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
@@ -38,6 +68,7 @@ export async function initDb() {
       CREATE TABLE IF NOT EXISTS startups (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        founder_username TEXT,
         founder_name TEXT NOT NULL,
         founder_email TEXT,
         founder_phone TEXT,
@@ -53,6 +84,8 @@ export async function initDb() {
 
       CREATE INDEX IF NOT EXISTS idx_startups_created_at ON startups(created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+      CREATE INDEX IF NOT EXISTS idx_users_username ON users(LOWER(username));
+      CREATE INDEX IF NOT EXISTS idx_startups_founder_username ON startups(LOWER(founder_username));
     `)
   } finally {
     client.release()
@@ -62,6 +95,7 @@ export async function initDb() {
 // User signup
 export async function createUser({
   name,
+  username,
   email,
   password,
   phone,
@@ -71,6 +105,7 @@ export async function createUser({
   github,
 }: {
   name: string
+  username?: string
   email: string
   password: string
   phone?: string
@@ -82,14 +117,39 @@ export async function createUser({
   const passwordHash = await bcrypt.hash(password, 10)
   const client = await pool.connect()
   try {
+    let finalUsername = username ? cleanUsername(username) : ""
+    if (finalUsername) {
+      const existing = await client.query(
+        "SELECT id FROM users WHERE LOWER(username) = LOWER($1)",
+        [finalUsername]
+      )
+      if (existing.rows.length > 0) {
+        throw new Error(`Username @${finalUsername} is already taken. Please choose another.`)
+      }
+    } else {
+      finalUsername = await generateUniqueUsername(client, name || email.split("@")[0])
+    }
+
     const res = await client.query(
-      `INSERT INTO users (name, email, password_hash, phone, website, bio, discord, github)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, name, email, phone, website, bio, discord, github, created_at`,
-      [name, email.toLowerCase().trim(), passwordHash, phone || null, website || null, bio || null, discord || null, github || null]
+      `INSERT INTO users (name, username, email, password_hash, phone, website, bio, discord, github, auth_provider)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'email')
+       RETURNING id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, created_at`,
+      [
+        name,
+        finalUsername,
+        email.toLowerCase().trim(),
+        passwordHash,
+        phone || null,
+        website || null,
+        bio || null,
+        discord || null,
+        github || null,
+      ]
     )
     const user = res.rows[0]
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "30d" })
+    const token = jwt.sign({ id: user.id, email: user.email, username: user.username }, JWT_SECRET, {
+      expiresIn: "30d",
+    })
     return { user, token }
   } finally {
     client.release()
@@ -101,7 +161,7 @@ export async function loginUser({ email, password }: { email: string; password: 
   const client = await pool.connect()
   try {
     const res = await client.query(
-      `SELECT id, name, email, password_hash, phone, website, bio, discord, github, created_at
+      `SELECT id, name, username, email, password_hash, phone, website, bio, discord, github, auth_provider, avatar_url, created_at
        FROM users WHERE email = $1`,
       [email.toLowerCase().trim()]
     )
@@ -109,12 +169,74 @@ export async function loginUser({ email, password }: { email: string; password: 
       throw new Error("Invalid email or password.")
     }
     const user = res.rows[0]
+    if (!user.password_hash) {
+      throw new Error("This account uses social sign in (Google or GitHub).")
+    }
     const valid = await bcrypt.compare(password, user.password_hash)
     if (!valid) {
       throw new Error("Invalid email or password.")
     }
     delete user.password_hash
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "30d" })
+    const token = jwt.sign({ id: user.id, email: user.email, username: user.username }, JWT_SECRET, {
+      expiresIn: "30d",
+    })
+    return { user, token }
+  } finally {
+    client.release()
+  }
+}
+
+// OAuth Sync / Sign in
+export async function syncOAuthUser({
+  email,
+  name,
+  avatarUrl,
+  provider,
+  preferredUsername,
+}: {
+  email: string
+  name: string
+  avatarUrl?: string
+  provider: "google" | "github"
+  preferredUsername?: string
+}) {
+  const client = await pool.connect()
+  try {
+    const normalizedEmail = email.toLowerCase().trim()
+    const existing = await client.query(
+      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, created_at
+       FROM users WHERE email = $1`,
+      [normalizedEmail]
+    )
+
+    let user: any
+    if (existing.rows.length > 0) {
+      user = existing.rows[0]
+      // Update avatar if provided
+      if (avatarUrl && !user.avatar_url) {
+        const updateRes = await client.query(
+          "UPDATE users SET avatar_url = $1, auth_provider = $2 WHERE id = $3 RETURNING *",
+          [avatarUrl, provider, user.id]
+        )
+        user = updateRes.rows[0]
+      }
+    } else {
+      const generatedUsername = await generateUniqueUsername(
+        client,
+        preferredUsername || name || normalizedEmail.split("@")[0]
+      )
+      const insertRes = await client.query(
+        `INSERT INTO users (name, username, email, avatar_url, auth_provider)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, created_at`,
+        [name || "Builder", generatedUsername, normalizedEmail, avatarUrl || null, provider]
+      )
+      user = insertRes.rows[0]
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email, username: user.username }, JWT_SECRET, {
+      expiresIn: "30d",
+    })
     return { user, token }
   } finally {
     client.release()
@@ -122,22 +244,37 @@ export async function loginUser({ email, password }: { email: string; password: 
 }
 
 // Verify token
-export function verifyToken(token: string): { id: number; email: string } | null {
+export function verifyToken(token: string): { id: number; email: string; username?: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { id: number; email: string }
+    return jwt.verify(token, JWT_SECRET) as { id: number; email: string; username?: string }
   } catch {
     return null
   }
 }
 
-// Get user profile
+// Get user profile by ID
 export async function getUserById(id: number) {
   const client = await pool.connect()
   try {
     const res = await client.query(
-      `SELECT id, name, email, phone, website, bio, discord, github, created_at
+      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, created_at
        FROM users WHERE id = $1`,
       [id]
+    )
+    return res.rows[0] || null
+  } finally {
+    client.release()
+  }
+}
+
+// Get user profile by Username
+export async function getUserByUsername(username: string) {
+  const client = await pool.connect()
+  try {
+    const res = await client.query(
+      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, created_at
+       FROM users WHERE LOWER(username) = LOWER($1)`,
+      [username.trim()]
     )
     return res.rows[0] || null
   } finally {
@@ -150,6 +287,7 @@ export async function updateUserProfile(
   id: number,
   {
     name,
+    username,
     phone,
     website,
     bio,
@@ -157,6 +295,7 @@ export async function updateUserProfile(
     github,
   }: {
     name?: string
+    username?: string
     phone?: string
     website?: string
     bio?: string
@@ -166,19 +305,41 @@ export async function updateUserProfile(
 ) {
   const client = await pool.connect()
   try {
+    let finalUsername: string | undefined = undefined
+    if (username) {
+      finalUsername = cleanUsername(username)
+      const conflict = await client.query(
+        "SELECT id FROM users WHERE LOWER(username) = LOWER($1) AND id != $2",
+        [finalUsername, id]
+      )
+      if (conflict.rows.length > 0) {
+        throw new Error(`Username @${finalUsername} is already taken.`)
+      }
+    }
+
     const res = await client.query(
       `UPDATE users
        SET name = COALESCE($2, name),
-           phone = $3,
-           website = $4,
-           bio = $5,
-           discord = $6,
-           github = $7,
+           username = COALESCE($3, username),
+           phone = $4,
+           website = $5,
+           bio = $6,
+           discord = $7,
+           github = $8,
            updated_at = NOW()
        WHERE id = $1
-       RETURNING id, name, email, phone, website, bio, discord, github, updated_at`,
-      [id, name, phone || null, website || null, bio || null, discord || null, github || null]
+       RETURNING id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, updated_at`,
+      [id, name, finalUsername || null, phone || null, website || null, bio || null, discord || null, github || null]
     )
+
+    // Sync startups founder_username if username changed
+    if (finalUsername) {
+      await client.query("UPDATE startups SET founder_username = $1 WHERE user_id = $2", [
+        finalUsername,
+        id,
+      ])
+    }
+
     return res.rows[0]
   } finally {
     client.release()
@@ -186,19 +347,28 @@ export async function updateUserProfile(
 }
 
 // List startups
-export async function listStartups({ search, category }: { search?: string; category?: string } = {}) {
+export async function listStartups({
+  search,
+  category,
+  username,
+}: { search?: string; category?: string; username?: string } = {}) {
   const client = await pool.connect()
   try {
     let query = `
       SELECT s.id, s.name, s.url, s.problem_solving, s.category, s.stage, s.created_at,
-             s.founder_name, s.founder_email, s.founder_phone, s.founder_website, s.founder_discord,
+             s.founder_name, s.founder_username, s.founder_email, s.founder_phone, s.founder_website, s.founder_discord,
              s.user_id,
-             u.name as author_name, u.phone as author_phone, u.website as author_website
+             u.name as author_name, u.username as author_username, u.phone as author_phone, u.website as author_website
       FROM startups s
       LEFT JOIN users u ON s.user_id = u.id
       WHERE 1=1
     `
     const params: any[] = []
+
+    if (username && username.trim()) {
+      params.push(username.trim().toLowerCase())
+      query += ` AND (LOWER(s.founder_username) = $${params.length} OR LOWER(u.username) = $${params.length})`
+    }
 
     if (category && category !== "ALL") {
       params.push(category)
@@ -207,7 +377,7 @@ export async function listStartups({ search, category }: { search?: string; cate
 
     if (search && search.trim()) {
       params.push(`%${search.trim().toLowerCase()}%`)
-      query += ` AND (LOWER(s.name) LIKE $${params.length} OR LOWER(s.problem_solving) LIKE $${params.length} OR LOWER(s.founder_name) LIKE $${params.length})`
+      query += ` AND (LOWER(s.name) LIKE $${params.length} OR LOWER(s.problem_solving) LIKE $${params.length} OR LOWER(s.founder_name) LIKE $${params.length} OR LOWER(s.founder_username) LIKE $${params.length})`
     }
 
     query += ` ORDER BY s.created_at DESC`
@@ -221,6 +391,7 @@ export async function listStartups({ search, category }: { search?: string; cate
 // Create startup
 export async function createStartup({
   userId,
+  founderUsername,
   founderName,
   founderEmail,
   founderPhone,
@@ -233,6 +404,7 @@ export async function createStartup({
   stage = "Prototype",
 }: {
   userId?: number | null
+  founderUsername?: string | null
   founderName: string
   founderEmail?: string | null
   founderPhone?: string | null
@@ -248,12 +420,13 @@ export async function createStartup({
   try {
     const res = await client.query(
       `INSERT INTO startups (
-        user_id, founder_name, founder_email, founder_phone, founder_website, founder_discord,
+        user_id, founder_username, founder_name, founder_email, founder_phone, founder_website, founder_discord,
         name, url, problem_solving, category, stage
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [
         userId || null,
+        founderUsername || null,
         founderName,
         founderEmail || null,
         founderPhone || null,

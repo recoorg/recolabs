@@ -1,18 +1,22 @@
 export interface UserProfile {
   id: number
   name: string
+  username: string
   email: string
   phone?: string | null
   website?: string | null
   bio?: string | null
   discord?: string | null
   github?: string | null
+  avatar_url?: string | null
+  auth_provider?: string
   created_at?: string
 }
 
 export interface StartupItem {
   id: number
   user_id?: number | null
+  founder_username?: string | null
   founder_name: string
   founder_email?: string | null
   founder_phone?: string | null
@@ -28,6 +32,7 @@ export interface StartupItem {
 
 const TOKEN_KEY = "reco_network_token"
 const USER_KEY = "reco_network_user"
+const SUPABASE_PROJECT_URL = "https://zjpbrdbdkkzczdwsgizj.supabase.co"
 
 export const networkApi = {
   getToken(): string | null {
@@ -57,8 +62,83 @@ export const networkApi = {
     localStorage.setItem(USER_KEY, JSON.stringify(user))
   },
 
+  // Trigger Google OAuth via Supabase
+  signInWithGoogle(redirectTo?: string): void {
+    if (typeof window === "undefined") return
+    const target = redirectTo || `${window.location.origin}/network`
+    window.location.href = `${SUPABASE_PROJECT_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(target)}`
+  },
+
+  // Trigger GitHub OAuth via Supabase
+  signInWithGitHub(redirectTo?: string): void {
+    if (typeof window === "undefined") return
+    const target = redirectTo || `${window.location.origin}/network`
+    window.location.href = `${SUPABASE_PROJECT_URL}/auth/v1/authorize?provider=github&redirect_to=${encodeURIComponent(target)}`
+  },
+
+  // Handle incoming OAuth callback hash
+  async handleOAuthCallback(): Promise<{ user: UserProfile; token: string } | null> {
+    if (typeof window === "undefined" || !window.location.hash) return null
+    const hash = window.location.hash.substring(1)
+    const params = new URLSearchParams(hash)
+    const accessToken = params.get("access_token")
+
+    if (!accessToken) return null
+
+    try {
+      // Query Supabase user info using accessToken
+      const supaRes = await fetch(`${SUPABASE_PROJECT_URL}/auth/v1/user`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          apikey: accessToken,
+        },
+      })
+
+      if (!supaRes.ok) {
+        throw new Error("Failed to verify Supabase OAuth access token")
+      }
+
+      const supaUser = await supaRes.json()
+      const email = supaUser.email
+      const metadata = supaUser.user_metadata || {}
+      const name = metadata.full_name || metadata.name || email.split("@")[0]
+      const avatarUrl = metadata.avatar_url || metadata.picture
+      const provider = supaUser.app_metadata?.provider === "github" ? "github" : "google"
+      const preferredUsername = metadata.user_name || metadata.preferred_username || name.toLowerCase().replace(/[^a-z0-9]/g, "")
+
+      // Sync with our PostgreSQL backend
+      const syncRes = await fetch("/api/network/oauth-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name,
+          avatarUrl,
+          provider,
+          preferredUsername,
+        }),
+      })
+
+      const syncJson = await syncRes.json()
+      if (!syncRes.ok || syncJson.error) {
+        throw new Error(syncJson.error || "OAuth sync failed.")
+      }
+
+      this.setSession(syncJson.user, syncJson.token)
+
+      // Clean URL hash without reload
+      window.history.replaceState(null, "", window.location.pathname + window.location.search)
+
+      return { user: syncJson.user, token: syncJson.token }
+    } catch (err) {
+      console.error("OAuth callback error:", err)
+      return null
+    }
+  },
+
   async signUp(data: {
     name: string
+    username?: string
     email: string
     password: string
     phone?: string
@@ -114,6 +194,7 @@ export const networkApi = {
 
   async updateProfile(data: {
     name?: string
+    username?: string
     phone?: string
     website?: string
     bio?: string
@@ -140,10 +221,20 @@ export const networkApi = {
     return json.user
   },
 
-  async getStartups(params?: { search?: string; category?: string }): Promise<StartupItem[]> {
+  async getBuilderProfile(username: string): Promise<{ user: UserProfile; startups: StartupItem[] }> {
+    const res = await fetch(`/api/network/builder/${encodeURIComponent(username)}`)
+    const json = await res.json()
+    if (!res.ok || json.error) {
+      throw new Error(json.error || `Builder @${username} not found.`)
+    }
+    return { user: json.user, startups: json.startups || [] }
+  },
+
+  async getStartups(params?: { search?: string; category?: string; username?: string }): Promise<StartupItem[]> {
     const q = new URLSearchParams()
     if (params?.search) q.set("search", params.search)
     if (params?.category && params.category !== "ALL") q.set("category", params.category)
+    if (params?.username) q.set("username", params.username)
 
     const res = await fetch(`/api/network/startups?${q.toString()}`)
     const json = await res.json()
@@ -160,6 +251,7 @@ export const networkApi = {
     category?: string
     stage?: string
     founder_name?: string
+    founder_username?: string
     founder_email?: string
     founder_phone?: string
     founder_website?: string

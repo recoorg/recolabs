@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Link } from "react-router-dom"
 import confetti from "canvas-confetti"
 import {
   Rocket,
@@ -24,6 +25,7 @@ import {
   Terminal,
   Filter,
 } from "lucide-react"
+import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
 
 const CATEGORIES = ["ALL", "Software", "Hardware", "Security", "AI", "Education & Tooling"]
@@ -44,6 +46,7 @@ export function NetworkPage() {
   // Auth Form State
   const [authForm, setAuthForm] = React.useState({
     name: "",
+    username: "",
     email: "",
     password: "",
     phone: "",
@@ -72,6 +75,7 @@ export function NetworkPage() {
   // Profile Edit State
   const [profileForm, setProfileForm] = React.useState({
     name: "",
+    username: "",
     phone: "",
     website: "",
     bio: "",
@@ -82,11 +86,20 @@ export function NetworkPage() {
 
   // Load Session and Startups
   React.useEffect(() => {
+    // Check if OAuth redirected back with access token hash
+    networkApi.handleOAuthCallback().then((res) => {
+      if (res?.user) {
+        setCurrentUser(res.user)
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } })
+      }
+    })
+
     const user = networkApi.getCurrentUser()
     if (user) {
       setCurrentUser(user)
       setProfileForm({
         name: user.name || "",
+        username: user.username || "",
         phone: user.phone || "",
         website: user.website || "",
         bio: user.bio || "",
@@ -256,13 +269,25 @@ export function NetworkPage() {
             {currentUser ? (
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 font-mono text-xs text-zinc-700 dark:text-zinc-300 shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="font-bold">{currentUser.name}</span>
+                <Link
+                  to={`/builder/${currentUser.username}`}
+                  className="font-bold hover:text-[#FA5D00] transition-colors"
+                >
+                  @{currentUser.username}
+                </Link>
+                <span className="text-zinc-400">·</span>
+                <Link
+                  to={`/builder/${currentUser.username}`}
+                  className="hover:text-[#FA5D00] transition-colors"
+                >
+                  Profile
+                </Link>
                 <span className="text-zinc-400">·</span>
                 <button
                   onClick={() => setShowProfileModal(true)}
                   className="hover:text-[#FA5D00] transition-colors cursor-pointer"
                 >
-                  Edit Profile
+                  Edit
                 </button>
                 <span className="text-zinc-400">·</span>
                 <button
@@ -408,11 +433,26 @@ export function NetworkPage() {
                   {/* Founder Contact Strip */}
                   <div className="mt-6 pt-4 border-t editorial-hairline">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-800 dark:text-zinc-200 font-bold">
+                      <Link
+                        to={`/builder/${item.founder_username || (item as any).author_username || item.founder_name.toLowerCase().replace(/[^a-z0-9]/g, '')}`}
+                        className="flex items-center gap-1.5 font-mono text-xs text-zinc-800 dark:text-zinc-200 font-bold hover:text-[#FA5D00] transition-colors"
+                      >
                         <User className="w-3.5 h-3.5 text-[#FA5D00]" />
                         <span>{item.founder_name}</span>
-                      </div>
-                      <span className="font-mono text-[10px] text-zinc-400">FOUNDER</span>
+                        {(item.founder_username || (item as any).author_username) && (
+                          <span className="font-normal text-[11px] text-zinc-400">
+                            (@{item.founder_username || (item as any).author_username})
+                          </span>
+                        )}
+                      </Link>
+
+                      <Link
+                        to={`/builder/${item.founder_username || (item as any).author_username || item.founder_name.toLowerCase().replace(/[^a-z0-9]/g, '')}`}
+                        className="font-mono text-[10px] font-bold text-[#FA5D00] hover:underline flex items-center gap-0.5"
+                      >
+                        <span>View Profile</span>
+                        <ArrowUpRight className="w-3 h-3" />
+                      </Link>
                     </div>
 
                     {/* Contact Badges */}
@@ -517,19 +557,79 @@ export function NetworkPage() {
               </div>
             )}
 
-            <form onSubmit={handleAuthSubmit} className="mt-5 space-y-3 font-mono text-xs">
+            {/* Social OAuth Buttons */}
+            <div className="mt-5 flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => networkApi.signInWithGoogle()}
+                className="w-full py-2.5 px-4 rounded-xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center justify-center gap-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.99] transition-all shadow-sm cursor-pointer"
+              >
+                <svg className="w-4 h-4 flex-none" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
+                <span>Continue with Google</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => networkApi.signInWithGitHub()}
+                className="w-full py-2.5 px-4 rounded-xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center justify-center gap-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.99] transition-all shadow-sm cursor-pointer"
+              >
+                <GithubIcon className="w-4 h-4 flex-none" />
+                <span>Continue with GitHub</span>
+              </button>
+            </div>
+
+            <div className="relative my-4 text-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t editorial-hairline" />
+              </div>
+              <span className="relative px-3 bg-white dark:bg-[#09090b] font-mono text-[10px] text-zinc-400 uppercase tracking-widest">
+                OR WITH EMAIL
+              </span>
+            </div>
+
+            <form onSubmit={handleAuthSubmit} className="space-y-3 font-mono text-xs">
               {authMode === "signup" && (
-                <div>
-                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">YOUR NAME *</label>
-                  <input
-                    type="text"
-                    required
-                    value={authForm.name}
-                    onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
-                    placeholder="Aditya Prasad"
-                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">YOUR NAME *</label>
+                    <input
+                      type="text"
+                      required
+                      value={authForm.name}
+                      onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
+                      placeholder="Aditya Prasad"
+                      className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">CHOOSE USERNAME *</label>
+                    <div className="flex items-center rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 px-3">
+                      <span className="text-zinc-400 mr-1">@</span>
+                      <input
+                        type="text"
+                        required
+                        value={authForm.username}
+                        onChange={(e) =>
+                          setAuthForm({
+                            ...authForm,
+                            username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+                          })
+                        }
+                        placeholder="aditya"
+                        className="w-full py-2.5 bg-transparent text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      />
+                    </div>
+                    <span className="text-[10px] text-zinc-400 mt-0.5 block">
+                      Profile link: recolabs.in/builder/{authForm.username || "username"}
+                    </span>
+                  </div>
+                </>
               )}
 
               <div>
@@ -809,6 +909,27 @@ export function NetworkPage() {
                   onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
                 />
+              </div>
+
+              <div>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">USERNAME</label>
+                <div className="flex items-center rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 px-3">
+                  <span className="text-zinc-400 mr-1">@</span>
+                  <input
+                    type="text"
+                    value={profileForm.username}
+                    onChange={(e) =>
+                      setProfileForm({
+                        ...profileForm,
+                        username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+                      })
+                    }
+                    className="w-full py-2.5 bg-transparent text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                  />
+                </div>
+                <span className="text-[10px] text-zinc-400 mt-0.5 block">
+                  Public profile: recolabs.in/builder/{profileForm.username || "username"}
+                </span>
               </div>
 
               <div>

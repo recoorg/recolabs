@@ -3,8 +3,10 @@ import {
   initDb,
   createUser,
   loginUser,
+  syncOAuthUser,
   verifyToken,
   getUserById,
+  getUserByUsername,
   updateUserProfile,
   listStartups,
   createStartup,
@@ -81,7 +83,24 @@ export function createNetworkApiMiddleware() {
         return res.end(JSON.stringify({ success: true, ...data }))
       }
 
-      // 3. GET PROFILE: GET /api/network/profile
+      // 3. OAUTH SYNC: POST /api/network/oauth-sync
+      if (req.method === "POST" && pathname === "/api/network/oauth-sync") {
+        const body = await parseBody()
+        if (!body.email) {
+          res.statusCode = 400
+          return res.end(JSON.stringify({ error: "Email is required for OAuth." }))
+        }
+        const data = await syncOAuthUser({
+          email: body.email,
+          name: body.name || "Builder",
+          avatarUrl: body.avatarUrl,
+          provider: body.provider === "github" ? "github" : "google",
+          preferredUsername: body.preferredUsername,
+        })
+        return res.end(JSON.stringify({ success: true, ...data }))
+      }
+
+      // 4. GET PROFILE: GET /api/network/profile
       if (req.method === "GET" && pathname === "/api/network/profile") {
         const auth = getAuthUser()
         if (!auth) {
@@ -92,7 +111,7 @@ export function createNetworkApiMiddleware() {
         return res.end(JSON.stringify({ success: true, user }))
       }
 
-      // 4. UPDATE PROFILE: PUT /api/network/profile
+      // 5. UPDATE PROFILE: PUT /api/network/profile
       if (req.method === "PUT" && pathname === "/api/network/profile") {
         const auth = getAuthUser()
         if (!auth) {
@@ -104,15 +123,32 @@ export function createNetworkApiMiddleware() {
         return res.end(JSON.stringify({ success: true, user: updated }))
       }
 
-      // 5. GET STARTUPS: GET /api/network/startups
+      // 6. GET BUILDER BY USERNAME: GET /api/network/builder/:username
+      if (req.method === "GET" && pathname.startsWith("/api/network/builder/")) {
+        const username = pathname.replace("/api/network/builder/", "").trim()
+        if (!username) {
+          res.statusCode = 400
+          return res.end(JSON.stringify({ error: "Username is required." }))
+        }
+        const user = await getUserByUsername(username)
+        if (!user) {
+          res.statusCode = 404
+          return res.end(JSON.stringify({ error: `Builder @${username} not found.` }))
+        }
+        const startups = await listStartups({ username })
+        return res.end(JSON.stringify({ success: true, user, startups }))
+      }
+
+      // 7. GET STARTUPS: GET /api/network/startups
       if (req.method === "GET" && pathname === "/api/network/startups") {
         const search = url.searchParams.get("search") || ""
         const category = url.searchParams.get("category") || "ALL"
-        const startups = await listStartups({ search, category })
+        const username = url.searchParams.get("username") || undefined
+        const startups = await listStartups({ search, category, username })
         return res.end(JSON.stringify({ success: true, count: startups.length, startups }))
       }
 
-      // 6. CREATE STARTUP: POST /api/network/startups
+      // 8. CREATE STARTUP: POST /api/network/startups
       if (req.method === "POST" && pathname === "/api/network/startups") {
         const body = await parseBody()
         const auth = getAuthUser()
@@ -127,6 +163,7 @@ export function createNetworkApiMiddleware() {
         }
 
         let founderName = body.founder_name
+        let founderUsername = body.founder_username
         let founderEmail = body.founder_email
         let founderPhone = body.founder_phone
         let founderWebsite = body.founder_website
@@ -138,6 +175,7 @@ export function createNetworkApiMiddleware() {
           const user = await getUserById(auth.id)
           if (user) {
             founderName = founderName || user.name
+            founderUsername = founderUsername || user.username
             founderEmail = founderEmail || user.email
             founderPhone = founderPhone || user.phone
             founderWebsite = founderWebsite || user.website
@@ -151,6 +189,7 @@ export function createNetworkApiMiddleware() {
 
         const startup = await createStartup({
           userId,
+          founderUsername,
           founderName,
           founderEmail,
           founderPhone,
