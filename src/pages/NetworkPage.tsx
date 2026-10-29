@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import confetti from "canvas-confetti"
 import {
   Rocket,
@@ -24,13 +24,16 @@ import {
   Building2,
   Terminal,
   Filter,
+  Camera,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
+import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
 
 const CATEGORIES = ["ALL", "Software", "Hardware", "Security", "AI", "Education & Tooling"]
 
 export function NetworkPage() {
+  const navigate = useNavigate()
   const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(null)
   const [startups, setStartups] = React.useState<StartupItem[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -42,17 +45,14 @@ export function NetworkPage() {
   const [authMode, setAuthMode] = React.useState<"login" | "signup">("signup")
   const [showPostModal, setShowPostModal] = React.useState(false)
   const [showProfileModal, setShowProfileModal] = React.useState(false)
+  const [screenshotStartup, setScreenshotStartup] = React.useState<StartupItem | null>(null)
 
-  // Auth Form State
+  // Auth Form State (Social links removed per request)
   const [authForm, setAuthForm] = React.useState({
     name: "",
     username: "",
     email: "",
     password: "",
-    phone: "",
-    website: "",
-    bio: "",
-    discord: "",
   })
   const [authLoading, setAuthLoading] = React.useState(false)
   const [authError, setAuthError] = React.useState("")
@@ -148,15 +148,19 @@ export function NetworkPage() {
       if (authMode === "signup") {
         const res = await networkApi.signUp(authForm)
         setCurrentUser(res.user)
-        confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } })
+        setShowAuthModal(false)
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } })
+        // Redirect directly to their builder profile with edit modal open
+        navigate(`/builder/${res.user.username}?edit=true`)
+        return
       } else {
         const res = await networkApi.login({
           email: authForm.email,
           password: authForm.password,
         })
         setCurrentUser(res.user)
+        setShowAuthModal(false)
       }
-      setShowAuthModal(false)
     } catch (err: any) {
       setAuthError(err.message || "Authentication failed.")
     } finally {
@@ -266,36 +270,49 @@ export function NetworkPage() {
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
 
+            {/* User Profile Pill when logged in, or Founder Sign In / Register when logged out */}
             {currentUser ? (
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 font-mono text-xs text-zinc-700 dark:text-zinc-300 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="flex items-center gap-2">
                 <Link
                   to={`/builder/${currentUser.username}`}
-                  className="font-bold hover:text-[#FA5D00] transition-colors"
+                  title="View your public builder profile"
+                  className="group inline-flex items-center gap-2.5 px-4 py-2 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-[#FA5D00] font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 shadow-sm transition-all"
                 >
-                  @{currentUser.username}
+                  {currentUser.avatar_url ? (
+                    <img
+                      src={currentUser.avatar_url}
+                      alt={currentUser.name}
+                      className="w-5 h-5 rounded-full object-cover flex-none"
+                    />
+                  ) : (
+                    <span className="w-5 h-5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center flex-none">
+                      {(currentUser.name || "B")[0].toUpperCase()}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>@{currentUser.username}</span>
+                  </span>
+                  <span className="text-zinc-400 group-hover:text-[#FA5D00] text-[10px] font-normal transition-colors">
+                    (My Profile)
+                  </span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
                 </Link>
-                <span className="text-zinc-400">·</span>
-                <Link
-                  to={`/builder/${currentUser.username}`}
-                  className="hover:text-[#FA5D00] transition-colors"
-                >
-                  Profile
-                </Link>
-                <span className="text-zinc-400">·</span>
+
                 <button
                   onClick={() => setShowProfileModal(true)}
-                  className="hover:text-[#FA5D00] transition-colors cursor-pointer"
+                  title="Edit Profile"
+                  className="px-3 py-2 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 font-mono text-xs text-zinc-600 dark:text-zinc-300 hover:border-[#FA5D00] hover:text-[#FA5D00] transition-colors cursor-pointer"
                 >
                   Edit
                 </button>
-                <span className="text-zinc-400">·</span>
+
                 <button
                   onClick={handleLogout}
                   title="Sign out"
-                  className="text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
+                  className="p-2 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-red-500 hover:border-red-500 transition-colors cursor-pointer"
                 >
-                  <LogOut className="w-3 h-3 inline" />
+                  <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
@@ -304,7 +321,7 @@ export function NetworkPage() {
                   setAuthMode("login")
                   setShowAuthModal(true)
                 }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-900 font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:border-[#FA5D00] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-black dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:border-[#FA5D00] transition-colors cursor-pointer"
               >
                 <LogIn className="w-3.5 h-3.5 text-[#FA5D00]" />
                 <span>Founder Sign In / Register</span>
@@ -374,135 +391,164 @@ export function NetworkPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {startups.map((item) => (
-                <div
-                  key={item.id}
-                  className="group relative p-6 rounded-3xl border editorial-hairline bg-white/60 dark:bg-zinc-900/40 hover:border-[#FA5D00] transition-all flex flex-col justify-between shadow-sm"
-                >
-                  <div>
-                    {/* Header: Name & External Link */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="inline-flex items-center gap-2 mb-1.5">
-                          <span className="px-2.5 py-0.5 rounded-full bg-orange-100/70 dark:bg-orange-950/40 text-[#FA5D00] font-mono text-[10px] font-bold uppercase tracking-wider">
+              {startups.map((item) => {
+                const founderUser =
+                  item.founder_username ||
+                  (item as any).author_username ||
+                  item.founder_name.toLowerCase().replace(/[^a-z0-9_-]/g, "")
+                const initial = (item.founder_name || "F")[0].toUpperCase()
+
+                return (
+                  <div
+                    key={item.id}
+                    className="group relative p-6 sm:p-7 rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between shadow-sm hover:shadow-md"
+                  >
+                    <div>
+                      {/* Top Bar: Category, Stage, Screenshot Snap & External Link */}
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="inline-flex items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-[#FA5D00] font-mono text-[10px] font-bold uppercase tracking-wider border border-orange-200 dark:border-orange-900/50">
                             {item.category}
                           </span>
-                          <span className="font-mono text-[10px] text-zinc-400 uppercase">
+                          <span className="inline-flex items-center gap-1 font-mono text-[10px] text-zinc-500 uppercase font-semibold">
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                item.stage?.toLowerCase() === "live"
+                                  ? "bg-emerald-500"
+                                  : item.stage?.toLowerCase() === "beta"
+                                  ? "bg-[#FA5D00]"
+                                  : "bg-zinc-400"
+                              }`}
+                            />
                             {item.stage}
                           </span>
                         </div>
-                        <h2 className="font-serif text-2xl sm:text-3xl font-normal text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors">
-                          {item.name}
-                        </h2>
+
+                        {/* Top Right Actions: Screenshot Card Snap & Link */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => setScreenshotStartup(item)}
+                            title="Generate Shareable Screenshot Card"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-mono text-[10px] font-bold hover:border-[#FA5D00] hover:text-[#FA5D00] active:scale-95 transition-all cursor-pointer shadow-2xs"
+                          >
+                            <Camera className="w-3 h-3 text-[#FA5D00]" />
+                            <span className="hidden sm:inline">Snap</span>
+                          </button>
+
+                          <a
+                            href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Open Startup Website"
+                            className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-400 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
                       </div>
 
-                      <a
-                        href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        title="Visit Startup URL"
-                        className="p-2 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-800 text-zinc-500 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    </div>
+                      {/* Startup Name */}
+                      <h2 className="font-serif text-2xl sm:text-3xl font-normal text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors">
+                        {item.name}
+                      </h2>
 
-                    {/* URL Pill */}
-                    <div className="mt-2 font-mono text-xs text-zinc-400 truncate">
-                      <a
-                        href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:text-[#FA5D00] transition-colors underline underline-offset-2"
-                      >
-                        {item.url.replace(/^https?:\/\//, "")}
-                      </a>
-                    </div>
-
-                    {/* Problem Solving Block */}
-                    <div className="mt-4 p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/60 border editorial-hairline">
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 font-bold block mb-1">
-                        PROBLEM SOLVED:
-                      </span>
-                      <p className="font-sans text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                        {item.problem_solving}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Founder Contact Strip */}
-                  <div className="mt-6 pt-4 border-t editorial-hairline">
-                    <div className="flex items-center justify-between mb-2">
-                      <Link
-                        to={`/builder/${item.founder_username || (item as any).author_username || item.founder_name.toLowerCase().replace(/[^a-z0-9]/g, '')}`}
-                        className="flex items-center gap-1.5 font-mono text-xs text-zinc-800 dark:text-zinc-200 font-bold hover:text-[#FA5D00] transition-colors"
-                      >
-                        <User className="w-3.5 h-3.5 text-[#FA5D00]" />
-                        <span>{item.founder_name}</span>
-                        {(item.founder_username || (item as any).author_username) && (
-                          <span className="font-normal text-[11px] text-zinc-400">
-                            (@{item.founder_username || (item as any).author_username})
-                          </span>
-                        )}
-                      </Link>
-
-                      <Link
-                        to={`/builder/${item.founder_username || (item as any).author_username || item.founder_name.toLowerCase().replace(/[^a-z0-9]/g, '')}`}
-                        className="font-mono text-[10px] font-bold text-[#FA5D00] hover:underline flex items-center gap-0.5"
-                      >
-                        <span>View Profile</span>
-                        <ArrowUpRight className="w-3 h-3" />
-                      </Link>
-                    </div>
-
-                    {/* Contact Badges */}
-                    <div className="flex flex-wrap items-center gap-2 pt-1 font-mono text-[11px]">
-                      {item.founder_phone && (
+                      {/* Clean URL Link */}
+                      <div className="mt-1 font-mono text-xs text-zinc-400 truncate">
                         <a
-                          href={`tel:${item.founder_phone}`}
-                          title={`Call or WhatsApp: ${item.founder_phone}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
-                        >
-                          <Phone className="w-3 h-3 text-emerald-500" />
-                          <span>{item.founder_phone}</span>
-                        </a>
-                      )}
-
-                      {item.founder_website && (
-                        <a
-                          href={item.founder_website.startsWith("http") ? item.founder_website : `https://${item.founder_website}`}
+                          href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
                           target="_blank"
                           rel="noreferrer"
-                          title="Founder Website"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
+                          className="hover:text-[#FA5D00] transition-colors underline underline-offset-2"
                         >
-                          <Globe className="w-3 h-3 text-blue-500" />
-                          <span>Website</span>
+                          {item.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                         </a>
-                      )}
+                      </div>
 
-                      {item.founder_email && (
-                        <a
-                          href={`mailto:${item.founder_email}`}
-                          title={`Email ${item.founder_email}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
-                        >
-                          <Mail className="w-3 h-3 text-[#FA5D00]" />
-                          <span>Email</span>
-                        </a>
-                      )}
-
-                      {item.founder_discord && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-500">
-                          <MessageSquare className="w-3 h-3 text-[#5865F2]" />
-                          <span>{item.founder_discord}</span>
+                      {/* Problem Statement Card */}
+                      <div className="mt-4 p-4 rounded-2xl bg-zinc-50/90 dark:bg-zinc-950/60 border border-zinc-200/80 dark:border-zinc-800/80">
+                        <span className="font-mono text-[9px] uppercase tracking-widest text-[#FA5D00] font-bold block mb-1">
+                          PROBLEM SOLVED:
                         </span>
-                      )}
+                        <p className="font-sans text-xs sm:text-[13px] text-zinc-700 dark:text-zinc-300 leading-relaxed line-clamp-4">
+                          {item.problem_solving}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                </div>
-              ))}
+                    {/* Founder Contact & Profile Strip */}
+                    <div className="mt-6 pt-4 border-t editorial-hairline">
+                      <div className="flex items-center justify-between gap-2 mb-2.5">
+                        <Link
+                          to={`/builder/${founderUser}`}
+                          className="flex items-center gap-2 font-mono text-xs text-zinc-900 dark:text-zinc-100 font-bold hover:text-[#FA5D00] transition-colors truncate"
+                        >
+                          <span className="w-6 h-6 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center flex-none">
+                            {initial}
+                          </span>
+                          <span className="truncate">{item.founder_name}</span>
+                          <span className="font-normal text-[11px] text-zinc-400 flex-none">
+                            (@{founderUser})
+                          </span>
+                        </Link>
+
+                        <Link
+                          to={`/builder/${founderUser}`}
+                          className="flex-none font-mono text-[10px] font-bold text-[#FA5D00] hover:underline inline-flex items-center gap-0.5"
+                        >
+                          <span>Profile</span>
+                          <ArrowUpRight className="w-3 h-3" />
+                        </Link>
+                      </div>
+
+                      {/* Contact Badges */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1 font-mono text-[11px]">
+                        {item.founder_phone && (
+                          <a
+                            href={`tel:${item.founder_phone}`}
+                            title={`Call or WhatsApp: ${item.founder_phone}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
+                          >
+                            <Phone className="w-3 h-3 text-emerald-500" />
+                            <span>{item.founder_phone}</span>
+                          </a>
+                        )}
+
+                        {item.founder_website && (
+                          <a
+                            href={item.founder_website.startsWith("http") ? item.founder_website : `https://${item.founder_website}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Founder Website"
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
+                          >
+                            <Globe className="w-3 h-3 text-blue-500" />
+                            <span>Website</span>
+                          </a>
+                        )}
+
+                        {item.founder_email && (
+                          <a
+                            href={`mailto:${item.founder_email}`}
+                            title={`Email ${item.founder_email}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
+                          >
+                            <Mail className="w-3 h-3 text-[#FA5D00]" />
+                            <span>Email</span>
+                          </a>
+                        )}
+
+                        {item.founder_discord && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-500">
+                            <MessageSquare className="w-3 h-3 text-[#5865F2]" />
+                            <span>{item.founder_discord}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -547,7 +593,7 @@ export function NetworkPage() {
             </h2>
             <p className="mt-1 font-sans text-xs text-zinc-500">
               {authMode === "signup"
-                ? "Create your profile to list your startups and share contact info."
+                ? "Create your profile in seconds. You can fill out your bio and social links right on your builder profile."
                 : "Enter your credentials to manage your listings and profile."}
             </p>
 
@@ -626,7 +672,7 @@ export function NetworkPage() {
                       />
                     </div>
                     <span className="text-[10px] text-zinc-400 mt-0.5 block">
-                      Profile link: recolabs.in/builder/{authForm.username || "username"}
+                      Your profile URL: recolabs.in/builder/{authForm.username || "username"}
                     </span>
                   </div>
                 </>
@@ -656,50 +702,12 @@ export function NetworkPage() {
                 />
               </div>
 
-              {authMode === "signup" && (
-                <>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PHONE / WHATSAPP</label>
-                      <input
-                        type="text"
-                        value={authForm.phone}
-                        onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
-                        placeholder="+91 98765 43210"
-                        className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-zinc-600 dark:text-zinc-400 mb-1">WEBSITE / PORTFOLIO</label>
-                      <input
-                        type="text"
-                        value={authForm.website}
-                        onChange={(e) => setAuthForm({ ...authForm, website: e.target.value })}
-                        placeholder="https://mysite.com"
-                        className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">DISCORD USERNAME</label>
-                    <input
-                      type="text"
-                      value={authForm.discord}
-                      onChange={(e) => setAuthForm({ ...authForm, discord: e.target.value })}
-                      placeholder="aditya_dev"
-                      className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
-                    />
-                  </div>
-                </>
-              )}
-
               <button
                 type="submit"
                 disabled={authLoading}
                 className="w-full mt-4 py-3 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
               >
-                {authLoading ? "Processing..." : authMode === "signup" ? "Complete Registration" : "Sign In"}
+                {authLoading ? "Processing..." : authMode === "signup" ? "Create Account & Go to Profile →" : "Sign In"}
               </button>
             </form>
           </div>
@@ -733,45 +741,39 @@ export function NetworkPage() {
               </div>
             )}
 
-            <form onSubmit={handlePostStartup} className="mt-5 space-y-3 font-mono text-xs">
+            <form onSubmit={handlePostStartup} className="mt-6 space-y-4 font-mono text-xs">
               <div>
-                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">
-                  1. STARTUP / PROJECT NAME *
-                </label>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">STARTUP / PROJECT NAME *</label>
                 <input
                   type="text"
                   required
                   value={startupForm.name}
                   onChange={(e) => setStartupForm({ ...startupForm, name: e.target.value })}
-                  placeholder="e.g. HexTrace, Reco Labs, Breadboard OS"
+                  placeholder="e.g. PulseKit"
                   className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">
-                  2. WEBSITE / DEMO URL *
-                </label>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PROJECT URL / REPO *</label>
                 <input
                   type="text"
                   required
                   value={startupForm.url}
                   onChange={(e) => setStartupForm({ ...startupForm, url: e.target.value })}
-                  placeholder="https://yourstartup.com or https://github.com/..."
+                  placeholder="https://myproject.com or github.com/user/repo"
                   className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">
-                  3. PROBLEM SOLVING *
-                </label>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">WHAT PROBLEM ARE YOU SOLVING? *</label>
                 <textarea
                   required
                   rows={3}
                   value={startupForm.problem_solving}
                   onChange={(e) => setStartupForm({ ...startupForm, problem_solving: e.target.value })}
-                  placeholder="Describe the exact problem your startup solves for users..."
+                  placeholder="Explain the technical problem and how your build solves it..."
                   className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
@@ -782,7 +784,7 @@ export function NetworkPage() {
                   <select
                     value={startupForm.category}
                     onChange={(e) => setStartupForm({ ...startupForm, category: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                   >
                     <option value="Software">Software</option>
                     <option value="Hardware">Hardware</option>
@@ -797,64 +799,63 @@ export function NetworkPage() {
                   <select
                     value={startupForm.stage}
                     onChange={(e) => setStartupForm({ ...startupForm, stage: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                   >
-                    <option value="Idea">Idea</option>
                     <option value="Prototype">Prototype</option>
                     <option value="Beta">Beta</option>
-                    <option value="Live">Live in Production</option>
+                    <option value="Live">Live</option>
                   </select>
                 </div>
               </div>
 
-              {/* Founder Contact Info */}
               <div className="pt-2 border-t editorial-hairline">
-                <span className="text-[10px] uppercase text-[#FA5D00] font-bold block mb-2">
-                  FOUNDER CONTACT DETAILS (FOR VISITORS TO REACH YOU)
+                <span className="block font-mono text-[10px] uppercase text-zinc-400 mb-3 font-semibold">
+                  FOUNDER CONTACT DETAILS (PUBLICLY SHOWN)
                 </span>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-zinc-500 text-[10px] mb-1">FOUNDER NAME</label>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">FOUNDER NAME</label>
                     <input
                       type="text"
                       value={startupForm.founder_name}
                       onChange={(e) => setStartupForm({ ...startupForm, founder_name: e.target.value })}
-                      placeholder="Your Name"
-                      className="w-full px-3 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                      placeholder={currentUser?.name || "Your Name"}
+                      className="w-full px-3.5 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                     />
                   </div>
-                  <div>
-                    <label className="block text-zinc-500 text-[10px] mb-1">PHONE NUMBER</label>
-                    <input
-                      type="text"
-                      value={startupForm.founder_phone}
-                      onChange={(e) => setStartupForm({ ...startupForm, founder_phone: e.target.value })}
-                      placeholder="+91..."
-                      className="w-full px-3 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                    />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <div>
-                    <label className="block text-zinc-500 text-[10px] mb-1">PERSONAL WEBSITE</label>
-                    <input
-                      type="text"
-                      value={startupForm.founder_website}
-                      onChange={(e) => setStartupForm({ ...startupForm, founder_website: e.target.value })}
-                      placeholder="https://..."
-                      className="w-full px-3 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                    />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PHONE / WHATSAPP</label>
+                      <input
+                        type="text"
+                        value={startupForm.founder_phone}
+                        onChange={(e) => setStartupForm({ ...startupForm, founder_phone: e.target.value })}
+                        placeholder="+91..."
+                        className="w-full px-3.5 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-zinc-600 dark:text-zinc-400 mb-1">WEBSITE</label>
+                      <input
+                        type="text"
+                        value={startupForm.founder_website}
+                        onChange={(e) => setStartupForm({ ...startupForm, founder_website: e.target.value })}
+                        placeholder="https://..."
+                        className="w-full px-3.5 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                      />
+                    </div>
                   </div>
+
                   <div>
-                    <label className="block text-zinc-500 text-[10px] mb-1">DISCORD / SOCIAL</label>
+                    <label className="block text-zinc-600 dark:text-zinc-400 mb-1">DISCORD HANDLE</label>
                     <input
                       type="text"
                       value={startupForm.founder_discord}
                       onChange={(e) => setStartupForm({ ...startupForm, founder_discord: e.target.value })}
-                      placeholder="Discord Handle"
-                      className="w-full px-3 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                      placeholder="user_dev"
+                      className="w-full px-3.5 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                     />
                   </div>
                 </div>
@@ -863,9 +864,9 @@ export function NetworkPage() {
               <button
                 type="submit"
                 disabled={postLoading}
-                className="w-full mt-5 py-3 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                className="w-full mt-4 py-3 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
               >
-                {postLoading ? "Publishing to Network..." : "POST STARTUP TO RECO NETWORK"}
+                {postLoading ? "Submitting..." : "Publish Startup Listing"}
               </button>
             </form>
           </div>
@@ -873,7 +874,7 @@ export function NetworkPage() {
       )}
 
       {/* MODAL 3: EDIT PROFILE */}
-      {showProfileModal && currentUser && (
+      {showProfileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="relative w-full max-w-md rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#09090b] p-6 sm:p-8 shadow-2xl">
             <button
@@ -887,81 +888,72 @@ export function NetworkPage() {
               FOUNDER PROFILE
             </span>
             <h2 className="mt-1 font-serif text-3xl text-zinc-950 dark:text-zinc-50 font-normal">
-              Edit Your Profile<span className="text-[#FA5D00]">.</span>
+              Edit Details<span className="text-[#FA5D00]">.</span>
             </h2>
             <p className="mt-1 font-sans text-xs text-zinc-500">
-              Personal contact details visible on all your startups so anyone can reach you directly.
+              Update how other founders reach out to you.
             </p>
 
             {profileSuccess && (
-              <div className="mt-3 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 font-mono text-xs flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-500" />
-                <span>Profile updated successfully!</span>
+              <div className="mt-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 font-mono text-xs">
+                Profile updated successfully.
               </div>
             )}
 
-            <form onSubmit={handleProfileSubmit} className="mt-4 space-y-3 font-mono text-xs">
+            <form onSubmit={handleProfileSubmit} className="mt-5 space-y-3 font-mono text-xs">
               <div>
                 <label className="block text-zinc-600 dark:text-zinc-400 mb-1">NAME</label>
                 <input
                   type="text"
                   value={profileForm.name}
                   onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">USERNAME</label>
-                <div className="flex items-center rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 px-3">
-                  <span className="text-zinc-400 mr-1">@</span>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">USERNAME (@handle)</label>
+                <input
+                  type="text"
+                  value={profileForm.username}
+                  onChange={(e) =>
+                    setProfileForm({
+                      ...profileForm,
+                      username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PHONE</label>
                   <input
                     type="text"
-                    value={profileForm.username}
-                    onChange={(e) =>
-                      setProfileForm({
-                        ...profileForm,
-                        username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
-                      })
-                    }
-                    className="w-full py-2.5 bg-transparent text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                   />
                 </div>
-                <span className="text-[10px] text-zinc-400 mt-0.5 block">
-                  Public profile: recolabs.in/builder/{profileForm.username || "username"}
-                </span>
+                <div>
+                  <label className="block text-zinc-600 dark:text-zinc-400 mb-1">WEBSITE</label>
+                  <input
+                    type="text"
+                    value={profileForm.website}
+                    onChange={(e) => setProfileForm({ ...profileForm, website: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PHONE NUMBER</label>
-                <input
-                  type="text"
-                  value={profileForm.phone}
-                  onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                  placeholder="+91 98765 43210"
-                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PERSONAL WEBSITE</label>
-                <input
-                  type="text"
-                  value={profileForm.website}
-                  onChange={(e) => setProfileForm({ ...profileForm, website: e.target.value })}
-                  placeholder="https://mysite.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">DISCORD USERNAME</label>
+                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">DISCORD</label>
                 <input
                   type="text"
                   value={profileForm.discord}
                   onChange={(e) => setProfileForm({ ...profileForm, discord: e.target.value })}
-                  placeholder="discord_tag"
-                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
@@ -971,25 +963,37 @@ export function NetworkPage() {
                   rows={2}
                   value={profileForm.bio}
                   onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                  placeholder="Hardware hacker, web engineer, student..."
-                  className="w-full px-3.5 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={profileLoading}
-                className="w-full mt-4 py-3 rounded-full bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
-              >
-                {profileLoading ? "Saving Changes..." : "Save Profile Details"}
-              </button>
+              <div className="flex gap-2 pt-2">
+                <Link
+                  to={`/builder/${currentUser?.username}`}
+                  className="flex-1 py-2.5 rounded-full border editorial-hairline text-center text-zinc-700 dark:text-zinc-300 font-bold hover:border-[#FA5D00]"
+                >
+                  View Public Profile
+                </Link>
+                <button
+                  type="submit"
+                  disabled={profileLoading}
+                  className="flex-1 py-2.5 rounded-full bg-[#FA5D00] text-black font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow cursor-pointer disabled:opacity-50"
+                >
+                  {profileLoading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
             </form>
           </div>
         </div>
       )}
 
+      {/* MODAL 4: SHAREABLE SCREENSHOT SNAPSHOT CARD */}
+      {screenshotStartup && (
+        <StartupScreenshotModal
+          startup={screenshotStartup}
+          onClose={() => setScreenshotStartup(null)}
+        />
+      )}
     </div>
   )
 }
-
-export default NetworkPage

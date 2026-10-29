@@ -20,14 +20,17 @@ import {
   ShieldCheck,
   Edit3,
   X,
+  Camera,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
+import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
 
 export function BuilderProfilePage() {
   const { username } = useParams<{ username: string }>()
   const [profile, setProfile] = React.useState<UserProfile | null>(null)
   const [startups, setStartups] = React.useState<StartupItem[]>([])
+  const [screenshotStartup, setScreenshotStartup] = React.useState<StartupItem | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState("")
   const [copiedLink, setCopiedLink] = React.useState(false)
@@ -69,6 +72,10 @@ export function BuilderProfilePage() {
           bio: data.user.bio || "",
           discord: data.user.discord || "",
         })
+        const params = new URLSearchParams(window.location.search)
+        if (params.get("edit") === "true") {
+          setShowEditModal(true)
+        }
       }
     } catch (err: any) {
       setError(err.message || "Builder not found.")
@@ -321,7 +328,21 @@ export function BuilderProfilePage() {
                   </div>
 
                   <div className="mt-4 pt-4 border-t editorial-hairline flex items-center justify-between">
-                    <span className="font-mono text-[11px] text-zinc-400">Visit Live Startup</span>
+                    <button
+                      onClick={() =>
+                        setScreenshotStartup({
+                          ...item,
+                          founder_name: profile.name,
+                          founder_username: profile.username,
+                          avatar_url: profile.avatar_url,
+                        } as any)
+                      }
+                      title="Create Shareable Screenshot Card"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border editorial-hairline bg-orange-50 dark:bg-orange-950/30 text-[#FA5D00] font-mono text-[11px] font-bold hover:bg-[#FA5D00] hover:text-black transition-all cursor-pointer"
+                    >
+                      <Camera className="w-3 h-3" />
+                      <span>Snap Card</span>
+                    </button>
                     <a
                       href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
                       target="_blank"
@@ -431,6 +452,14 @@ export function BuilderProfilePage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* SCREENSHOT MODAL */}
+      {screenshotStartup && (
+        <StartupScreenshotModal
+          startup={screenshotStartup}
+          onClose={() => setScreenshotStartup(null)}
+        />
       )}
 
     </div>
