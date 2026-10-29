@@ -194,19 +194,8 @@ export function HackathonsPage() {
           </div>
         </div>
 
-        {/* Clean Status Counter */}
-        <div className="mt-4 flex items-center justify-between font-mono text-xs text-zinc-500">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="uppercase tracking-wider">
-              {endpointMode === "upcoming" ? "Live Upcoming Schedule" : "Global Archives"}
-            </span>
-          </div>
-          <span>Showing {paginatedEvents.length} of {filteredEvents.length} hackathons</span>
-        </div>
-
         {/* Live Grid */}
-        <div className="mt-8">
+        <div className="mt-10">
           {loading ? (
             <div className="py-24 text-center flex flex-col items-center justify-center">
               <RefreshCw className="w-6 h-6 text-[#FA5D00] animate-spin mb-3" />
