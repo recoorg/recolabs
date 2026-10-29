@@ -51,11 +51,11 @@ export function SponsorSection() {
             {/* Primary Sponsor Button */}
             <a
               href={`mailto:${sponsorEmail}?subject=Sponsoring%20Reco%20Labs&body=Hi%20Aditya%2C%0A%0AWe%20would%20love%20to%20sponsor%20Reco%20Labs.%20Here%20are%20the%20details%3A`}
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
             >
-              <Heart className="w-4 h-4 fill-black" />
+              <Heart className="w-3.5 h-3.5 fill-black" />
               <span>Sponsor Reco Labs</span>
-              <ArrowUpRight className="w-4 h-4" />
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
 
             {/* Email Pill with Copy Trigger */}
