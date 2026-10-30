@@ -30,6 +30,7 @@ export function Navbar() {
 
   const navLinks = [
     { label: "ABOUT", path: "/about" },
+    { label: "BLOG", path: "https://blog.recolabs.in", external: true },
     { label: "JOBS", path: "/jobs" },
     { label: "PROJECTS", path: "/projects" },
     { label: "HACKATHONS", path: "/hackathons" },
@@ -61,18 +62,32 @@ export function Navbar() {
 
         {/* Center: Desktop Vibrant Orange Pill Navigation */}
         <nav
-          className="pointer-events-auto hidden sm:flex items-center gap-6 md:gap-8 px-7 py-2 rounded-full bg-[#FA5D00] border-2 border-black text-black font-mono text-[13px] font-bold tracking-wider uppercase shadow-sm"
+          className="pointer-events-auto hidden sm:flex items-center gap-4 md:gap-6 px-6 py-2 rounded-full bg-[#FA5D00] border-2 border-black text-black font-mono text-[12px] md:text-[13px] font-bold tracking-wider uppercase shadow-sm"
           aria-label="Main Navigation"
         >
-          {navLinks.slice(0, 5).map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={`transition-opacity ${isActive(link.path) ? "underline underline-offset-4 decoration-2" : "hover:opacity-75"}`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) =>
+            link.external ? (
+              <a
+                key={link.label}
+                href={link.path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-75 transition-opacity inline-flex items-center gap-0.5"
+                title="Reco Labs Blog (opens in new tab)"
+              >
+                <span>{link.label}</span>
+                <span className="text-[10px] leading-none opacity-70">↗</span>
+              </a>
+            ) : (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`transition-opacity ${isActive(link.path) ? "underline underline-offset-4 decoration-2" : "hover:opacity-75"}`}
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </nav>
 
         {/* Right Desktop: Discord Button */}
@@ -146,19 +161,33 @@ export function Navbar() {
                 <ArrowUpRight className="w-4 h-4 opacity-50" />
               </Link>
 
-              {navLinks.map((link, idx) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center justify-between py-2 text-base font-bold tracking-wider transition-colors border-t editorial-hairline ${
-                    isActive(link.path) ? "text-[#FA5D00]" : "text-zinc-900 dark:text-zinc-100 hover:text-[#FA5D00]"
-                  }`}
-                >
-                  <span>0{idx + 2}. {link.label}</span>
-                  <ArrowUpRight className="w-4 h-4 opacity-50" />
-                </Link>
-              ))}
+              {navLinks.map((link, idx) =>
+                link.external ? (
+                  <a
+                    key={link.label}
+                    href={link.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-between py-2 text-base font-bold tracking-wider transition-colors border-t editorial-hairline text-zinc-900 dark:text-zinc-100 hover:text-[#FA5D00]"
+                  >
+                    <span>0{idx + 2}. {link.label}</span>
+                    <ArrowUpRight className="w-4 h-4 text-[#FA5D00]" />
+                  </a>
+                ) : (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center justify-between py-2 text-base font-bold tracking-wider transition-colors border-t editorial-hairline ${
+                      isActive(link.path) ? "text-[#FA5D00]" : "text-zinc-900 dark:text-zinc-100 hover:text-[#FA5D00]"
+                    }`}
+                  >
+                    <span>0{idx + 2}. {link.label}</span>
+                    <ArrowUpRight className="w-4 h-4 opacity-50" />
+                  </Link>
+                )
+              )}
             </nav>
 
             {/* Bottom Actions */}

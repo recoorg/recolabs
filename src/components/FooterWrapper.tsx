@@ -64,6 +64,8 @@ export function FooterWrapper() {
               { label: "The Skill Exchange", href: "/" },
               { label: "Grade 10 Origins", href: "/about" },
               { label: "Beginner Roadmaps", href: "/about" },
+              { label: "Privacy Policy", href: "/privacy" },
+              { label: "Blog ↗", href: "https://blog.recolabs.in" },
             ],
           },
           {
@@ -96,6 +98,10 @@ export function FooterWrapper() {
           },
         ]}
         copyright="© 2026 Reco Labs · Founded by Aditya & Tanish · Built by curious minds worldwide."
+        legal={[
+          { label: "Privacy Policy", href: "/privacy" },
+          { label: "Blog ↗", href: "https://blog.recolabs.in" },
+        ]}
         palette={
           isDark
             ? {

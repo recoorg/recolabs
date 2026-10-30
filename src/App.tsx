@@ -13,6 +13,7 @@ import { HackathonsPage } from "@/pages/HackathonsPage"
 import { SponsorsPage } from "@/pages/SponsorsPage"
 import { NetworkPage } from "@/pages/NetworkPage"
 import { BuilderProfilePage } from "@/pages/BuilderProfilePage"
+import { PrivacyPage } from "@/pages/PrivacyPage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
 import { networkApi } from "@/services/networkApi"
 
@@ -65,6 +66,8 @@ export function App() {
             <Route path="/network" element={<NetworkPage />} />
             <Route path="/builder/:username" element={<BuilderProfilePage />} />
             <Route path="/builders/:username" element={<BuilderProfilePage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/privary" element={<PrivacyPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
