@@ -11,8 +11,7 @@ import {
   ExternalLink,
   Sparkles,
   Link as LinkIcon,
-  Sun,
-  Moon,
+  BadgeCheck,
 } from "lucide-react"
 import type { StartupItem } from "@/services/networkApi"
 
@@ -26,7 +25,6 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
   const [downloading, setDownloading] = React.useState(false)
   const [copiedImage, setCopiedImage] = React.useState(false)
   const [copiedLink, setCopiedLink] = React.useState(false)
-  const [cardTheme, setCardTheme] = React.useState<"dark" | "light">("dark")
   const [statusMessage, setStatusMessage] = React.useState("")
 
   if (!startup) return null
@@ -41,7 +39,7 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
     .map((n) => n[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase() || "RL"
+    .toUpperCase()
 
   const cleanUrl = startup.url.replace(/^https?:\/\//, "").replace(/\/$/, "")
 
@@ -54,8 +52,8 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
       const canvas = await html2canvas(cardRef.current, {
         scale: 3,
         useCORS: true,
-        allowTaint: false,
-        backgroundColor: cardTheme === "dark" ? "#09090b" : "#f4f4f5",
+        allowTaint: true,
+        backgroundColor: null,
         logging: false,
       })
 
@@ -68,10 +66,10 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
 
       setStatusMessage("Screenshot downloaded!")
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } })
-      setTimeout(() => setStatusMessage(""), 3000)
+      setTimeout(() => setStatusMessage(""), 2500)
     } catch (err: any) {
-      console.error("Screenshot download error:", err)
-      setStatusMessage("Render failed. Try again.")
+      console.error("Failed to render card:", err)
+      setStatusMessage("Failed to render screenshot.")
       setTimeout(() => setStatusMessage(""), 3000)
     } finally {
       setDownloading(false)
@@ -81,50 +79,50 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
   // Copy PNG image to clipboard
   const handleCopyImage = async () => {
     if (!cardRef.current || copiedImage) return
-    setStatusMessage("Rendering image...")
+    setStatusMessage("Generating image...")
     try {
       const canvas = await html2canvas(cardRef.current, {
         scale: 3,
         useCORS: true,
-        allowTaint: false,
-        backgroundColor: cardTheme === "dark" ? "#09090b" : "#f4f4f5",
+        allowTaint: true,
+        backgroundColor: null,
         logging: false,
       })
 
-      // Attempt clipboard copy
-      try {
-        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"))
-        if (blob && navigator.clipboard && typeof ClipboardItem !== "undefined") {
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setStatusMessage("Clipboard export unavailable.")
+          return
+        }
+        try {
           await navigator.clipboard.write([
             new ClipboardItem({
               "image/png": blob,
             }),
           ])
           setCopiedImage(true)
-          setStatusMessage("Image copied! Paste in X or Discord.")
+          setStatusMessage("Image copied! Paste anywhere.")
           confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } })
           setTimeout(() => {
             setCopiedImage(false)
             setStatusMessage("")
           }, 3000)
-          return
+        } catch {
+          // Fallback if write ClipboardItem fails
+          const imgUrl = canvas.toDataURL("image/png")
+          const win = window.open()
+          if (win) {
+            win.document.write(`<img src="${imgUrl}" style="max-width:100%" />`)
+            setStatusMessage("Opened in new tab to copy!")
+          } else {
+            setStatusMessage("Copy not permitted by browser.")
+          }
+          setTimeout(() => setStatusMessage(""), 3000)
         }
-      } catch (clipErr) {
-        console.warn("Direct clipboard item write failed, trying fallback:", clipErr)
-      }
-
-      // Fallback: download automatically
-      const image = canvas.toDataURL("image/png")
-      const link = document.createElement("a")
-      const safeName = startup.name.toLowerCase().replace(/[^a-z0-9]/g, "-")
-      link.download = `${safeName}-recolabs.png`
-      link.href = image
-      link.click()
-      setStatusMessage("Downloaded PNG! (Clipboard blocked by browser)")
-      setTimeout(() => setStatusMessage(""), 3500)
+      }, "image/png")
     } catch (err: any) {
-      console.error("Screenshot copy error:", err)
-      setStatusMessage("Render error. Try download instead.")
+      console.error("Failed to copy card image:", err)
+      setStatusMessage("Error copying image.")
       setTimeout(() => setStatusMessage(""), 3000)
     }
   }
@@ -141,145 +139,93 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
     }, 2500)
   }
 
-  const isDark = cardTheme === "dark"
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in overflow-y-auto">
       {/* Container holding Card + Floating Toolbar */}
       <div className="relative flex flex-col md:flex-row items-center justify-center gap-4 max-w-4xl w-full my-auto">
         
-        {/* THE EXPORTABLE RECO LABS CARD (Uses explicit inline styling for bulletproof html2canvas support) */}
+        {/* THE EXPORTABLE RECO LABS CARD */}
         <div
           ref={cardRef}
+          className="relative w-full max-w-xl rounded-3xl p-6 sm:p-8 bg-zinc-100 dark:bg-[#0c0c0e] border-2 border-zinc-300 dark:border-zinc-800 shadow-2xl flex flex-col justify-between overflow-hidden"
           style={{
-            backgroundColor: isDark ? "#09090b" : "#f4f4f5",
-            borderColor: isDark ? "#27272a" : "#e4e4e7",
-            color: isDark ? "#ffffff" : "#09090b",
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamily:
+              'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           }}
-          className="relative w-full max-w-xl rounded-3xl p-6 sm:p-8 border-2 shadow-2xl flex flex-col justify-between overflow-hidden select-none"
         >
-          {/* Subtle ambient gradient */}
-          <div
-            style={{
-              position: "absolute",
-              top: "-50px",
-              right: "-50px",
-              width: "250px",
-              height: "250px",
-              background: "radial-gradient(circle, rgba(250,93,0,0.15) 0%, rgba(0,0,0,0) 70%)",
-              borderRadius: "50%",
-              pointerEvents: "none",
-            }}
-          />
+          {/* Subtle gradient vignette */}
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-[#FA5D00]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-[#FA5D00]/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* INNER CARD */}
-          <div
-            style={{
-              backgroundColor: isDark ? "#141417" : "#ffffff",
-              borderColor: isDark ? "#27272a" : "#e4e4e7",
-              color: isDark ? "#ffffff" : "#09090b",
-            }}
-            className="relative z-10 w-full rounded-2xl border p-6 sm:p-7 shadow-md"
-          >
+          {/* INNER WHITE / DARK CARD (Matching the Peerlist format, customized for Reco Labs) */}
+          <div className="relative z-10 w-full rounded-2xl bg-white dark:bg-[#151518] border border-zinc-200/80 dark:border-zinc-800/80 p-6 sm:p-7 shadow-lg">
+            
             {/* Top Row: Founder info & Reco Monogram Badge */}
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                {/* Founder Avatar with Initials Fallback */}
+                {/* Founder Avatar */}
                 <div className="relative flex-none">
-                  <div
-                    style={{
-                      background: "linear-gradient(135deg, #FA5D00 0%, #f59e0b 100%)",
-                      color: "#000000",
-                    }}
-                    className="w-12 h-12 rounded-full font-mono font-bold flex items-center justify-center text-sm shadow-md overflow-hidden"
-                  >
-                    <span>{initials}</span>
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#FA5D00] to-amber-400 text-black font-mono font-bold flex items-center justify-center text-sm shadow-md overflow-hidden">
+                    {(startup as any).avatar_url ? (
+                      <img
+                        src={(startup as any).avatar_url}
+                        alt={founderName}
+                        crossOrigin="anonymous"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{initials}</span>
+                    )}
                   </div>
                   {/* Verified Founder Badge */}
-                  <div
-                    style={{ backgroundColor: "#FA5D00", color: "#000000" }}
-                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center shadow"
-                  >
-                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#FA5D00] text-black flex items-center justify-center shadow">
+                    <Check className="w-3 h-3 stroke-[3]" />
                   </div>
                 </div>
 
                 {/* Founder Meta */}
                 <div>
-                  <h3
-                    style={{ color: isDark ? "#ffffff" : "#09090b" }}
-                    className="font-bold text-base leading-snug"
-                  >
-                    {founderName}
-                  </h3>
-                  <div
-                    style={{ color: isDark ? "#a1a1aa" : "#71717a" }}
-                    className="flex items-center gap-2 font-mono text-[11px] mt-0.5"
-                  >
-                    <span style={{ color: "#FA5D00" }} className="font-semibold">
-                      @{founderUsername}
-                    </span>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-bold text-zinc-950 dark:text-zinc-50 text-base leading-snug">
+                      {founderName}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2 font-mono text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    <span className="text-[#FA5D00] font-semibold">@{founderUsername}</span>
                     <span>•</span>
                     <span className="uppercase text-[10px] tracking-wider font-semibold">
                       #{startup.category.toLowerCase().replace(/[^a-z0-9]/g, "")}
                     </span>
                     <span>•</span>
-                    <span className="text-[10px] uppercase font-semibold">{startup.stage}</span>
+                    <span className="text-[10px] uppercase text-zinc-400">{startup.stage}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Reco Labs Brand Mark */}
+              {/* Reco Labs Brand Mark (Upper Right) */}
               <div
-                style={{
-                  backgroundColor: "#FA5D00",
-                  color: "#000000",
-                  fontFamily: "serif",
-                }}
-                className="w-9 h-9 rounded-xl text-xl font-bold flex items-center justify-center shadow-sm flex-none select-none"
+                className="w-10 h-10 rounded-xl bg-black dark:bg-[#FA5D00] text-[#FA5D00] dark:text-black font-serif text-2xl font-bold flex items-center justify-center shadow-sm flex-none select-none"
+                title="Reco Labs Network"
               >
                 R
               </div>
             </div>
 
             {/* Middle Pitch Section */}
-            <div
-              style={{
-                borderColor: isDark ? "#27272a" : "#f4f4f5",
-              }}
-              className="mt-5 pt-4 border-t"
-            >
+            <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800/80">
               {/* Startup Title */}
-              <h2
-                style={{
-                  color: isDark ? "#ffffff" : "#09090b",
-                  fontFamily: "serif",
-                }}
-                className="text-2xl sm:text-3xl font-normal tracking-tight leading-snug"
-              >
+              <h2 className="text-xl sm:text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight leading-snug">
                 {startup.name}
               </h2>
 
               {/* Problem Solving Pitch Text */}
-              <div
-                style={{
-                  color: isDark ? "#d4d4d8" : "#3f3f46",
-                }}
-                className="mt-3 text-sm sm:text-[15px] leading-relaxed whitespace-pre-line"
-              >
+              <div className="mt-3 font-sans text-sm sm:text-[15px] text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line">
                 {startup.problem_solving}
               </div>
 
               {/* Startup URL Badge */}
-              <div className="mt-4 pt-2 flex items-center gap-2">
-                <span
-                  style={{
-                    backgroundColor: isDark ? "#27272a" : "#f4f4f5",
-                    color: isDark ? "#e4e4e7" : "#18181b",
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-xs font-semibold"
-                >
+              <div className="mt-4 pt-3 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono text-xs font-semibold">
                   <ExternalLink className="w-3 h-3 text-[#FA5D00]" />
                   <span>{cleanUrl}</span>
                 </span>
@@ -288,33 +234,19 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
 
           </div>
 
-          {/* Card Footer Watermark */}
-          <div
-            style={{ color: isDark ? "#71717a" : "#a1a1aa" }}
-            className="relative z-10 mt-5 pt-1 text-center font-mono text-xs flex items-center justify-center gap-1.5"
-          >
+          {/* Card Footer Watermark (Matching the bottom caption in the screenshot) */}
+          <div className="relative z-10 mt-5 pt-1 text-center font-mono text-xs text-zinc-500 dark:text-zinc-400 flex items-center justify-center gap-1.5">
             <span>Posted by</span>
-            <span
-              style={{ color: isDark ? "#ffffff" : "#09090b" }}
-              className="font-bold"
-            >
-              @{founderUsername}
-            </span>
+            <span className="font-bold text-zinc-800 dark:text-zinc-200">@{founderUsername}</span>
             <span>on</span>
-            <span
-              style={{ color: isDark ? "#ffffff" : "#09090b" }}
-              className="font-bold text-sm tracking-tight flex items-center gap-1"
-            >
-              <span
-                style={{ backgroundColor: "#FA5D00" }}
-                className="inline-block w-2 h-2 rounded-full"
-              />
+            <span className="font-serif font-bold text-zinc-950 dark:text-zinc-50 text-sm tracking-tight flex items-center gap-1">
+              <span className="inline-block w-2 h-2 rounded-full bg-[#FA5D00]" />
               Reco Labs
             </span>
           </div>
         </div>
 
-        {/* FLOATING ACTION TOOLBAR */}
+        {/* FLOATING ACTION TOOLBAR (Right on desktop, bottom on mobile) */}
         <div className="flex md:flex-col items-center gap-2.5 p-2 rounded-full md:rounded-2xl bg-white/95 dark:bg-zinc-900/95 border-2 border-black dark:border-zinc-700 shadow-2xl backdrop-blur-md">
           {/* Download Image Button */}
           <button
@@ -330,22 +262,13 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
           <button
             onClick={handleCopyImage}
             title="Copy PNG to Clipboard (Paste on X / Discord)"
-            className="flex items-center justify-center w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:text-[#FA5D00] active:scale-95 transition-all cursor-pointer"
+            className="flex items-center justify-center w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:text-[#FA5D00] hover:border-[#FA5D00] border border-transparent active:scale-95 transition-all cursor-pointer"
           >
             {copiedImage ? (
               <Check className="w-5 h-5 text-emerald-500" />
             ) : (
               <Copy className="w-5 h-5" />
             )}
-          </button>
-
-          {/* Toggle Dark / Light Theme on Card */}
-          <button
-            onClick={() => setCardTheme(cardTheme === "dark" ? "light" : "dark")}
-            title={`Switch to ${cardTheme === "dark" ? "Light" : "Dark"} Card Theme`}
-            className="flex items-center justify-center w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:text-[#FA5D00] active:scale-95 transition-all cursor-pointer"
-          >
-            {cardTheme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-zinc-600" />}
           </button>
 
           {/* Copy Profile Link Button */}
@@ -375,7 +298,7 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
 
       {/* Floating Status Notification Toast */}
       {statusMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold tracking-wider uppercase shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold tracking-wider uppercase shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
           <Sparkles className="w-3.5 h-3.5 text-[#FA5D00]" />
           <span>{statusMessage}</span>
         </div>

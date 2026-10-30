@@ -3,7 +3,6 @@
 import * as React from "react"
 import { CheckCircle2, MessageSquare, Briefcase, Search, MapPin, ExternalLink, RefreshCw, Key, X } from "lucide-react"
 import { api, type GoogleJobItem } from "@/services/api"
-import { SEO } from "@/components/SEO"
 
 export function JobsPage() {
   const [jobs, setJobs] = React.useState<GoogleJobItem[]>([])
@@ -91,10 +90,6 @@ export function JobsPage() {
 
   return (
     <div className="relative w-full pt-32 sm:pt-36 pb-24 px-6 sm:px-8 bg-transparent overflow-hidden">
-      <SEO
-        title="Developer Roles & Gigs · Reco Labs"
-        description="Curated high-signal engineering roles, contractor bounties, and verified openings for builders and young developers without corporate fluff."
-      />
       {/* Seamless ambient blurred glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />

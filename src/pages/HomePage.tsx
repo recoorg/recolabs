@@ -5,12 +5,10 @@ import { Link } from "react-router-dom"
 import { HeroSection } from "@/components/HeroSection"
 import { RepoShowcase } from "@/components/RepoShowcase"
 import { ArrowUpRight, Terminal, Flame, Users, BookOpen } from "lucide-react"
-import { SEO } from "@/components/SEO"
 
 export function HomePage() {
   return (
     <div className="w-full">
-      <SEO />
       {/* Hero Section matching exact screenshot */}
       <HeroSection />
 
@@ -29,7 +27,7 @@ export function HomePage() {
             Built to fix real problems, share tutorials, and help beginners find their path<span className="text-[#FA5D00]">.</span>
           </h2>
           <p className="mt-6 font-sans text-base sm:text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-            Founded by Aditya in Grade 10, Reco Labs is a peer-driven collective where curious minds exchange skills across software, circuits, and open-source infrastructure.
+            Founded by Aditya and Tanish, Reco Labs is a peer-driven collective where curious minds exchange skills across software, circuits, and open-source infrastructure.
           </p>
 
           <div className="mt-10 flex flex-wrap justify-center items-center gap-4">
@@ -38,7 +36,7 @@ export function HomePage() {
               className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-85 transition-opacity"
             >
               <Users className="w-4 h-4" />
-              <span>Read The Story</span>
+              <span>Read Founders Story</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
 
