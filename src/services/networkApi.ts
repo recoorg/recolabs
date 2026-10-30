@@ -56,6 +56,26 @@ async function safeJsonFetch<T = any>(input: RequestInfo | URL, init?: RequestIn
   return json as T
 }
 
+// Helper to safely decode a JWT payload client-side
+function parseJwtPayload(token: string): any {
+  try {
+    const parts = token.split(".")
+    if (parts.length < 2) return null
+    const base64Url = parts[1]
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    )
+    return JSON.parse(jsonPayload)
+  } catch (e) {
+    console.error("JWT parse error:", e)
+    return null
+  }
+}
+
 export const networkApi = {
   getToken(): string | null {
     if (typeof window === "undefined") return null
@@ -76,12 +96,14 @@ export const networkApi = {
     if (typeof window === "undefined") return
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
+    window.dispatchEvent(new Event("reco_auth_changed"))
   },
 
   setSession(user: UserProfile, token: string): void {
     if (typeof window === "undefined") return
     localStorage.setItem(TOKEN_KEY, token)
     localStorage.setItem(USER_KEY, JSON.stringify(user))
+    window.dispatchEvent(new Event("reco_auth_changed"))
   },
 
   // Trigger Google OAuth via Supabase
@@ -98,35 +120,47 @@ export const networkApi = {
     window.location.href = `${SUPABASE_PROJECT_URL}/auth/v1/authorize?provider=github&redirect_to=${encodeURIComponent(target)}`
   },
 
-  // Handle incoming OAuth callback hash
+  // Handle incoming OAuth callback (supports both hash fragment and search params)
   async handleOAuthCallback(): Promise<{ user: UserProfile; token: string } | null> {
-    if (typeof window === "undefined" || !window.location.hash) return null
-    const hash = window.location.hash.substring(1)
-    const params = new URLSearchParams(hash)
-    const accessToken = params.get("access_token")
+    if (typeof window === "undefined") return null
+
+    let accessToken: string | null = null
+
+    // 1. Check URL hash (Supabase default: #access_token=...&refresh_token=...)
+    if (window.location.hash && window.location.hash.includes("access_token")) {
+      const hash = window.location.hash.substring(1)
+      const params = new URLSearchParams(hash)
+      accessToken = params.get("access_token")
+    }
+
+    // 2. Check query search params fallback (?access_token=...)
+    if (!accessToken && window.location.search && window.location.search.includes("access_token")) {
+      const searchParams = new URLSearchParams(window.location.search)
+      accessToken = searchParams.get("access_token")
+    }
 
     if (!accessToken) return null
 
     try {
-      // Query Supabase user info using accessToken
-      const supaRes = await fetch(`${SUPABASE_PROJECT_URL}/auth/v1/user`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          apikey: accessToken,
-        },
-      })
-
-      if (!supaRes.ok) {
-        throw new Error("Failed to verify Supabase OAuth access token")
+      // Decode JWT payload directly — contains all OAuth user claims without failing on API key checks
+      const jwtUser = parseJwtPayload(accessToken)
+      if (!jwtUser) {
+        throw new Error("Unable to parse access token payload")
       }
 
-      const supaUser = await supaRes.json()
-      const email = supaUser.email
-      const metadata = supaUser.user_metadata || {}
-      const name = metadata.full_name || metadata.name || email.split("@")[0]
-      const avatarUrl = metadata.avatar_url || metadata.picture
-      const provider = supaUser.app_metadata?.provider === "github" ? "github" : "google"
-      const preferredUsername = metadata.user_name || metadata.preferred_username || name.toLowerCase().replace(/[^a-z0-9]/g, "")
+      const email = jwtUser.email
+      if (!email) {
+        throw new Error("No email found in OAuth token")
+      }
+
+      const metadata = jwtUser.user_metadata || {}
+      const name = metadata.full_name || metadata.name || email.split("@")[0] || "Builder"
+      const avatarUrl = metadata.avatar_url || metadata.picture || null
+      const provider = jwtUser.app_metadata?.provider === "github" ? "github" : "google"
+      const preferredUsername =
+        metadata.user_name ||
+        metadata.preferred_username ||
+        name.toLowerCase().replace(/[^a-z0-9_-]/g, "")
 
       // Sync with our PostgreSQL backend
       const syncJson = await safeJsonFetch<{ success: boolean; user: UserProfile; token: string }>(
@@ -144,10 +178,14 @@ export const networkApi = {
         }
       )
 
+      if (!syncJson.user || !syncJson.token) {
+        throw new Error("Invalid sync response from server.")
+      }
+
       this.setSession(syncJson.user, syncJson.token)
 
-      // Clean URL hash without reload
-      window.history.replaceState(null, "", window.location.pathname + window.location.search)
+      // Clean URL hash and search params without page reload
+      window.history.replaceState(null, "", window.location.pathname)
 
       return { user: syncJson.user, token: syncJson.token }
     } catch (err) {

@@ -25,6 +25,7 @@ import {
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
+import { SEO } from "@/components/SEO"
 
 export function BuilderProfilePage() {
   const { username } = useParams<{ username: string }>()
@@ -145,6 +146,10 @@ export function BuilderProfilePage() {
 
   return (
     <div className="relative w-full pt-32 sm:pt-36 pb-24 px-5 sm:px-8 bg-transparent overflow-hidden">
+      <SEO
+        title={`@${profile.username} (${profile.name}) · Builder Profile`}
+        description={profile.bio || `Explore startups and open projects built by ${profile.name} (@${profile.username}) on the Reco Labs Founder Network.`}
+      />
       {/* Seamless ambient blurred glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />

@@ -60,10 +60,10 @@ export function FooterWrapper() {
           {
             title: "Guild",
             links: [
-              { label: "Read Founders Story", href: "/about" },
+              { label: "Read Our Story", href: "/about" },
               { label: "The Skill Exchange", href: "/" },
               { label: "Grade 10 Origins", href: "/about" },
-              { label: "Beginner Roadmaps", href: "/about" },
+              { label: "Privacy Policy", href: "/privacy" },
             ],
           },
           {
@@ -95,7 +95,7 @@ export function FooterWrapper() {
             ],
           },
         ]}
-        copyright="© 2026 Reco Labs · Founded by Aditya & Tanish · Built by curious minds worldwide."
+        copyright="© 2026 Reco Labs · Founded by Aditya in Grade 10 · Built by curious minds worldwide."
         palette={
           isDark
             ? {

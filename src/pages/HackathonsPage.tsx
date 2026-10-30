@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Calendar, MapPin, ExternalLink, Search, RefreshCw } from "lucide-react"
 import { api, type HackathonEvent } from "@/services/api"
+import { SEO } from "@/components/SEO"
 
 type EndpointMode = "upcoming" | "all"
 type AttendanceFilter = "ALL" | "IN_PERSON" | "VIRTUAL" | "APAC"
@@ -112,6 +113,10 @@ export function HackathonsPage() {
 
   return (
     <div className="relative w-full pt-32 sm:pt-36 pb-24 px-6 sm:px-8 bg-transparent overflow-hidden">
+      <SEO
+        title="Global Hackathons & Build Sprints · Reco Labs"
+        description="Comprehensive real-time directory of 900+ high-school and teen hackathons, build sprints, and weekend maker competitions worldwide."
+      />
       {/* Seamless ambient blurred glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />

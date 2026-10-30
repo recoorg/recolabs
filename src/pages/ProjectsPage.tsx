@@ -5,6 +5,7 @@ import { RepoShowcase } from "@/components/RepoShowcase"
 import { ExternalLink, Terminal, GitBranch, Star, Code2, FolderGit2, Search, Check, Copy } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { api, type ProjectItem } from "@/services/api"
+import { SEO } from "@/components/SEO"
 
 export function ProjectsPage() {
   const [projects, setProjects] = React.useState<ProjectItem[]>([])
@@ -50,6 +51,10 @@ export function ProjectsPage() {
 
   return (
     <div className="relative w-full pt-32 sm:pt-36 pb-24 px-6 sm:px-8 bg-transparent overflow-hidden">
+      <SEO
+        title="Open Artifacts & Codebases · Reco Labs"
+        description="Public repositories, prototype firmware, and open tools created by Reco Labs on GitHub under recoorg. Free, open, and hackable."
+      />
       {/* Seamless ambient blurred glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />

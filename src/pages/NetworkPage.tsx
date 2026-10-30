@@ -29,6 +29,7 @@ import {
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
+import { SEO } from "@/components/SEO"
 
 const CATEGORIES = ["ALL", "Software", "Hardware", "Security", "AI", "Education & Tooling"]
 
@@ -86,34 +87,44 @@ export function NetworkPage() {
 
   // Load Session and Startups
   React.useEffect(() => {
+    const syncSession = () => {
+      const user = networkApi.getCurrentUser()
+      if (user) {
+        setCurrentUser(user)
+        setProfileForm({
+          name: user.name || "",
+          username: user.username || "",
+          phone: user.phone || "",
+          website: user.website || "",
+          bio: user.bio || "",
+          discord: user.discord || "",
+        })
+        setStartupForm((prev) => ({
+          ...prev,
+          founder_name: user.name || "",
+          founder_phone: user.phone || "",
+          founder_website: user.website || "",
+          founder_discord: user.discord || "",
+        }))
+      }
+    }
+
     // Check if OAuth redirected back with access token hash
     networkApi.handleOAuthCallback().then((res) => {
       if (res?.user) {
         setCurrentUser(res.user)
+        syncSession()
         confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } })
       }
     })
 
-    const user = networkApi.getCurrentUser()
-    if (user) {
-      setCurrentUser(user)
-      setProfileForm({
-        name: user.name || "",
-        username: user.username || "",
-        phone: user.phone || "",
-        website: user.website || "",
-        bio: user.bio || "",
-        discord: user.discord || "",
-      })
-      setStartupForm((prev) => ({
-        ...prev,
-        founder_name: user.name || "",
-        founder_phone: user.phone || "",
-        founder_website: user.website || "",
-        founder_discord: user.discord || "",
-      }))
-    }
+    syncSession()
+    window.addEventListener("reco_auth_changed", syncSession)
     loadStartups()
+
+    return () => {
+      window.removeEventListener("reco_auth_changed", syncSession)
+    }
   }, [])
 
   const loadStartups = async () => {
@@ -232,6 +243,10 @@ export function NetworkPage() {
 
   return (
     <div className="relative w-full pt-32 sm:pt-36 pb-24 px-5 sm:px-8 bg-transparent overflow-hidden">
+      <SEO
+        title="Founder Network & Startup Registry · Reco Labs"
+        description="Public registry of student-built startups, toolchains, and hardware projects. Sign up, list what you're building, and share direct contact details with the guild."
+      />
       {/* Seamless ambient blurred glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />

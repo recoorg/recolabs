@@ -1,18 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { Heart, Mail, ArrowUpRight, Copy, Check, Plus, Image as ImageIcon, ExternalLink, ShieldCheck, Cpu, Zap, Users } from "lucide-react"
+import { Heart, Mail, ArrowUpRight, Copy, Check, Plus, ShieldCheck, Cpu, Users, Sparkles } from "lucide-react"
+import { SEO } from "@/components/SEO"
 
-// ==============================================================================
-// SPONSOR ROSTER CONFIGURATION
-// To add or change a sponsor image, place your image inside /public/sponsors/
-// and update the 'logo' property below (e.g. logo: "/sponsors/company.png").
-// If logo is undefined or empty, a clean placeholder slot is automatically rendered.
-// ==============================================================================
 export interface SponsorItem {
   id: string
   name: string
-  logo?: string // e.g. "/sponsors/partner1.png"
+  logo?: string
   url?: string
   tier: "founding" | "hardware" | "community"
   tierLabel: string
@@ -27,7 +22,7 @@ export const INITIAL_SPONSORS: SponsorItem[] = [
     name: "Founding Partner Slot #1",
     tier: "founding",
     tierLabel: "TIER 01 · FOUNDING PARTNER",
-    description: "Anchor sponsor supporting global hackathons, hardware shipments, and beginner workshops.",
+    description: "Anchor benefactor supporting global hackathons, hardware shipments, and beginner workshops.",
     slotOpen: true,
   },
   {
@@ -137,6 +132,11 @@ export function SponsorsPage() {
 
   return (
     <div className="relative w-full pt-32 sm:pt-36 pb-24 px-6 sm:px-8 bg-transparent overflow-hidden">
+      <SEO
+        title="Sponsors & Build Grants · Reco Labs"
+        description="Back open hardware labs, student hackathons, and beginner toolchains. Support the next generation of builders directly with zero corporate overhead."
+      />
+
       {/* Seamless ambient blurred glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
@@ -157,20 +157,20 @@ export function SponsorsPage() {
             Backing open hardware labs, beginner toolchains, and global weekend hack sprints. Zero corporate overhead—every dollar goes directly to physical parts and student build grants.
           </p>
 
-          {/* Action Triggers */}
+          {/* Action Triggers with Matched Heights */}
           <div className="mt-8 flex flex-wrap justify-center items-center gap-3">
             <a
               href={`mailto:${sponsorEmail}?subject=Sponsoring%20Reco%20Labs&body=Hi%20Aditya%2C%0A%0AWe%20would%20love%20to%20become%20a%20sponsor%20for%20Reco%20Labs.%20Here%20are%20the%20details%3A`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer border border-[#FA5D00]"
             >
               <Heart className="w-3.5 h-3.5 fill-black" />
               <span>Sponsor Reco Labs</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
 
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-900 font-mono text-xs text-zinc-700 dark:text-zinc-300 shadow-sm">
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono text-xs text-zinc-800 dark:text-zinc-200 shadow-sm">
               <Mail className="w-3.5 h-3.5 text-[#FA5D00] flex-none" />
-              <a href={`mailto:${sponsorEmail}`} className="hover:text-[#FA5D00] transition-colors">
+              <a href={`mailto:${sponsorEmail}`} className="hover:text-[#FA5D00] transition-colors font-semibold">
                 {sponsorEmail}
               </a>
               <button
@@ -179,7 +179,7 @@ export function SponsorsPage() {
                 title="Copy email address"
                 className="ml-1 p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>
@@ -203,12 +203,12 @@ export function SponsorsPage() {
             {foundingSponsors.map((s) => (
               <div
                 key={s.id}
-                className="group relative p-8 rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/30 hover:border-[#FA5D00] transition-all flex flex-col justify-between min-h-[220px]"
+                className="group relative p-8 rounded-3xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/40 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between min-h-[220px] shadow-xs hover:shadow-md"
               >
                 <div>
                   <div className="flex items-center justify-between pb-4 border-b editorial-hairline">
                     <span className="font-mono text-[11px] text-[#FA5D00] font-bold">{s.tierLabel}</span>
-                    <span className="font-mono text-[10px] text-zinc-400 uppercase">Available Slot</span>
+                    <span className="font-mono text-[10px] text-zinc-400 uppercase font-semibold">Available Slot</span>
                   </div>
 
                   {s.logo ? (
@@ -217,16 +217,16 @@ export function SponsorsPage() {
                     </div>
                   ) : (
                     <div className="my-6 flex flex-col items-center justify-center py-6 text-center">
-                      <div className="w-14 h-14 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-3">
+                      <div className="w-14 h-14 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-3 bg-zinc-50 dark:bg-zinc-800/40">
                         <Plus className="w-6 h-6" />
                       </div>
-                      <div className="font-serif text-2xl text-zinc-900 dark:text-zinc-100 font-normal">{s.name}</div>
-                      <div className="font-mono text-[11px] text-zinc-500 mt-1">Drop sponsor logo here (`logo: &quot;/sponsors/...&quot;`)</div>
+                      <div className="font-serif text-2xl text-zinc-950 dark:text-zinc-100 font-normal">{s.name}</div>
+                      <div className="font-mono text-[11px] text-zinc-500 mt-1">Available for partner logo</div>
                     </div>
                   )}
 
                   {s.description && (
-                    <p className="font-sans text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed text-center max-w-md mx-auto">
+                    <p className="font-sans text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed text-center max-w-md mx-auto">
                       {s.description}
                     </p>
                   )}
@@ -247,58 +247,54 @@ export function SponsorsPage() {
           </div>
         </div>
 
-        {/* Tier 2: Hardware & Cloud Compute Backers */}
+        {/* Tier 2: Hardware & Cloud Backers */}
         <div className="mt-20">
           <div className="flex items-center justify-between pb-4 border-b editorial-hairline mb-8">
             <div>
-              <span className="font-mono text-xs text-[#FA5D00] font-bold uppercase tracking-wider flex items-center gap-2">
-                <Cpu className="w-3.5 h-3.5" />
+              <span className="font-mono text-xs text-[#FA5D00] font-bold uppercase tracking-wider">
                 TIER 02 · HARDWARE & COMPUTE
               </span>
               <h2 className="mt-1 font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal">
-                Workbench & Cloud Infrastructure
+                Lab Gear & Infrastructure
               </h2>
             </div>
-            <span className="font-mono text-xs text-zinc-400">4 Active Slots</span>
+            <span className="font-mono text-xs text-zinc-400">4 Open Slots</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {hardwareSponsors.map((s) => (
               <div
                 key={s.id}
-                className="group p-6 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/30 hover:border-[#FA5D00] transition-all flex flex-col justify-between min-h-[190px]"
+                className="group relative p-7 rounded-3xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/40 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between shadow-xs hover:shadow-md"
               >
                 <div>
-                  <div className="font-mono text-[10px] text-[#FA5D00] font-bold uppercase">{s.tierLabel}</div>
-                  
-                  {s.logo ? (
-                    <div className="my-4 flex items-center justify-center h-16">
-                      <img src={s.logo} alt={s.name} className="max-h-12 max-w-full object-contain" />
+                  <div className="flex items-center justify-between pb-3 border-b editorial-hairline">
+                    <span className="font-mono text-[11px] text-[#FA5D00] font-bold">{s.tierLabel}</span>
+                    <span className="font-mono text-[10px] text-zinc-400 uppercase font-semibold">Available Slot</span>
+                  </div>
+
+                  <div className="my-5 flex flex-col items-center justify-center text-center">
+                    <div className="w-12 h-12 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-2 bg-zinc-50 dark:bg-zinc-800/40">
+                      <Cpu className="w-5 h-5" />
                     </div>
-                  ) : (
-                    <div className="my-4 flex flex-col items-center justify-center text-center">
-                      <div className="w-10 h-10 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-2">
-                        <ImageIcon className="w-4 h-4" />
-                      </div>
-                      <div className="font-serif text-lg text-zinc-900 dark:text-zinc-100">{s.name}</div>
-                      <div className="font-mono text-[10px] text-zinc-400 mt-0.5">Available Slot</div>
-                    </div>
-                  )}
+                    <div className="font-serif text-xl text-zinc-950 dark:text-zinc-100">{s.name}</div>
+                  </div>
 
                   {s.description && (
-                    <p className="font-sans text-xs text-zinc-500 dark:text-zinc-400 leading-normal text-center">
+                    <p className="font-sans text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed text-center max-w-sm mx-auto">
                       {s.description}
                     </p>
                   )}
                 </div>
 
-                <div className="mt-4 pt-3 border-t editorial-hairline text-center">
+                <div className="mt-5 pt-3 border-t editorial-hairline flex items-center justify-between">
+                  <span className="font-mono text-[10px] text-zinc-400">Dev boards, test rigs & compute</span>
                   <a
-                    href={`mailto:${sponsorEmail}?subject=Hardware%20Compute%20Sponsor%20Inquiry%20-%20Reco%20Labs&body=Hi%20Aditya%2C%0A%0AWe%20would%20like%20to%20sponsor%20${encodeURIComponent(s.name)}.`}
-                    className="font-mono text-[11px] font-bold text-zinc-700 dark:text-zinc-300 group-hover:text-[#FA5D00] transition-colors inline-flex items-center gap-1"
+                    href={`mailto:${sponsorEmail}?subject=Hardware%20Compute%20Sponsorship%20-%20Reco%20Labs&body=Hi%20Aditya%2C%0A%0AWe%20would%20like%20to%20claim%20${encodeURIComponent(s.name)}.`}
+                    className="inline-flex items-center gap-1 font-mono text-xs font-bold text-black dark:text-white group-hover:text-[#FA5D00] transition-colors"
                   >
                     <span>Claim Slot</span>
-                    <ArrowUpRight className="w-3 h-3" />
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                   </a>
                 </div>
               </div>
@@ -310,74 +306,38 @@ export function SponsorsPage() {
         <div className="mt-20">
           <div className="flex items-center justify-between pb-4 border-b editorial-hairline mb-8">
             <div>
-              <span className="font-mono text-xs text-[#FA5D00] font-bold uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-3.5 h-3.5" />
+              <span className="font-mono text-xs text-[#FA5D00] font-bold uppercase tracking-wider">
                 TIER 03 · COMMUNITY SUPPORTERS
               </span>
               <h2 className="mt-1 font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal">
-                Ecosystem & Micro-Grants
+                Micro-Grants & Individual Backers
               </h2>
             </div>
-            <span className="font-mono text-xs text-zinc-400">Open Roster</span>
+            <span className="font-mono text-xs text-zinc-400">4 Open Slots</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {communitySponsors.map((s) => (
               <div
                 key={s.id}
-                className="group p-4 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white/40 dark:bg-zinc-900/20 hover:border-[#FA5D00] transition-all flex flex-col items-center justify-center text-center min-h-[100px]"
+                className="group p-6 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/40 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col items-center justify-between text-center min-h-[160px] shadow-xs"
               >
-                <div className="w-8 h-8 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-1.5">
-                  <Plus className="w-3.5 h-3.5" />
+                <div className="w-10 h-10 rounded-full border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-2 bg-zinc-50 dark:bg-zinc-800/40">
+                  <Users className="w-4 h-4" />
                 </div>
-                <div className="font-serif text-sm text-zinc-900 dark:text-zinc-100">{s.name}</div>
+                <div>
+                  <div className="font-serif text-lg text-zinc-950 dark:text-zinc-100">{s.name}</div>
+                  <div className="font-mono text-[10px] text-zinc-400 mt-1">Youth Build Bounty</div>
+                </div>
                 <a
-                  href={`mailto:${sponsorEmail}?subject=Community%20Supporter%20Inquiry%20-%20Reco%20Labs`}
-                  className="font-mono text-[10px] text-[#FA5D00] mt-1 hover:underline inline-flex items-center gap-0.5"
+                  href={`mailto:${sponsorEmail}?subject=Community%20Supporter%20-%20Reco%20Labs&body=Hi%20Aditya%2C%0A%0AWe%20would%20like%20to%20support%20Reco%20Labs%20at%20Tier%203.`}
+                  className="mt-3 font-mono text-[11px] font-bold text-[#FA5D00] hover:underline inline-flex items-center gap-0.5"
                 >
-                  <span>Inquire</span>
-                  <ArrowUpRight className="w-2.5 h-2.5" />
+                  <span>Support</span>
+                  <ArrowUpRight className="w-3 h-3" />
                 </a>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* How Funds are Allocated */}
-        <div className="mt-24 pt-16 border-t editorial-hairline">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="font-mono text-xs uppercase tracking-widest text-[#FA5D00] font-semibold">
-              TRANSPARENT ALLOCATION
-            </span>
-            <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal">
-              Where Your Sponsorship Goes<span className="text-[#FA5D00]">.</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
-            <div className="p-6 rounded-2xl border editorial-hairline bg-zinc-50/50 dark:bg-zinc-900/40">
-              <span className="text-2xl font-bold text-[#FA5D00]">50%</span>
-              <h3 className="mt-2 font-serif text-xl font-normal text-zinc-900 dark:text-zinc-100">Hardware & Component Grants</h3>
-              <p className="mt-2 font-sans text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                Direct shipment of development boards (ESP32, RP2040), breadboards, sensors, and PCB fabrication credits for high school hackers building physical gadgets.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl border editorial-hairline bg-zinc-50/50 dark:bg-zinc-900/40">
-              <span className="text-2xl font-bold text-[#FA5D00]">30%</span>
-              <h3 className="mt-2 font-serif text-xl font-normal text-zinc-900 dark:text-zinc-100">Hackathon Prize Bounties</h3>
-              <p className="mt-2 font-sans text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                Direct peer-voted prizes and toolchain bounties awarded to participants at the end of every 48-hour build jam.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl border editorial-hairline bg-zinc-50/50 dark:bg-zinc-900/40">
-              <span className="text-2xl font-bold text-[#FA5D00]">20%</span>
-              <h3 className="mt-2 font-serif text-xl font-normal text-zinc-900 dark:text-zinc-100">Compute & Infrastructure</h3>
-              <p className="mt-2 font-sans text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                Server hosting, domain registries, and continuous deployment runners keeping all Reco Labs repositories open-source and free for all users.
-              </p>
-            </div>
           </div>
         </div>
 

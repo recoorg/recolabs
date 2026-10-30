@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom"
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom"
 import { Navbar } from "@/components/Navbar"
 import { FooterWrapper } from "@/components/FooterWrapper"
 import { ScrollToTop } from "@/components/ScrollToTop"
@@ -13,28 +13,52 @@ import { HackathonsPage } from "@/pages/HackathonsPage"
 import { SponsorsPage } from "@/pages/SponsorsPage"
 import { NetworkPage } from "@/pages/NetworkPage"
 import { BuilderProfilePage } from "@/pages/BuilderProfilePage"
+import { PrivacyPage } from "@/pages/PrivacyPage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
-import { networkApi } from "@/services/networkApi"
 
+// Blog module
+import { BlogHomePage } from "@/pages/blog/BlogHomePage"
+import { BlogPostPage } from "@/pages/blog/BlogPostPage"
+import { BlogDashboardPage } from "@/pages/blog/BlogDashboardPage"
+import { BlogWritePage } from "@/pages/blog/BlogWritePage"
+
+import { networkApi } from "@/services/networkApi"
+import { initAnalytics } from "@/lib/analytics"
+
+// Listens to OAuth callback hash (#access_token=...) globally across all pages
 function GlobalOAuthListener() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   React.useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
+    if (typeof window === "undefined") return
+
+    const hasAccessToken =
+      (window.location.hash && window.location.hash.includes("access_token")) ||
+      (window.location.search && window.location.search.includes("access_token"))
+
+    if (hasAccessToken) {
       networkApi.handleOAuthCallback().then((res) => {
         if (res?.user) {
-          if (window.location.pathname === "/" || window.location.pathname === "") {
+          window.dispatchEvent(new Event("reco_auth_changed"))
+          // If on home or root, redirect to network to show active session
+          if (location.pathname === "/" || location.pathname === "") {
             navigate("/network")
           }
         }
       })
     }
-  }, [navigate])
+  }, [navigate, location.pathname])
 
   return null
 }
 
 export function App() {
+  React.useEffect(() => {
+    // Exactly one browser-side analytics client after document is available
+    initAnalytics()
+  }, [])
+
   return (
     <BrowserRouter>
       <ScrollToTop />
@@ -46,6 +70,7 @@ export function App() {
         {/* Dynamic Route Pages */}
         <main className="w-full flex-grow">
           <Routes>
+            {/* Core Reco Labs Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/jobs" element={<JobsPage />} />
@@ -58,6 +83,24 @@ export function App() {
             <Route path="/network" element={<NetworkPage />} />
             <Route path="/builder/:username" element={<BuilderProfilePage />} />
             <Route path="/builders/:username" element={<BuilderProfilePage />} />
+            
+            {/* Privacy Policy (with typo alias /privary) */}
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/privary" element={<PrivacyPage />} />
+
+            {/* Reco Labs Blog & Technical Dispatch */}
+            <Route path="/blog" element={<BlogHomePage />} />
+            <Route path="/blog/dashboard" element={<BlogDashboardPage />} />
+            <Route path="/dashboard" element={<BlogDashboardPage />} />
+            <Route path="/blog/write" element={<BlogWritePage />} />
+            <Route path="/blog/write/:slug" element={<BlogWritePage />} />
+            <Route path="/write" element={<BlogWritePage />} />
+            <Route path="/write/:slug" element={<BlogWritePage />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
+            <Route path="/blog/post/:slug" element={<BlogPostPage />} />
+            <Route path="/post/:slug" element={<BlogPostPage />} />
+
+            {/* Fallback 404 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
