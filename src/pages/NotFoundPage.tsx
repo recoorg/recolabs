@@ -1,10 +1,16 @@
 "use client"
 
 import * as React from "react"
+import { usePageMeta } from "@/hooks/usePageMeta"
 import { Link } from "react-router-dom"
 import { ArrowLeft, Compass, Terminal } from "lucide-react"
 
 export function NotFoundPage() {
+  usePageMeta({
+    title: "Page Not Found | Reco Labs",
+    image: "/twitter-image.png",
+  })
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center px-6 pt-32 pb-24 bg-white dark:bg-[#09090b] text-center">
       <div className="max-w-xl mx-auto flex flex-col items-center">

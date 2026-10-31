@@ -1,10 +1,17 @@
 "use client"
 
 import * as React from "react"
+import { usePageMeta } from "@/hooks/usePageMeta"
 import { MessageSquare, Terminal, Heart, Compass, Lightbulb, Code } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 
 export function AboutPage() {
+  usePageMeta({
+    title: "About | Reco Labs",
+    description: "From high school experiment to global guild. Founded by Aditya Raj & Tanish to empower curious young minds.",
+    image: "/twitter-about.png",
+  })
+
   return (
     <div className="relative w-full pt-32 sm:pt-36 pb-20 px-6 sm:px-8 bg-transparent overflow-hidden">
       {/* Seamless ambient blurred glow */}

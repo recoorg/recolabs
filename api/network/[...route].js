@@ -940,6 +940,9 @@ async function deleteProjectSection(id) {
 }
 
 // server/apiRouter.ts
+function escapeHtml(str) {
+  return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 function checkAdminAuth(req) {
   const headerKey = req.headers && (req.headers["x-admin-key"] || req.headers["admin-key"]) || "";
   const authHeader = req.headers && req.headers["authorization"] || "";
@@ -1098,6 +1101,145 @@ async function handleNetworkRequest(req, res) {
       const startups = await listStartups({ username });
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, user, startups }));
+      return;
+    }
+    if (req.method === "GET" && (pathname === "/api/network/builder-preview" || pathname.startsWith("/api/network/builder-preview"))) {
+      let username = searchParams.get("username") || pathname.replace("/api/network/builder-preview", "").replace(/^\//, "").trim();
+      username = username.replace(/^@/, "").trim();
+      let title = "Reco Labs";
+      let desc = "The Skill Exchange for curious Mind. A global collective of young hackers, builders, and makers shipping high-impact software, hardware rigs, and tutorials.";
+      let image = "https://recolabs.in/twitter-network.png";
+      let url = `https://recolabs.in/builder/${username}`;
+      if (username) {
+        try {
+          const user = await getUserByUsername(username);
+          if (user) {
+            const displayName = user.name || user.username || username;
+            title = `${displayName} (@${user.username}) | Reco Labs`;
+            desc = user.bio || `${displayName} is building software, hardware rigs, and shipping on Reco Labs.`;
+            if (user.avatar_url && (user.avatar_url.startsWith("http") || user.avatar_url.startsWith("/"))) {
+              image = user.avatar_url.startsWith("http") ? user.avatar_url : `https://recolabs.in${user.avatar_url}`;
+            }
+          } else {
+            title = `@${username} | Reco Labs`;
+          }
+        } catch {
+        }
+      }
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(desc)}">
+  <link rel="canonical" href="${escapeHtml(url)}">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="profile">
+  <meta property="og:site_name" content="Reco Labs">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(desc)}">
+  <meta property="og:image" content="${escapeHtml(image)}">
+  <meta property="og:image:secure_url" content="${escapeHtml(image)}">
+  <meta property="og:url" content="${escapeHtml(url)}">
+
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@adibxr">
+  <meta name="twitter:creator" content="@adibxr">
+  <meta name="twitter:title" content="${escapeHtml(title)}">
+  <meta name="twitter:description" content="${escapeHtml(desc)}">
+  <meta name="twitter:image" content="${escapeHtml(image)}">
+  <meta name="twitter:image:alt" content="${escapeHtml(title)}">
+
+  <meta http-equiv="refresh" content="0;url=/builder/${encodeURIComponent(username)}">
+</head>
+<body style="background:#0c0c0e;color:#fff;font-family:sans-serif;padding:40px;text-align:center;">
+  <h2>${escapeHtml(title)}</h2>
+  <p>${escapeHtml(desc)}</p>
+  <p>Loading builder profile... <a href="/builder/${encodeURIComponent(username)}" style="color:#FA5D00;">Click here if not redirected</a></p>
+  <script>window.location.replace("/builder/" + encodeURIComponent("${username}"));</script>
+</body>
+</html>`;
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.statusCode = 200;
+      res.end(html);
+      return;
+    }
+    if (req.method === "GET" && pathname === "/api/network/seo-preview") {
+      const page = (searchParams.get("page") || "").toLowerCase().trim();
+      let title = "Reco Labs";
+      let desc = "The Skill Exchange for curious Mind. A global collective of young hackers, builders, and makers shipping high-impact software, hardware rigs, and tutorials.";
+      let image = "https://recolabs.in/twitter-image.png";
+      let url = "https://recolabs.in";
+      if (page === "projects" || page === "project") {
+        title = "Projects | Reco Labs";
+        desc = "190+ hand-picked design systems, open source tools, terminal utilities, and engineering rigs.";
+        image = "https://recolabs.in/twitter-projects.png";
+        url = "https://recolabs.in/projects";
+      } else if (page === "network") {
+        title = "Network | Reco Labs";
+        desc = "The professional network for builders to show and tell. Showcase your work, launch projects, find jobs, and connect with peers.";
+        image = "https://recolabs.in/twitter-network.png";
+        url = "https://recolabs.in/network";
+      } else if (page === "about") {
+        title = "About | Reco Labs";
+        desc = "From high school experiment to global guild. Founded by Aditya Raj & Tanish to empower curious young minds.";
+        image = "https://recolabs.in/twitter-about.png";
+        url = "https://recolabs.in/about";
+      } else if (page === "jobs") {
+        title = "Jobs | Reco Labs";
+        desc = "Work with high-velocity startups and developer tool founders. Internships, gigs, and full-time engineering roles.";
+        image = "https://recolabs.in/twitter-jobs.png";
+        url = "https://recolabs.in/jobs";
+      } else if (page === "hackathons" || page === "hackathon") {
+        title = "Hackathons | Reco Labs";
+        desc = "Curated hackathons for high school hackers and collegiate builders. Ship projects, win grants, meet peers.";
+        image = "https://recolabs.in/twitter-hackathons.png";
+        url = "https://recolabs.in/hackathons";
+      } else if (page === "sponsors" || page === "sponsor") {
+        title = "Sponsors | Reco Labs";
+        desc = "Support the next generation of builders. Transparent community sponsorship and founder visibility.";
+        image = "https://recolabs.in/twitter-sponsors.png";
+        url = "https://recolabs.in/sponsors";
+      }
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(desc)}">
+  <link rel="canonical" href="${escapeHtml(url)}">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Reco Labs">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(desc)}">
+  <meta property="og:image" content="${escapeHtml(image)}">
+  <meta property="og:image:secure_url" content="${escapeHtml(image)}">
+  <meta property="og:url" content="${escapeHtml(url)}">
+
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@adibxr">
+  <meta name="twitter:creator" content="@adibxr">
+  <meta name="twitter:title" content="${escapeHtml(title)}">
+  <meta name="twitter:description" content="${escapeHtml(desc)}">
+  <meta name="twitter:image" content="${escapeHtml(image)}">
+  <meta name="twitter:image:alt" content="${escapeHtml(title)}">
+
+  <meta http-equiv="refresh" content="0;url=${escapeHtml(url.replace("https://recolabs.in", ""))}">
+</head>
+<body style="background:#0c0c0e;color:#fff;font-family:sans-serif;padding:40px;text-align:center;">
+  <h2>${escapeHtml(title)}</h2>
+  <p>${escapeHtml(desc)}</p>
+  <script>window.location.replace("${escapeHtml(url.replace("https://recolabs.in", ""))}");</script>
+</body>
+</html>`;
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.statusCode = 200;
+      res.end(html);
       return;
     }
     if (req.method === "GET" && pathname === "/api/network/stats") {

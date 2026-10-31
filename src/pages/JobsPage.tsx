@@ -1,10 +1,17 @@
 "use client"
 
 import * as React from "react"
+import { usePageMeta } from "@/hooks/usePageMeta"
 import { CheckCircle2, MessageSquare, Briefcase, Search, MapPin, ExternalLink, RefreshCw, Key, X } from "lucide-react"
 import { api, type GoogleJobItem } from "@/services/api"
 
 export function JobsPage() {
+  usePageMeta({
+    title: "Jobs | Reco Labs",
+    description: "Work with high-velocity startups and developer tool founders. Internships, gigs, and full-time engineering roles.",
+    image: "/twitter-jobs.png",
+  })
+
   const [jobs, setJobs] = React.useState<GoogleJobItem[]>([])
   const [loading, setLoading] = React.useState(true)
   const [searchQuery, setSearchQuery] = React.useState("")

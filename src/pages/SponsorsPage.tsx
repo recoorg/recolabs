@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePageMeta } from "@/hooks/usePageMeta"
 import { Heart, Mail, ArrowUpRight, Copy, Check, Plus, Image as ImageIcon, ExternalLink, ShieldCheck, Cpu, Zap, Users } from "lucide-react"
 
 // ==============================================================================
@@ -121,6 +122,12 @@ export const INITIAL_SPONSORS: SponsorItem[] = [
 ]
 
 export function SponsorsPage() {
+  usePageMeta({
+    title: "Sponsors | Reco Labs",
+    description: "Support the next generation of builders. Transparent community sponsorship and founder visibility.",
+    image: "/twitter-sponsors.png",
+  })
+
   const [sponsors] = React.useState<SponsorItem[]>(INITIAL_SPONSORS)
   const [copied, setCopied] = React.useState(false)
   const sponsorEmail = "devadibxr@gmail.com"

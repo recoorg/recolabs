@@ -18,6 +18,94 @@
       "destination": "/api/network/[...route]"
     },
     {
+      "source": "/builder/:username",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
+        }
+      ],
+      "destination": "/api/network/builder-preview?username=:username"
+    },
+    {
+      "source": "/builders/:username",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
+        }
+      ],
+      "destination": "/api/network/builder-preview?username=:username"
+    },
+    {
+      "source": "/projects",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=projects"
+    },
+    {
+      "source": "/network",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=network"
+    },
+    {
+      "source": "/about",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=about"
+    },
+    {
+      "source": "/jobs",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=jobs"
+    },
+    {
+      "source": "/hackathons",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=hackathons"
+    },
+    {
+      "source": "/sponsors",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=sponsors"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

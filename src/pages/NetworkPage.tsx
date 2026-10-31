@@ -31,12 +31,19 @@ import {
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
+import { usePageMeta } from "@/hooks/usePageMeta"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
 import { NetworkAvatarCloud } from "@/components/NetworkAvatarCloud"
 
 const CATEGORIES = ["ALL", "Software", "Hardware", "Security", "AI", "Education & Tooling"]
 
 export function NetworkPage() {
+  usePageMeta({
+    title: "Network | Reco Labs",
+    description: "The professional network for builders to show and tell. Showcase your work, launch projects, find jobs, and connect with peers.",
+    image: "/twitter-network.png",
+  })
+
   const navigate = useNavigate()
   const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(null)
   const [startups, setStartups] = React.useState<StartupItem[]>([])

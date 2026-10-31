@@ -1,10 +1,17 @@
 "use client"
 
 import * as React from "react"
+import { usePageMeta } from "@/hooks/usePageMeta"
 import { Link } from "react-router-dom"
 import { ShieldCheck, Lock, Eye, Database, FileText, ArrowLeft, Mail, MessageSquare } from "lucide-react"
 
 export function PrivacyPage() {
+  usePageMeta({
+    title: "Privacy Policy | Reco Labs",
+    description: "Privacy policy and terms of service for Reco Labs.",
+    image: "/twitter-image.png",
+  })
+
   return (
     <div className="relative w-full pt-32 sm:pt-36 pb-24 px-5 sm:px-8 bg-transparent overflow-hidden">
       {/* Ambient background glow */}

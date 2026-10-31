@@ -39,6 +39,7 @@ import {
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile } from "@/services/networkApi"
 import { INITIAL_PROJECTS, type CatalogProject } from "@/data/initialCatalog"
+import { usePageMeta } from "@/hooks/usePageMeta"
 
 const CATEGORIES = ["All", "Finds", "Interface", "Motion", "3D", "Tools", "Resources", "Hardware", "Inspiration"]
 
@@ -57,6 +58,12 @@ function getCategoryIcon(name: string) {
 const DEFAULT_CATEGORIES = ["Design", "Develop", "Resources"]
 
 export function ProjectsPage() {
+  usePageMeta({
+    title: "Projects | Reco Labs",
+    description: "190+ hand-picked design systems, open source tools, terminal utilities, and engineering rigs.",
+    image: "/twitter-projects.png",
+  })
+
   const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(null)
   
   // Database Projects state (fetched live from Supabase)

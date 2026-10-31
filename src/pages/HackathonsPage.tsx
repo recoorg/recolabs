@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePageMeta } from "@/hooks/usePageMeta"
 import { Calendar, MapPin, ExternalLink, Search, RefreshCw } from "lucide-react"
 import { api, type HackathonEvent } from "@/services/api"
 
@@ -8,6 +9,12 @@ type EndpointMode = "upcoming" | "all"
 type AttendanceFilter = "ALL" | "IN_PERSON" | "VIRTUAL" | "APAC"
 
 export function HackathonsPage() {
+  usePageMeta({
+    title: "Hackathons | Reco Labs",
+    description: "Curated hackathons for high school hackers and collegiate builders. Ship projects, win grants, meet peers.",
+    image: "/twitter-hackathons.png",
+  })
+
   const [endpointMode, setEndpointMode] = React.useState<EndpointMode>("upcoming")
   const [upcomingEvents, setUpcomingEvents] = React.useState<HackathonEvent[]>([])
   const [allEvents, setAllEvents] = React.useState<HackathonEvent[]>([])

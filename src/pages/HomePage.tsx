@@ -6,8 +6,15 @@ import { HeroSection } from "@/components/HeroSection"
 import { RepoShowcase } from "@/components/RepoShowcase"
 import { SponsorSection } from "@/components/SponsorSection"
 import { ArrowUpRight, Terminal, Flame, Users, BookOpen } from "lucide-react"
+import { usePageMeta } from "@/hooks/usePageMeta"
 
 export function HomePage() {
+  usePageMeta({
+    title: "Reco Labs",
+    description: "The Skill Exchange for curious Mind. A global collective of young hackers, builders, and makers shipping high-impact software, hardware rigs, and tutorials.",
+    image: "/twitter-home.png",
+  })
+
   return (
     <div className="w-full">
       {/* Hero Section matching exact screenshot */}

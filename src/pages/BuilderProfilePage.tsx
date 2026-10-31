@@ -22,13 +22,21 @@ import {
   X,
   Camera,
 } from "lucide-react"
-import { GithubIcon } from "@/components/icons"
+import { GithubIcon, TwitterIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
+import { usePageMeta } from "@/hooks/usePageMeta"
 
 export function BuilderProfilePage() {
   const { username } = useParams<{ username: string }>()
   const [profile, setProfile] = React.useState<UserProfile | null>(null)
+
+  usePageMeta({
+    title: profile ? `${profile.name || profile.username} (@${profile.username}) | Reco Labs` : (username ? `@${username.replace(/^@/, '')} | Reco Labs` : "Builder Profile | Reco Labs"),
+    description: profile?.bio || "Builder and founder showcasing projects on Reco Labs.",
+    image: profile?.avatar_url || "/twitter-network.png",
+    type: "profile",
+  })
   const [startups, setStartups] = React.useState<StartupItem[]>([])
   const [screenshotStartup, setScreenshotStartup] = React.useState<StartupItem | null>(null)
   const [loading, setLoading] = React.useState(true)
@@ -205,14 +213,27 @@ export function BuilderProfilePage() {
 
             {/* Right Action Stack */}
             <div className="flex flex-wrap sm:flex-col items-start sm:items-end gap-2 flex-none">
-              <button
-                type="button"
-                onClick={handleCopyProfileUrl}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
-              >
-                {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-                <span>{copiedLink ? "Link Copied!" : "Share Profile"}</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <button
+                  type="button"
+                  onClick={handleCopyProfileUrl}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
+                  <span>{copiedLink ? "Link Copied!" : "Share Profile"}</span>
+                </button>
+
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${profile.name || profile.username}'s builder profile on @adibxr Reco Labs:`)}&url=${encodeURIComponent(`https://recolabs.in/builder/${profile.username}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Share profile to Twitter/X with live photo card"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-mono text-xs font-semibold hover:border-[#FA5D00] hover:text-[#FA5D00] transition-colors cursor-pointer"
+                >
+                  <TwitterIcon className="w-3.5 h-3.5 fill-current" />
+                  <span>Post on X</span>
+                </a>
+              </div>
 
               {isSelf && (
                 <button
