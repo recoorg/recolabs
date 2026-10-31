@@ -29,6 +29,9 @@ import {
   createCatalogProject,
   updateCatalogProject,
   deleteCatalogProject,
+  listProjectSections,
+  createProjectSection,
+  deleteProjectSection,
   saveProjectAsset,
   getProjectAsset,
 } from "./db.js"
@@ -699,6 +702,57 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       );
       res.statusCode = 201;
       res.end(JSON.stringify({ success: true, ...asset }));
+      return;
+    }
+
+    // 15A. PROJECT SECTIONS LIST: GET /api/network/sections
+    if (req.method === "GET" && (pathname === "/api/network/sections" || pathname === "/api/sections")) {
+      const sections = await listProjectSections();
+      res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, sections }));
+      return;
+    }
+
+    // 15B. CREATE PROJECT SECTION (Admin): POST /api/network/sections
+    if (req.method === "POST" && (pathname === "/api/network/sections" || pathname === "/api/sections")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Admin key required." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.name) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Section name is required." }));
+        return;
+      }
+      const section = await createProjectSection(body);
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, section }));
+      return;
+    }
+
+    // 15C. DELETE PROJECT SECTION (Admin): POST /api/network/sections/delete
+    if (
+      (req.method === "DELETE" && pathname.startsWith("/api/network/sections/")) ||
+      (req.method === "POST" && (pathname === "/api/network/sections/delete" || pathname === "/api/sections/delete"))
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Admin key required." }));
+        return;
+      }
+      const body = await parseBody();
+      const id = Number(body.id || pathname.split("/").pop());
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid section ID is required." }));
+        return;
+      }
+      const deleted = await deleteProjectSection(id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, deleted }));
       return;
     }
 

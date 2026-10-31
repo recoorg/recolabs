@@ -3,10 +3,21 @@
 import * as React from "react"
 import { useLocation } from "react-router-dom"
 import DoodleCrewFooter from "@/components/ui/doodle-crew-footer"
+import { networkApi } from "@/services/networkApi"
 
 export function FooterWrapper() {
   const location = useLocation()
   const [isDark, setIsDark] = React.useState(false)
+  const [isLoggedIn, setIsLoggedIn] = React.useState<boolean>(() => !!networkApi.getCurrentUser())
+
+  React.useEffect(() => {
+    const checkAuth = () => {
+      setIsLoggedIn(!!networkApi.getCurrentUser())
+    }
+    checkAuth()
+    window.addEventListener("reco_auth_changed", checkAuth)
+    return () => window.removeEventListener("reco_auth_changed", checkAuth)
+  }, [])
 
   React.useEffect(() => {
     const checkDark = () => {
@@ -25,6 +36,11 @@ export function FooterWrapper() {
   // Hide global footer on desktop catalogue app (/projects) so sidebar and cards extend full height
   // Kept after all hooks to strictly adhere to React rules of hooks
   if (location.pathname.startsWith("/projects") || location.pathname.startsWith("/project")) {
+    return null
+  }
+
+  // Remove footer on Network page when user is logged in or signed up
+  if (location.pathname.startsWith("/network") && isLoggedIn) {
     return null
   }
 

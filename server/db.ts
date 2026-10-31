@@ -148,6 +148,21 @@ export async function initDb() {
       ALTER TABLE catalog_projects ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT true;
       CREATE INDEX IF NOT EXISTS idx_catalog_projects_approved ON catalog_projects(is_approved);
       CREATE INDEX IF NOT EXISTS idx_catalog_projects_category ON catalog_projects(LOWER(category));
+
+      CREATE TABLE IF NOT EXISTS project_sections (
+        id SERIAL PRIMARY KEY,
+        name TEXT UNIQUE NOT NULL,
+        slug TEXT UNIQUE NOT NULL,
+        icon TEXT DEFAULT 'Layers',
+        sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      INSERT INTO project_sections (name, slug, icon, sort_order) VALUES
+        ('Design', 'design', 'Palette', 1),
+        ('Develop', 'develop', 'Code', 2),
+        ('Resources', 'resources', 'Box', 3)
+      ON CONFLICT (slug) DO NOTHING;
     `)
   } finally {
     client.release()
@@ -986,6 +1001,47 @@ export async function getProjectAsset(id: number) {
       [id]
     );
     return res.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+// ==========================================
+// 10. PROJECT SECTIONS (Dynamic Categories)
+// ==========================================
+export async function listProjectSections() {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("SELECT * FROM project_sections ORDER BY sort_order ASC, id ASC");
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createProjectSection(data: { name: string; icon?: string }) {
+  const client = await pool.connect();
+  try {
+    const cleanName = data.name.trim();
+    const slug = cleanName.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+    const res = await client.query(
+      `INSERT INTO project_sections (name, slug, icon)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, icon = EXCLUDED.icon
+       RETURNING *`,
+      [cleanName, slug, data.icon || "Layers"]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteProjectSection(id: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("DELETE FROM project_sections WHERE id = $1 RETURNING id", [id]);
+    return res.rows.length > 0;
   } finally {
     client.release();
   }

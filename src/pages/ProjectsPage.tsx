@@ -13,6 +13,7 @@ import {
   Box,
   Terminal,
   Cpu,
+  User,
   UserCheck,
   Check,
   Sparkles,
@@ -42,7 +43,7 @@ interface CatalogProject {
   id: string
   title: string
   url: string
-  category: "Finds" | "Interface" | "Motion" | "3D" | "Tools" | "Resources" | "Hardware" | "Inspiration"
+  category: string
   description: string
   author: string
   authorHandle: string
@@ -180,6 +181,20 @@ const INITIAL_PROJECTS: CatalogProject[] = [
 
 const CATEGORIES = ["All", "Finds", "Interface", "Motion", "3D", "Tools", "Resources", "Hardware", "Inspiration"]
 
+
+function getCategoryIcon(name: string) {
+  const n = (name || "").toLowerCase()
+  if (n.includes("design") || n.includes("interface")) return Layers
+  if (n.includes("develop") || n.includes("code") || n.includes("tool") || n.includes("terminal")) return Terminal
+  if (n.includes("resource") || n.includes("box")) return Box
+  if (n.includes("hardware") || n.includes("rig") || n.includes("chip")) return Cpu
+  if (n.includes("motion") || n.includes("3d")) return Sparkles
+  if (n.includes("ai") || n.includes("intel")) return Cpu
+  return Layers
+}
+
+const DEFAULT_CATEGORIES = ["Design", "Develop", "Resources"]
+
 export function ProjectsPage() {
   const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(null)
   
@@ -187,6 +202,21 @@ export function ProjectsPage() {
   const [dbProjects, setDbProjects] = React.useState<CatalogProject[]>([])
   const [loadingProjects, setLoadingProjects] = React.useState(true)
   const [projects, setProjects] = React.useState<CatalogProject[]>(INITIAL_PROJECTS)
+  const [sections, setSections] = React.useState<Array<{ id?: number; name: string; slug?: string }>>([
+    { name: "Design" },
+    { name: "Develop" },
+    { name: "Resources" },
+  ])
+
+  const fetchSections = async () => {
+    try {
+      const res = await fetch("/api/network/sections")
+      const data = await res.json()
+      if (data.sections && Array.isArray(data.sections) && data.sections.length > 0) {
+        setSections(data.sections)
+      }
+    } catch {}
+  }
 
   // Fetch all live curated projects from Supabase database
   const fetchDatabaseProjects = async () => {
@@ -493,7 +523,7 @@ export function ProjectsPage() {
       setTimeout(() => {
         setSubmitSuccess(false)
         setShowSubmitModal(false)
-        setSubmitForm({ title: "", url: "", category: "Finds", description: "" })
+        setSubmitForm({ title: "", url: "", category: "Design", description: "" })
         setPreviewImageUrl("")
       }, 2000)
     } catch (err: any) {
@@ -878,27 +908,20 @@ export function ProjectsPage() {
           A curated collection of interface craft, component libraries, AI tools, hardware rigs, and resources for curious builders.
         </p>
 
-        {/* Browse Navigation */}
+        {/* Browse Navigation (Dynamic sections: Design, Develop, Resources & custom) */}
         <div className="mt-6">
           <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-zinc-400 block mb-2 px-2">
-            Browse
+            Sections
           </span>
           <nav className="space-y-1 font-mono text-xs">
-            {[
-              { label: "Finds", icon: Flame, cat: "Finds" },
-              { label: "Inspiration", icon: Lightbulb, cat: "Inspiration" },
-              { label: "Resources", icon: Box, cat: "Resources" },
-              { label: "Tools", icon: Terminal, cat: "Tools" },
-              { label: "Hardware", icon: Cpu, cat: "Hardware" },
-              { label: "Interface", icon: Layers, cat: "Interface" },
-            ].map((item) => {
-              const Icon = item.icon
-              const isActive = activeCategory.toLowerCase() === item.cat.toLowerCase()
+            {sections.map((sec) => {
+              const Icon = getCategoryIcon(sec.name)
+              const isActive = activeCategory.toLowerCase() === sec.name.toLowerCase()
               return (
                 <button
-                  key={item.label}
+                  key={sec.name}
                   onClick={() => {
-                    setActiveCategory(item.cat)
+                    setActiveCategory(sec.name)
                     setShowFavoritesOnly(false)
                     setMobileSidebarOpen(false)
                   }}
@@ -910,7 +933,7 @@ export function ProjectsPage() {
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#FA5D00]" : "opacity-60"}`} />
-                    <span>{item.label}</span>
+                    <span>{sec.name}</span>
                   </div>
                 </button>
               )
@@ -1086,96 +1109,110 @@ export function ProjectsPage() {
         {/* ======================================================== */}
         <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
           
-          {/* Permanently Fixed Top Control Bar */}
-          <div className="flex-none z-20 flex flex-wrap items-center justify-between gap-2.5 px-4 sm:px-8 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-[#09090b]/95 backdrop-blur-md shadow-xs">
-            
-            {/* Left Controls: Reco Logo Toggles Sidebar */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof window !== "undefined" && window.innerWidth < 768) {
-                    setMobileSidebarOpen(!mobileSidebarOpen)
-                  } else {
-                    setIsSidebarCollapsed(!isSidebarCollapsed)
-                  }
-                }}
-                title={isSidebarCollapsed ? "Open sidebar" : "Toggle sidebar"}
-                className="flex items-center gap-2 group cursor-pointer p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-              >
-                <div className="w-8 h-8 rounded-full bg-[#FA5D00] p-1.5 flex items-center justify-center flex-none shadow-xs group-hover:scale-105 transition-transform">
-                  <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
-                </div>
-                <span className="font-mono text-xs font-bold tracking-tight text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors hidden sm:inline">
-                  recolabs
-                </span>
-              </button>
-            </div>
-
-            {/* Center Search Input */}
-            <div className="relative flex-1 max-w-xs sm:max-w-md mx-2 min-w-[140px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search tools, AI, hardware..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00] transition-colors"
-              />
-            </div>
-
-            {/* Right Action Buttons: Login / User Profile with Logout */}
-            <div className="flex items-center gap-2">
-              {currentUser ? (
-                <div className="flex items-center gap-1.5">
-                  <Link
-                    to={`/builder/${currentUser.username}`}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors"
-                  >
-                    {currentUser.avatar_url ? (
-                      <img src={currentUser.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
-                    ) : (
-                      <span className="w-4 h-4 rounded-full bg-[#FA5D00] text-black text-[9px] font-bold flex items-center justify-center">
-                        {(currentUser.name || "B")[0].toUpperCase()}
-                      </span>
-                    )}
-                    <span className="max-w-[100px] truncate">@{currentUser.username}</span>
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    title="Log out"
-                    className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 hover:border-rose-500 hover:text-rose-500 text-zinc-400 transition-colors cursor-pointer"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
+          {/* Permanently Fixed Symmetrical Top Control Bar */}
+          <div className="flex-none z-20 px-4 sm:px-8 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-[#09090b]/95 backdrop-blur-md shadow-xs">
+            <div className="w-full flex items-center justify-between gap-4">
+              
+              {/* Left Controls: Reco Logo Toggles Sidebar */}
+              <div className="flex-none flex items-center">
                 <button
+                  type="button"
                   onClick={() => {
-                    setAuthMode("login")
-                    setShowAuthModal(true)
+                    if (typeof window !== "undefined" && window.innerWidth < 768) {
+                      setMobileSidebarOpen(!mobileSidebarOpen)
+                    } else {
+                      setIsSidebarCollapsed(!isSidebarCollapsed)
+                    }
                   }}
-                  className="px-3.5 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
+                  title={isSidebarCollapsed ? "Open sidebar" : "Toggle sidebar"}
+                  className="flex items-center gap-2 group cursor-pointer p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
-                  Login / Sign up
+                  <div className="w-8 h-8 rounded-full bg-[#FA5D00] p-1.5 flex items-center justify-center flex-none shadow-xs group-hover:scale-105 transition-transform">
+                    <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
+                  </div>
+                  <span className="font-mono text-xs font-bold tracking-tight text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors hidden sm:inline">
+                    recolabs
+                  </span>
                 </button>
-              )}
+              </div>
 
-              <button
-                onClick={() => setShowSponsorModal(true)}
-                className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 hover:border-[#FA5D00] font-mono text-xs font-semibold text-[#FA5D00] transition-colors cursor-pointer"
-              >
-                <Megaphone className="w-3.5 h-3.5" />
-                <span>+ Sponsor</span>
-              </button>
+              {/* Center: Symmetrically Centered Search Input */}
+              <div className="flex-1 max-w-sm sm:max-w-md mx-auto">
+                <div className="relative w-full">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search tools, design, develop, resources..."
+                    className="w-full pl-9 pr-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00] transition-colors"
+                  />
+                </div>
+              </div>
 
-              <button
-                onClick={handleOpenSubmit}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                <span>Submit</span>
-              </button>
+              {/* Right Action Buttons: Hover Profile with View Profile & Logout / Login + Submit */}
+              <div className="flex-none flex items-center gap-2 sm:gap-2.5">
+                {currentUser ? (
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
+                    >
+                      {currentUser.avatar_url ? (
+                        <img src={currentUser.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                      ) : (
+                        <span className="w-4 h-4 rounded-full bg-[#FA5D00] text-black text-[9px] font-bold flex items-center justify-center">
+                          {(currentUser.name || "B")[0].toUpperCase()}
+                        </span>
+                      )}
+                      <span className="max-w-[100px] truncate">@{currentUser.username}</span>
+                    </button>
+
+                    {/* Hover Dropdown Menu */}
+                    <div className="absolute right-0 top-full pt-1.5 hidden group-hover:block group-focus-within:block z-50">
+                      <div className="w-44 py-1.5 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 shadow-xl font-mono text-xs text-zinc-700 dark:text-zinc-300 animate-in fade-in duration-150">
+                        <div className="px-3.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 truncate">
+                          Signed in as <strong className="text-zinc-800 dark:text-zinc-200">@{currentUser.username}</strong>
+                        </div>
+                        <Link
+                          to={`/builder/${currentUser.username}`}
+                          className="flex items-center gap-2 px-3.5 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[#FA5D00] transition-colors"
+                        >
+                          <User className="w-3.5 h-3.5 text-zinc-400" />
+                          <span>View profile</span>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="w-full text-left flex items-center gap-2 px-3.5 py-2 hover:bg-rose-500/10 hover:text-rose-500 text-zinc-600 dark:text-zinc-400 transition-colors cursor-pointer"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setAuthMode("login")
+                      setShowAuthModal(true)
+                    }}
+                    className="px-3.5 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
+                  >
+                    Login / Sign up
+                  </button>
+                )}
+
+                <button
+                  onClick={handleOpenSubmit}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>Submit</span>
+                </button>
+              </div>
+
             </div>
           </div>
 
@@ -1192,43 +1229,8 @@ export function ProjectsPage() {
               </p>
             </div>
 
-            {/* Filter Chips Toolbar */}
-            <div className="py-4 flex flex-wrap items-center justify-between gap-4 border-y border-zinc-200 dark:border-zinc-800">
-              {/* Category Chips */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar">
-                {CATEGORIES.map((cat) => {
-                  const active = activeCategory.toLowerCase() === cat.toLowerCase()
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => {
-                        setActiveCategory(cat)
-                        setShowFavoritesOnly(false)
-                      }}
-                      className={`px-3.5 py-1.5 rounded-full font-mono text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                        active
-                          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-sm"
-                          : "border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Right Sort Controls */}
-              <div className="flex items-center gap-2 font-mono text-xs">
-                <button
-                  onClick={() => setSelectedSort(selectedSort === "recent" ? "stars" : "recent")}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-[#FA5D00] transition-colors cursor-pointer"
-                >
-                  <span>{selectedSort === "recent" ? "Recent ⌵" : "Popular ⌵"}</span>
-                </button>
-              </div>
-            </div>
-
             {/* Project Cards Grid */}
+
             <div className="pt-8">
               {filteredProjects.length === 0 ? (
                 <div className="text-center py-20 font-mono text-sm text-zinc-500">
@@ -1460,9 +1462,9 @@ export function ProjectsPage() {
                   onChange={(e) => setSubmitForm({ ...submitForm, category: e.target.value as any })}
                   className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
                 >
-                  {CATEGORIES.filter((c) => c !== "All").map((c) => (
-                    <option key={c} value={c}>
-                      {c}
+                  {sections.map((s) => (
+                    <option key={s.name} value={s.name}>
+                      {s.name}
                     </option>
                   ))}
                 </select>
