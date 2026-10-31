@@ -13,6 +13,8 @@ import {
   Mail,
   MessageSquare,
   User,
+  Edit3,
+  ChevronDown,
   LogIn,
   LogOut,
   X,
@@ -409,33 +411,59 @@ export function NetworkPage() {
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">
-              <Link
-                to={`/builder/${currentUser.username}`}
-                title="View your public builder profile"
-                className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-[#FA5D00] font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 shadow-sm transition-all"
-              >
-                {currentUser.avatar_url ? (
-                  <img
-                    src={currentUser.avatar_url}
-                    alt={currentUser.name}
-                    className="w-5 h-5 rounded-full object-cover flex-none"
-                  />
-                ) : (
-                  <span className="w-5 h-5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center flex-none">
-                    {(currentUser.name || "B")[0].toUpperCase()}
-                  </span>
-                )}
-                <span>@{currentUser.username}</span>
-                <ArrowUpRight className="w-3 h-3 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
-              </Link>
+              {/* Profile Pill with Hover Dropdown (View profile, Edit profile, Logout) */}
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-[#FA5D00] font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 shadow-sm transition-all cursor-pointer"
+                >
+                  {currentUser.avatar_url ? (
+                    <img
+                      src={currentUser.avatar_url}
+                      alt={currentUser.name}
+                      className="w-5 h-5 rounded-full object-cover flex-none"
+                    />
+                  ) : (
+                    <span className="w-5 h-5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center flex-none">
+                      {(currentUser.name || "B")[0].toUpperCase()}
+                    </span>
+                  )}
+                  <span>@{currentUser.username}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
+                </button>
 
-              <button
-                onClick={() => setShowProfileModal(true)}
-                title="Edit Profile"
-                className="px-3 py-1.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 font-mono text-xs text-zinc-600 dark:text-zinc-300 hover:border-[#FA5D00] hover:text-[#FA5D00] transition-colors cursor-pointer"
-              >
-                Edit Profile
-              </button>
+                {/* Hover Dropdown Menu */}
+                <div className="absolute right-0 top-full pt-1.5 hidden group-hover:block group-focus-within:block z-50">
+                  <div className="w-48 py-1.5 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 shadow-xl font-mono text-xs text-zinc-700 dark:text-zinc-300 animate-in fade-in duration-150">
+                    <div className="px-3.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 truncate">
+                      Signed in as <strong className="text-zinc-800 dark:text-zinc-200">@{currentUser.username}</strong>
+                    </div>
+                    <Link
+                      to={`/builder/${currentUser.username}`}
+                      className="flex items-center gap-2 px-3.5 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[#FA5D00] transition-colors"
+                    >
+                      <User className="w-3.5 h-3.5 text-zinc-400" />
+                      <span>View profile</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setShowProfileModal(true)}
+                      className="w-full text-left flex items-center gap-2 px-3.5 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[#FA5D00] transition-colors cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
+                      <span>Edit profile</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full text-left flex items-center gap-2 px-3.5 py-2 hover:bg-rose-500/10 hover:text-rose-500 text-zinc-600 dark:text-zinc-400 transition-colors cursor-pointer border-t border-zinc-100 dark:border-zinc-800"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               <button
                 onClick={() => setShowPostModal(true)}
@@ -443,14 +471,6 @@ export function NetworkPage() {
               >
                 <Rocket className="w-3.5 h-3.5 fill-black" />
                 <span>List Your Startup</span>
-              </button>
-
-              <button
-                onClick={handleLogout}
-                title="Sign out"
-                className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-red-500 hover:border-red-500 transition-colors cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
