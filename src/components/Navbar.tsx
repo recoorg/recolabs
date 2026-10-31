@@ -28,14 +28,18 @@ export function Navbar() {
 
   const isActive = (path: string) => location.pathname === path
 
-  const navLinks = [
+  interface NavItem {
+    label: string
+    path: string
+    external?: boolean
+  }
+
+  const navLinks: NavItem[] = [
     { label: "ABOUT", path: "/about" },
-    { label: "BLOG", path: "https://blog.recolabs.in", external: true },
     { label: "JOBS", path: "/jobs" },
     { label: "PROJECTS", path: "/projects" },
     { label: "HACKATHONS", path: "/hackathons" },
     { label: "NETWORK", path: "/network" },
-    { label: "SPONSORS", path: "/sponsors" },
   ]
 
   return (
@@ -62,7 +66,7 @@ export function Navbar() {
 
         {/* Center: Desktop Vibrant Orange Pill Navigation */}
         <nav
-          className="pointer-events-auto hidden sm:flex items-center gap-4 md:gap-6 px-6 py-2 rounded-full bg-[#FA5D00] border-2 border-black text-black font-mono text-[12px] md:text-[13px] font-bold tracking-wider uppercase shadow-sm"
+          className="pointer-events-auto hidden sm:flex items-center gap-6 md:gap-8 px-7 py-2 rounded-full bg-[#FA5D00] border-2 border-black text-black font-mono text-[13px] font-bold tracking-wider uppercase shadow-sm"
           aria-label="Main Navigation"
         >
           {navLinks.map((link) =>

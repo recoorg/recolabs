@@ -82,7 +82,7 @@ export function FooterWrapper() {
             links: [
               { label: "Founder Network", href: "/network" },
               { label: "Hackathons & Sprints", href: "/hackathons" },
-              { label: "Sponsors & Partners", href: "/sponsors" },
+              { label: "Sponsor Reco Labs", href: "/sponsors" },
               { label: "Guild Roles & Jobs", href: "/jobs" },
               { label: "Discord Build Calls", href: "https://discord.com/invite/7dk4w37BhP" },
             ],
@@ -101,6 +101,7 @@ export function FooterWrapper() {
         legal={[
           { label: "Privacy Policy", href: "/privacy" },
           { label: "Blog ↗", href: "https://blog.recolabs.in" },
+          { label: "Sponsors & Partners", href: "/sponsors" },
         ]}
         palette={
           isDark
