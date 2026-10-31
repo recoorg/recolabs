@@ -89,6 +89,41 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_users_username ON users(LOWER(username));
       CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_startups_founder_username ON startups(LOWER(founder_username));
+
+      CREATE TABLE IF NOT EXISTS ads (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        image_url TEXT,
+        destination_url TEXT NOT NULL,
+        placement TEXT DEFAULT 'projects_sidebar',
+        badge_label TEXT DEFAULT 'Sponsored',
+        sponsor_name TEXT,
+        sponsor_email TEXT,
+        is_active BOOLEAN DEFAULT true,
+        clicks_count INTEGER DEFAULT 0,
+        impressions_count INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS store_links (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        url TEXT NOT NULL,
+        category TEXT DEFAULT 'Tools',
+        price TEXT,
+        icon_url TEXT,
+        is_active BOOLEAN DEFAULT true,
+        clicks_count INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_ads_placement ON ads(placement);
+      CREATE INDEX IF NOT EXISTS idx_ads_is_active ON ads(is_active);
+      CREATE INDEX IF NOT EXISTS idx_store_links_category ON store_links(category);
     `)
   } finally {
     client.release()
@@ -540,6 +575,67 @@ export async function createAd(data: {
   }
 }
 
+export async function listAllAdsAdmin() {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("SELECT * FROM ads ORDER BY id DESC");
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateAd(id: number, data: {
+  title?: string;
+  description?: string;
+  image_url?: string;
+  destination_url?: string;
+  placement?: string;
+  badge_label?: string;
+  sponsor_name?: string;
+  sponsor_email?: string;
+  is_active?: boolean;
+}) {
+  const client = await pool.connect();
+  try {
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (data.title !== undefined) { fields.push(`title = $${idx++}`); values.push(data.title); }
+    if (data.description !== undefined) { fields.push(`description = $${idx++}`); values.push(data.description); }
+    if (data.image_url !== undefined) { fields.push(`image_url = $${idx++}`); values.push(data.image_url); }
+    if (data.destination_url !== undefined) { fields.push(`destination_url = $${idx++}`); values.push(data.destination_url); }
+    if (data.placement !== undefined) { fields.push(`placement = $${idx++}`); values.push(data.placement); }
+    if (data.badge_label !== undefined) { fields.push(`badge_label = $${idx++}`); values.push(data.badge_label); }
+    if (data.sponsor_name !== undefined) { fields.push(`sponsor_name = $${idx++}`); values.push(data.sponsor_name); }
+    if (data.sponsor_email !== undefined) { fields.push(`sponsor_email = $${idx++}`); values.push(data.sponsor_email); }
+    if (data.is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(data.is_active); }
+    fields.push(`updated_at = NOW()`);
+
+    if (fields.length === 1) return null; // only updated_at
+
+    values.push(id);
+    const res = await client.query(
+      `UPDATE ads SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteAd(id: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("DELETE FROM ads WHERE id = $1 RETURNING id", [id]);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
+
 // ==========================================
 // STORE LINKS METHODS
 // ==========================================
@@ -555,6 +651,16 @@ export async function listStoreLinks(category?: string) {
     }
     query += " ORDER BY id ASC";
     const res = await client.query(query, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function listAllStoreLinksAdmin() {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("SELECT * FROM store_links ORDER BY id ASC");
     return res.rows;
   } finally {
     client.release();
@@ -584,6 +690,95 @@ export async function createStoreLink(data: {
         data.price || null,
         data.icon_url || null,
       ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateStoreLink(id: number, data: {
+  title?: string;
+  description?: string;
+  url?: string;
+  category?: string;
+  price?: string;
+  icon_url?: string;
+  is_active?: boolean;
+}) {
+  const client = await pool.connect();
+  try {
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (data.title !== undefined) { fields.push(`title = $${idx++}`); values.push(data.title); }
+    if (data.description !== undefined) { fields.push(`description = $${idx++}`); values.push(data.description); }
+    if (data.url !== undefined) { fields.push(`url = $${idx++}`); values.push(data.url); }
+    if (data.category !== undefined) { fields.push(`category = $${idx++}`); values.push(data.category); }
+    if (data.price !== undefined) { fields.push(`price = $${idx++}`); values.push(data.price); }
+    if (data.icon_url !== undefined) { fields.push(`icon_url = $${idx++}`); values.push(data.icon_url); }
+    if (data.is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(data.is_active); }
+    fields.push(`updated_at = NOW()`);
+
+    if (fields.length === 1) return null;
+
+    values.push(id);
+    const res = await client.query(
+      `UPDATE store_links SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteStoreLink(id: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("DELETE FROM store_links WHERE id = $1 RETURNING id", [id]);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteStartup(id: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("DELETE FROM startups WHERE id = $1 RETURNING id", [id]);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateStartup(id: number, data: {
+  name?: string;
+  url?: string;
+  problem_solving?: string;
+  category?: string;
+  stage?: string;
+}) {
+  const client = await pool.connect();
+  try {
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (data.name !== undefined) { fields.push(`name = $${idx++}`); values.push(data.name); }
+    if (data.url !== undefined) { fields.push(`url = $${idx++}`); values.push(data.url); }
+    if (data.problem_solving !== undefined) { fields.push(`problem_solving = $${idx++}`); values.push(data.problem_solving); }
+    if (data.category !== undefined) { fields.push(`category = $${idx++}`); values.push(data.category); }
+    if (data.stage !== undefined) { fields.push(`stage = $${idx++}`); values.push(data.stage); }
+
+    if (fields.length === 0) return null;
+
+    values.push(id);
+    const res = await client.query(
+      `UPDATE startups SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+      values
     );
     return res.rows[0];
   } finally {

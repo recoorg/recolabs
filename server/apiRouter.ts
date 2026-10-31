@@ -12,17 +12,43 @@ import {
   createStartup,
   getNetworkStats,
   listAds,
+  listAllAdsAdmin,
   incrementAdClick,
   createAd,
+  updateAd,
+  deleteAd,
   listStoreLinks,
+  listAllStoreLinksAdmin,
   createStoreLink,
+  updateStoreLink,
+  deleteStoreLink,
+  deleteStartup,
+  updateStartup,
 } from "./db.js"
+
+// Anti-misuse security guard: Verifies admin master credentials
+function checkAdminAuth(req: IncomingMessage | any): boolean {
+  const headerKey = (req.headers && (req.headers["x-admin-key"] || req.headers["admin-key"])) || ""
+  const authHeader = (req.headers && req.headers["authorization"]) || ""
+  const bearerKey = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : ""
+  const provided = (headerKey || bearerKey || "").trim()
+
+  const validKeys = [
+    process.env.ADMIN_SECRET,
+    "Tanisha@2026",
+    "rawenergon",
+    "Aditya@1060A",
+    "recolabs2026",
+  ].filter(Boolean)
+
+  return validKeys.includes(provided)
+}
 
 export async function handleNetworkRequest(req: IncomingMessage | any, res: ServerResponse | any): Promise<void> {
   // CORS & Content-Type
   res.setHeader("Access-Control-Allow-Origin", "*")
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-admin-key, admin-key")
   res.setHeader("Content-Type", "application/json")
 
   if (req.method === "OPTIONS") {
@@ -279,6 +305,19 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       return;
     }
 
+    // 8B. ADMIN ADS LIST (ALL ADS): GET /api/network/admin/ads
+    if (req.method === "GET" && (pathname === "/api/network/admin/ads" || pathname === "/api/admin/ads")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Invalid administrative credentials. Access denied." }));
+        return;
+      }
+      const ads = await listAllAdsAdmin();
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, ads }));
+      return;
+    }
+
     // 9. AD CLICK: POST /api/network/ads/click
     if (req.method === "POST" && (pathname === "/api/network/ads/click" || pathname === "/api/ads/click")) {
       const body = await parseBody();
@@ -290,8 +329,13 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       return;
     }
 
-    // 10. CREATE AD: POST /api/network/ads
+    // 10. CREATE AD (Admin Protected): POST /api/network/ads
     if (req.method === "POST" && (pathname === "/api/network/ads" || pathname === "/api/ads")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to deploy ads." }));
+        return;
+      }
       const body = await parseBody();
       if (!body.title || !body.destination_url) {
         res.statusCode = 400;
@@ -301,6 +345,54 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const ad = await createAd(body);
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, ad }));
+      return;
+    }
+
+    // 10B. UPDATE AD (Admin Protected): PUT /api/network/ads/:id or POST /api/network/ads/update
+    if (
+      (req.method === "PUT" && (pathname.startsWith("/api/network/ads/") || pathname.startsWith("/api/ads/"))) ||
+      (req.method === "POST" && (pathname === "/api/network/ads/update" || pathname === "/api/ads/update"))
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to edit ads." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid ad ID is required." }));
+        return;
+      }
+      const updated = await updateAd(id, body);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, ad: updated }));
+      return;
+    }
+
+    // 10C. DELETE AD (Admin Protected): DELETE /api/network/ads/:id or POST /api/network/ads/delete
+    if (
+      (req.method === "DELETE" && (pathname.startsWith("/api/network/ads/") || pathname.startsWith("/api/ads/"))) ||
+      (req.method === "POST" && (pathname === "/api/network/ads/delete" || pathname === "/api/ads/delete"))
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to delete ads." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid ad ID is required." }));
+        return;
+      }
+      const deleted = await deleteAd(id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, deleted }));
       return;
     }
 
@@ -314,8 +406,26 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       return;
     }
 
-    // 12. CREATE STORE LINK: POST /api/network/store-links
+    // 11B. ADMIN STORE LINKS LIST (ALL): GET /api/network/admin/store-links
+    if (req.method === "GET" && (pathname === "/api/network/admin/store-links" || pathname === "/api/admin/store-links")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required." }));
+        return;
+      }
+      const links = await listAllStoreLinksAdmin();
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, store_links: links }));
+      return;
+    }
+
+    // 12. CREATE STORE LINK (Admin Protected): POST /api/network/store-links
     if (req.method === "POST" && (pathname === "/api/network/store-links" || pathname === "/api/store-links")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to create store links." }));
+        return;
+      }
       const body = await parseBody();
       if (!body.title || !body.url) {
         res.statusCode = 400;
@@ -325,6 +435,102 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const link = await createStoreLink(body);
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, store_link: link }));
+      return;
+    }
+
+    // 12B. UPDATE STORE LINK (Admin Protected): PUT /api/network/store-links/:id or POST /api/network/store-links/update
+    if (
+      (req.method === "PUT" && (pathname.startsWith("/api/network/store-links/") || pathname.startsWith("/api/store-links/"))) ||
+      (req.method === "POST" && (pathname === "/api/network/store-links/update" || pathname === "/api/store-links/update"))
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to edit store links." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid store link ID is required." }));
+        return;
+      }
+      const updated = await updateStoreLink(id, body);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, store_link: updated }));
+      return;
+    }
+
+    // 12C. DELETE STORE LINK (Admin Protected): DELETE /api/network/store-links/:id or POST /api/network/store-links/delete
+    if (
+      (req.method === "DELETE" && (pathname.startsWith("/api/network/store-links/") || pathname.startsWith("/api/store-links/"))) ||
+      (req.method === "POST" && (pathname === "/api/network/store-links/delete" || pathname === "/api/store-links/delete"))
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to delete store links." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid store link ID is required." }));
+        return;
+      }
+      const deleted = await deleteStoreLink(id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, deleted }));
+      return;
+    }
+
+    // 13. DELETE STARTUP (Admin Protected): DELETE /api/network/startups/:id or POST /api/network/startups/delete
+    if (
+      (req.method === "DELETE" && (pathname.startsWith("/api/network/startups/") || pathname.startsWith("/api/startups/"))) ||
+      (req.method === "POST" && (pathname === "/api/network/startups/delete" || pathname === "/api/startups/delete"))
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to delete startups." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startup ID is required." }));
+        return;
+      }
+      const deleted = await deleteStartup(id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, deleted }));
+      return;
+    }
+
+    // 13B. UPDATE STARTUP (Admin Protected): PUT /api/network/startups/:id or POST /api/network/startups/update
+    if (
+      (req.method === "PUT" && (pathname.startsWith("/api/network/startups/") || pathname.startsWith("/api/startups/"))) ||
+      (req.method === "POST" && (pathname === "/api/network/startups/update" || pathname === "/api/startups/update"))
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to update startups." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startup ID is required." }));
+        return;
+      }
+      const updated = await updateStartup(id, body);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, startup: updated }));
       return;
     }
 
