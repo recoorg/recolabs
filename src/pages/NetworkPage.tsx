@@ -520,11 +520,12 @@ export function NetworkPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {startups.map((item) => {
+                const safeName = item?.founder_name || "Builder"
                 const founderUser =
-                  item.founder_username ||
-                  (item as any).author_username ||
-                  item.founder_name.toLowerCase().replace(/[^a-z0-9_-]/g, "")
-                const initial = (item.founder_name || "F")[0].toUpperCase()
+                  item?.founder_username ||
+                  (item as any)?.author_username ||
+                  safeName.toLowerCase().replace(/[^a-z0-9_-]/g, "")
+                const initial = (safeName[0] || "B").toUpperCase()
 
                 return (
                   <div

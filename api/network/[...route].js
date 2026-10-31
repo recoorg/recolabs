@@ -831,6 +831,37 @@ async function deleteCatalogProject(id) {
     client.release();
   }
 }
+async function saveProjectAsset(filename, mimeType, base64Data) {
+  const client = await pool.connect();
+  try {
+    const cleanBase64 = base64Data.replace(/^data:[a-zA-Z0-9\/+-]+;base64,/, "");
+    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, "_") || "asset.png";
+    const res = await client.query(
+      `INSERT INTO project_assets (filename, mime_type, data_base64)
+       VALUES ($1, $2, $3)
+       RETURNING id, filename, mime_type`,
+      [safeFilename, mimeType || "image/png", cleanBase64]
+    );
+    const asset = res.rows[0];
+    const publicUrl = `https://www.recolabs.in/api/network/assets/${asset.id}/${encodeURIComponent(asset.filename)}`;
+    await client.query("UPDATE project_assets SET public_url = $1 WHERE id = $2", [publicUrl, asset.id]);
+    return { id: asset.id, url: publicUrl, filename: asset.filename };
+  } finally {
+    client.release();
+  }
+}
+async function getProjectAsset(id) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "SELECT id, filename, mime_type, data_base64 FROM project_assets WHERE id = $1",
+      [id]
+    );
+    return res.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
 
 // server/apiRouter.ts
 function checkAdminAuth(req) {
@@ -1322,6 +1353,43 @@ async function handleNetworkRequest(req, res) {
       const deleted = await deleteCatalogProject(id);
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, deleted }));
+      return;
+    }
+    if (req.method === "GET" && pathname.startsWith("/api/network/assets/")) {
+      const parts = pathname.replace("/api/network/assets/", "").split("/");
+      const assetId = Number(parts[0]);
+      if (!assetId || isNaN(assetId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Invalid asset ID" }));
+        return;
+      }
+      const asset = await getProjectAsset(assetId);
+      if (!asset || !asset.data_base64) {
+        res.statusCode = 404;
+        res.end(JSON.stringify({ error: "Asset not found" }));
+        return;
+      }
+      const buffer = Buffer.from(asset.data_base64, "base64");
+      res.setHeader("Content-Type", asset.mime_type || "image/png");
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.statusCode = 200;
+      res.end(buffer);
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/upload" || pathname === "/api/upload" || pathname === "/api/network/assets/upload")) {
+      const body = await parseBody();
+      if (!body.data_base64) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Image data (base64) is required." }));
+        return;
+      }
+      const asset = await saveProjectAsset(
+        body.filename || "project_preview.png",
+        body.mime_type || "image/png",
+        body.data_base64
+      );
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, ...asset }));
       return;
     }
     res.statusCode = 404;

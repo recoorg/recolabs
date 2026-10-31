@@ -9,6 +9,11 @@ export function Navbar() {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
+  // Project page is an independent standalone catalogue app with its own dedicated topbar - hide global navbar
+  if (location.pathname.startsWith("/projects") || location.pathname.startsWith("/project")) {
+    return null
+  }
+
   // Close mobile menu whenever route changes
   React.useEffect(() => {
     setMobileOpen(false)

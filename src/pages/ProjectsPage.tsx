@@ -31,6 +31,9 @@ import {
   Upload,
   DollarSign,
   Megaphone,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Home,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile } from "@/services/networkApi"
@@ -236,7 +239,8 @@ export function ProjectsPage() {
   })
   const [showFavoritesOnly, setShowFavoritesOnly] = React.useState(false)
 
-  // Mobile drawer state
+  // Sidebar collapse & drawer states
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false)
 
   // Modals
@@ -332,15 +336,33 @@ export function ProjectsPage() {
     }
   }
 
-  // Handle Photo Upload
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Photo Upload directly to Supabase storage bucket
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     const reader = new FileReader()
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setPreviewImageUrl(event.target.result as string)
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string
+      if (base64) {
+        setPreviewImageUrl(base64)
+        try {
+          const res = await fetch("/api/network/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              filename: file.name,
+              mime_type: file.type,
+              data_base64: base64,
+            }),
+          })
+          const data = await res.json()
+          if (data && data.url) {
+            setPreviewImageUrl(data.url)
+          }
+        } catch (err) {
+          console.warn("Storage upload note:", err)
+        }
       }
     }
     reader.readAsDataURL(file)
@@ -949,52 +971,69 @@ export function ProjectsPage() {
         </div>
       </div>
 
-      {/* Sidebar Bottom Promo Card (Live from Supabase) */}
+      {/* Sidebar Bottom Promo Card (Live from Supabase — No Mock BoardUI) */}
       <div className="mt-8 pt-4">
-        <div className="p-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 shadow-sm relative group">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-6 h-6 rounded-lg bg-[#FA5D00] text-black font-mono font-bold text-xs flex items-center justify-center flex-none">
-              {((sidebarAd?.sponsor_name || sidebarAd?.title || "B")[0] || "B").toUpperCase()}
+        {sidebarAd ? (
+          <div className="p-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 shadow-sm relative group">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-[#FA5D00] text-black font-mono font-bold text-xs flex items-center justify-center flex-none">
+                {((sidebarAd?.sponsor_name || sidebarAd?.title || "S")[0] || "S").toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-mono text-xs font-bold leading-none truncate">
+                  {sidebarAd?.title}
+                </h4>
+                <span className="text-[9px] uppercase font-mono text-zinc-400">
+                  {sidebarAd?.badge_label || "Sponsored"}
+                </span>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="font-mono text-xs font-bold leading-none truncate">
-                {sidebarAd?.title || "BoardUI"}
-              </h4>
-              <span className="text-[9px] uppercase font-mono text-zinc-400">
-                {sidebarAd?.badge_label || "Sponsored"}
-              </span>
+            <p className="font-sans text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug line-clamp-2">
+              {sidebarAd?.description || "Curated showcase sponsorship."}
+            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <a
+                href={sidebarAd?.destination_url || "https://recolabs.in"}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  if (sidebarAd?.id) {
+                    fetch("/api/network/ads/click", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ id: sidebarAd.id }),
+                    }).catch(() => {})
+                  }
+                }}
+                className="flex-1 text-center py-1.5 px-3 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-mono text-[11px] font-bold hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-colors"
+              >
+                Visit site ↗
+              </a>
+              <button
+                onClick={() => setShowSponsorModal(true)}
+                title="Sponsor this sidebar slot"
+                className="p-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 hover:border-[#FA5D00] text-zinc-500 hover:text-[#FA5D00] transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-          <p className="font-sans text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug line-clamp-2">
-            {sidebarAd?.description || "Tables, charts and agent-interface components in a React and Tailwind system."}
-          </p>
-          <div className="mt-3 flex items-center gap-2">
-            <a
-              href={sidebarAd?.destination_url || "https://recolabs.in/projects"}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                if (sidebarAd?.id) {
-                  fetch("/api/network/ads/click", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: sidebarAd.id }),
-                  }).catch(() => {})
-                }
-              }}
-              className="flex-1 text-center py-1.5 px-3 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-mono text-[11px] font-bold hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-colors"
-            >
-              Visit site ↗
-            </a>
-            <button
-              onClick={() => setShowSponsorModal(true)}
-              title="Sponsor this sidebar slot"
-              className="p-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 hover:border-[#FA5D00] text-zinc-500 hover:text-[#FA5D00] transition-colors cursor-pointer"
-            >
+        ) : (
+          <div
+            onClick={() => setShowSponsorModal(true)}
+            className="p-4 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 hover:border-[#FA5D00] bg-zinc-50 dark:bg-zinc-900/30 transition-all cursor-pointer text-center group"
+          >
+            <div className="w-7 h-7 mx-auto rounded-full border border-dashed border-zinc-400 dark:border-zinc-600 flex items-center justify-center text-zinc-500 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-2">
               <Plus className="w-3.5 h-3.5" />
-            </button>
+            </div>
+            <span className="block font-serif text-xs font-normal text-zinc-900 dark:text-zinc-200">
+              Feature Your Tool Here
+            </span>
+            <span className="block font-mono text-[10px] text-[#FA5D00] mt-1 font-semibold">
+              + Claim Sidebar Slot
+            </span>
           </div>
-        </div>
+        )}
 
         <p className="mt-4 font-mono text-[10px] text-zinc-400 text-center">
           Curated by Reco Labs · © 2026
@@ -1004,15 +1043,21 @@ export function ProjectsPage() {
   )
 
   return (
-    <div className="relative w-full h-screen bg-white dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 flex flex-col pt-20 overflow-hidden">
+    <div className="relative w-full h-screen bg-white dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 flex flex-col pt-0 overflow-hidden">
       
       {/* App Body: Split Layout */}
       <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden relative">
         
         {/* ======================================================== */}
-        {/* 1. DESKTOP LEFT SIDEBAR                                  */}
+        {/* 1. DESKTOP LEFT SIDEBAR (Collapsible with smooth slide)  */}
         {/* ======================================================== */}
-        <aside className="hidden md:flex w-64 lg:w-72 flex-none border-r border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-[#0c0c0e]/80 backdrop-blur-md p-5 flex-col justify-between h-full overflow-y-auto sliderbar">
+        <aside
+          className={`hidden md:flex flex-none border-r border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-[#0c0c0e]/80 backdrop-blur-md flex-col justify-between h-full overflow-y-auto sliderbar transition-all duration-300 ${
+            isSidebarCollapsed
+              ? "w-0 p-0 border-r-0 overflow-hidden opacity-0 pointer-events-none"
+              : "w-64 lg:w-72 p-5 opacity-100"
+          }`}
+        >
           {renderSidebarContent()}
         </aside>
 
@@ -1033,12 +1078,45 @@ export function ProjectsPage() {
         {/* ======================================================== */}
         <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
           
-          {/* Permanently Fixed Top Control Bar (Never hides behind Navbar!) */}
+          {/* Permanently Fixed Top Control Bar with Sidebar Toggle & Reco Nav */}
           <div className="flex-none z-20 flex flex-wrap items-center justify-between gap-2.5 px-4 sm:px-8 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-[#09090b]/95 backdrop-blur-md shadow-xs">
             
-            {/* Left Controls & Mobile Toggle */}
+            {/* Left Controls: Reco Logo Link, Sidebar Collapse Button & Auth */}
             <div className="flex items-center gap-2">
-              {/* Mobile Sidebar Hamburger Trigger */}
+              {/* Back to Reco Labs Home Brand Mark */}
+              <Link
+                to="/"
+                title="Return to Reco Labs Home"
+                className="flex items-center gap-2 group mr-1 cursor-pointer"
+              >
+                <div className="w-7 h-7 rounded-full bg-[#FA5D00] p-1 flex items-center justify-center flex-none shadow-xs group-hover:scale-105 transition-transform">
+                  <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
+                </div>
+                <span className="font-mono text-xs font-bold tracking-tight text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors hidden sm:inline">
+                  recolabs
+                </span>
+              </Link>
+
+              {/* Desktop Sidebar Collapse Toggle */}
+              <button
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                title={isSidebarCollapsed ? "Show Sidebar" : "Collapse Sidebar"}
+                className="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs text-zinc-700 dark:text-zinc-300 hover:border-[#FA5D00] hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+              >
+                {isSidebarCollapsed ? (
+                  <>
+                    <PanelLeftOpen className="w-3.5 h-3.5 text-[#FA5D00]" />
+                    <span>Sidebar</span>
+                  </>
+                ) : (
+                  <>
+                    <PanelLeftClose className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Collapse</span>
+                  </>
+                )}
+              </button>
+
+              {/* Mobile Sidebar Drawer Trigger */}
               <button
                 onClick={() => setMobileSidebarOpen(true)}
                 className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
@@ -1046,6 +1124,13 @@ export function ProjectsPage() {
                 <SlidersHorizontal className="w-3.5 h-3.5 text-[#FA5D00]" />
                 <span className="hidden xs:inline">Browse</span>
               </button>
+
+              {/* Quick links to Network & Home */}
+              <div className="hidden lg:flex items-center gap-2 font-mono text-xs text-zinc-400 ml-1">
+                <Link to="/" className="hover:text-[#FA5D00] transition-colors">Home</Link>
+                <span>/</span>
+                <Link to="/network" className="hover:text-[#FA5D00] transition-colors">Network</Link>
+              </div>
 
               {currentUser ? (
                 <Link
@@ -1185,7 +1270,7 @@ export function ProjectsPage() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 ${isSidebarCollapsed ? "lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" : "lg:grid-cols-3"} gap-6`}>
                   {filteredProjects.map((p) => {
                     const isFav = favorites.includes(p.id)
 

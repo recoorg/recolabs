@@ -921,3 +921,45 @@ export async function deleteCatalogProject(id: number) {
     client.release();
   }
 }
+
+// ==========================================
+// SUPABASE PROJECT ASSETS STORAGE (IMAGES)
+// ==========================================
+
+export async function saveProjectAsset(filename: string, mimeType: string, base64Data: string) {
+  const client = await pool.connect();
+  try {
+    // Strip data URL header if present (e.g. data:image/png;base64,...)
+    const cleanBase64 = base64Data.replace(/^data:[a-zA-Z0-9\/+-]+;base64,/, "");
+    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, "_") || "asset.png";
+
+    const res = await client.query(
+      `INSERT INTO project_assets (filename, mime_type, data_base64)
+       VALUES ($1, $2, $3)
+       RETURNING id, filename, mime_type`,
+      [safeFilename, mimeType || "image/png", cleanBase64]
+    );
+
+    const asset = res.rows[0];
+    const publicUrl = `https://www.recolabs.in/api/network/assets/${asset.id}/${encodeURIComponent(asset.filename)}`;
+    
+    // Update public_url column
+    await client.query("UPDATE project_assets SET public_url = $1 WHERE id = $2", [publicUrl, asset.id]);
+    return { id: asset.id, url: publicUrl, filename: asset.filename };
+  } finally {
+    client.release();
+  }
+}
+
+export async function getProjectAsset(id: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "SELECT id, filename, mime_type, data_base64 FROM project_assets WHERE id = $1",
+      [id]
+    );
+    return res.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}

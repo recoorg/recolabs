@@ -2,10 +2,22 @@
 
 import * as React from "react"
 import { Link } from "react-router-dom"
-import { Heart, Mail, ArrowUpRight, Copy, Check, Plus } from "lucide-react"
+import { Heart, Mail, ArrowUpRight, Copy, Check, Plus, ExternalLink, Sparkles } from "lucide-react"
+
+interface HomeSponsorAd {
+  id: number
+  title: string
+  description?: string
+  destination_url: string
+  placement: string
+  badge_label?: string
+  sponsor_name?: string
+  is_active: boolean
+}
 
 export function SponsorSection() {
   const [copied, setCopied] = React.useState(false)
+  const [liveAds, setLiveAds] = React.useState<HomeSponsorAd[]>([])
   const sponsorEmail = "devadibxr@gmail.com"
 
   const handleCopy = () => {
@@ -14,12 +26,57 @@ export function SponsorSection() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const previewSlots = [
-    { label: "Partner Slot 01", desc: "Founding Tier" },
-    { label: "Partner Slot 02", desc: "Hardware Lab" },
-    { label: "Partner Slot 03", desc: "Cloud & Compute" },
-    { label: "Partner Slot 04", desc: "Community Tier" },
+  // Fetch live ads from Supabase
+  React.useEffect(() => {
+    const fetchAds = async () => {
+      try {
+        const res = await fetch(`/api/network/ads?_t=${Date.now()}`)
+        const data = await res.json()
+        if (data && Array.isArray(data.ads)) {
+          setLiveAds(data.ads.filter((a: HomeSponsorAd) => a && a.is_active))
+        }
+      } catch (e) {
+        console.warn("Home sponsor fetch note:", e)
+      }
+    }
+    fetchAds()
+  }, [])
+
+  // 4 Designated Home Screen Sponsor Tiers
+  const slotsConfig = [
+    {
+      key: "home_sponsor_1",
+      tierLabel: "TIER 01 · FOUNDING PARTNER",
+      defaultName: "Founding Partner Slot",
+      defaultDesc: "Hardware lab, global shipping, and beginner workshops sponsor.",
+    },
+    {
+      key: "home_sponsor_2",
+      tierLabel: "TIER 02 · HARDWARE LAB",
+      defaultName: "Hardware Lab Slot",
+      defaultDesc: "Microcontroller dev boards, test benches, and glitcher rigs.",
+    },
+    {
+      key: "home_sponsor_3",
+      tierLabel: "TIER 03 · CLOUD & COMPUTE",
+      defaultName: "Cloud & Compute Slot",
+      defaultDesc: "Server instances, LLM credits, and deployment infrastructure.",
+    },
+    {
+      key: "home_sponsor_4",
+      tierLabel: "TIER 04 · COMMUNITY TIER",
+      defaultName: "Community Tier Slot",
+      defaultDesc: "High school hackathon prize bounties and student mentorship.",
+    },
   ]
+
+  const handleAdClick = (adId: number) => {
+    fetch("/api/network/ads/click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: adId }),
+    }).catch(() => {})
+  }
 
   return (
     <section className="relative w-full py-20 sm:py-24 px-6 sm:px-8 bg-transparent overflow-hidden">
@@ -84,10 +141,10 @@ export function SponsorSection() {
 
         </div>
 
-        {/* Sponsor Placeholder Logo Strip */}
+        {/* Sponsor Grid: Shows Live Supabase Ads or Interactive Placeholder Slots */}
         <div className="mt-14 pt-8 border-t editorial-hairline">
           <div className="flex items-center justify-between mb-4 font-mono text-xs text-zinc-400">
-            <span className="uppercase tracking-wider">OFFICIAL SPONSOR SLOTS</span>
+            <span className="uppercase tracking-wider">OFFICIAL HOMESCREEN SPONSOR SLOTS</span>
             <Link
               to="/sponsors"
               className="text-[#FA5D00] font-bold hover:underline inline-flex items-center gap-1"
@@ -97,20 +154,71 @@ export function SponsorSection() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {previewSlots.map((slot, i) => (
-              <Link
-                key={i}
-                to="/sponsors"
-                className="group p-4 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/30 hover:border-[#FA5D00] transition-all flex flex-col items-center justify-center text-center min-h-[90px]"
-              >
-                <div className="w-7 h-7 rounded-full border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-1.5">
-                  <Plus className="w-3.5 h-3.5" />
-                </div>
-                <div className="font-serif text-sm text-zinc-800 dark:text-zinc-200">{slot.label}</div>
-                <div className="font-mono text-[10px] text-zinc-400">{slot.desc}</div>
-              </Link>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {slotsConfig.map((slot, idx) => {
+              // Check if an active ad matches this slot or general home placement
+              const assignedAd = liveAds.find(
+                (a) =>
+                  a.placement === slot.key ||
+                  (a.placement === "home_sponsor" && liveAds.indexOf(a) === idx) ||
+                  (a.placement === "all" && liveAds.indexOf(a) === idx)
+              )
+
+              if (assignedAd) {
+                return (
+                  <a
+                    key={slot.key}
+                    href={assignedAd.destination_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => handleAdClick(assignedAd.id)}
+                    className="group relative p-5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="px-2 py-0.5 rounded-full bg-[#FA5D00] text-black font-mono text-[9px] font-bold uppercase">
+                          {assignedAd.badge_label || "Partner"}
+                        </span>
+                        <ExternalLink className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
+                      </div>
+                      <h4 className="font-serif text-base font-normal text-zinc-950 dark:text-zinc-50 line-clamp-1">
+                        {assignedAd.title}
+                      </h4>
+                      <p className="mt-1 font-sans text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                        {assignedAd.description || slot.defaultDesc}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-[10px] font-mono text-zinc-400 flex items-center justify-between">
+                      <span>{assignedAd.sponsor_name || "Official Partner"}</span>
+                      <span className="text-[#FA5D00] group-hover:underline">Visit site ↗</span>
+                    </div>
+                  </a>
+                )
+              }
+
+              // Available Placeholder Slot
+              return (
+                <Link
+                  key={slot.key}
+                  to="/sponsors"
+                  className="group relative p-5 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 hover:border-[#FA5D00] bg-white/40 dark:bg-zinc-900/20 transition-all flex flex-col items-center justify-center text-center min-h-[140px] cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-full border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-2">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                  <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
+                    {slot.tierLabel}
+                  </span>
+                  <div className="font-serif text-sm text-zinc-800 dark:text-zinc-200 font-normal">
+                    {slot.defaultName}
+                  </div>
+                  <span className="mt-2 text-[10px] font-mono text-[#FA5D00] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                    + Claim Slot
+                  </span>
+                </Link>
+              )
+            })}
           </div>
         </div>
 

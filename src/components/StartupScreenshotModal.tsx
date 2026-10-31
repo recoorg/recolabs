@@ -41,7 +41,7 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
     .slice(0, 2)
     .toUpperCase()
 
-  const cleanUrl = startup.url.replace(/^https?:\/\//, "").replace(/\/$/, "")
+  const cleanUrl = (startup.url || "https://recolabs.in").replace(/^https?:\/\//, "").replace(/\/$/, "")
 
   // Download snapshot as PNG
   const handleDownload = async () => {

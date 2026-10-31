@@ -29,6 +29,8 @@ import {
   createCatalogProject,
   updateCatalogProject,
   deleteCatalogProject,
+  saveProjectAsset,
+  getProjectAsset,
 } from "./db.js"
 
 // Anti-misuse security guard: Verifies admin master credentials
@@ -627,6 +629,50 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const deleted = await deleteCatalogProject(id);
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, deleted }));
+      return;
+    }
+
+    // 15. PROJECT IMAGE ASSETS SERVING: GET /api/network/assets/:id or /api/network/assets/:id/:filename
+    if (req.method === "GET" && pathname.startsWith("/api/network/assets/")) {
+      const parts = pathname.replace("/api/network/assets/", "").split("/");
+      const assetId = Number(parts[0]);
+      if (!assetId || isNaN(assetId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Invalid asset ID" }));
+        return;
+      }
+      const asset = await getProjectAsset(assetId);
+      if (!asset || !asset.data_base64) {
+        res.statusCode = 404;
+        res.end(JSON.stringify({ error: "Asset not found" }));
+        return;
+      }
+      const buffer = Buffer.from(asset.data_base64, "base64");
+      res.setHeader("Content-Type", asset.mime_type || "image/png");
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.statusCode = 200;
+      res.end(buffer);
+      return;
+    }
+
+    // 16. SUPABASE PROJECT IMAGE ASSET UPLOAD: POST /api/network/upload
+    if (
+      req.method === "POST" &&
+      (pathname === "/api/network/upload" || pathname === "/api/upload" || pathname === "/api/network/assets/upload")
+    ) {
+      const body = await parseBody();
+      if (!body.data_base64) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Image data (base64) is required." }));
+        return;
+      }
+      const asset = await saveProjectAsset(
+        body.filename || "project_preview.png",
+        body.mime_type || "image/png",
+        body.data_base64
+      );
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, ...asset }));
       return;
     }
 
