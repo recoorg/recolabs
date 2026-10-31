@@ -246,6 +246,37 @@ export function ProjectsPage() {
   const [sponsorLoading, setSponsorLoading] = React.useState(false)
   const [sponsorSuccess, setSponsorSuccess] = React.useState(false)
 
+  // Live Real-Time Ads from Supabase
+  const [liveAds, setLiveAds] = React.useState<any[]>([])
+  const [sidebarAd, setSidebarAd] = React.useState<any>(null)
+
+  const fetchLiveAds = async () => {
+    try {
+      const res = await fetch(`/api/network/ads?_t=${Date.now()}`)
+      const data = await res.json()
+      if (data.ads && Array.isArray(data.ads)) {
+        setLiveAds(data.ads)
+        const sAd = data.ads.find((a: any) => a.placement === "projects_sidebar" && a.is_active)
+        if (sAd) {
+          setSidebarAd(sAd)
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch live ads:", err)
+    }
+  }
+
+  React.useEffect(() => {
+    fetchLiveAds()
+    const timer = setInterval(fetchLiveAds, 8000)
+    const onFocus = () => fetchLiveAds()
+    window.addEventListener("focus", onFocus)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener("focus", onFocus)
+    }
+  }, [])
+
   // Sync user session
   React.useEffect(() => {
     const syncUser = () => {
@@ -475,8 +506,37 @@ export function ProjectsPage() {
     }
   }
 
+  // Merge live sponsors from Supabase into project feed
+  const allProjects = React.useMemo(() => {
+    const liveSponsors: CatalogProject[] = liveAds
+      .filter((a) => a.is_active && (a.placement === "projects_card" || a.placement === "all"))
+      .map((a) => ({
+        id: `live-ad-${a.id}`,
+        title: a.title,
+        url: a.destination_url,
+        category: "Interface" as const,
+        description: a.description || "Sponsored showcase in the Reco Labs curated ecosystem.",
+        author: a.sponsor_name || "Reco Sponsor",
+        authorHandle: "sponsor",
+        thumbnailBg: "#121214",
+        visualType: "cyber" as const,
+        preview_image_url: a.image_url || undefined,
+        isSponsored: true,
+        sponsoredLabel: a.badge_label || "Sponsored",
+        tags: ["Sponsored", a.badge_label || "Featured"],
+        stars: (a.clicks_count || 0) + 120,
+      }))
+
+    // Deduplicate against existing static projects
+    const combined = [
+      ...liveSponsors,
+      ...projects.filter((p) => !liveSponsors.some((s) => s.title.toLowerCase() === p.title.toLowerCase())),
+    ]
+    return combined
+  }, [projects, liveAds])
+
   // Filter projects
-  const filteredProjects = projects.filter((p) => {
+  const filteredProjects = allProjects.filter((p) => {
     const matchesCategory = activeCategory === "All" || p.category.toLowerCase() === activeCategory.toLowerCase()
     const matchesSearch =
       !searchQuery ||
@@ -818,24 +878,39 @@ export function ProjectsPage() {
         </div>
       </div>
 
-      {/* Sidebar Bottom Promo Card (Matching BoardUI) */}
+      {/* Sidebar Bottom Promo Card (Live from Supabase) */}
       <div className="mt-8 pt-4">
         <div className="p-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 shadow-sm relative group">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-6 h-6 rounded-lg bg-[#FA5D00] text-black font-mono font-bold text-xs flex items-center justify-center">
-              B
+            <div className="w-6 h-6 rounded-lg bg-[#FA5D00] text-black font-mono font-bold text-xs flex items-center justify-center flex-none">
+              {((sidebarAd?.sponsor_name || sidebarAd?.title || "B")[0] || "B").toUpperCase()}
             </div>
-            <div>
-              <h4 className="font-mono text-xs font-bold leading-none">BoardUI</h4>
-              <span className="text-[9px] uppercase font-mono text-zinc-400">Sponsored</span>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-mono text-xs font-bold leading-none truncate">
+                {sidebarAd?.title || "BoardUI"}
+              </h4>
+              <span className="text-[9px] uppercase font-mono text-zinc-400">
+                {sidebarAd?.badge_label || "Sponsored"}
+              </span>
             </div>
           </div>
-          <p className="font-sans text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
-            Tables, charts and agent-interface components in a React and Tailwind system.
+          <p className="font-sans text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug line-clamp-2">
+            {sidebarAd?.description || "Tables, charts and agent-interface components in a React and Tailwind system."}
           </p>
           <div className="mt-3 flex items-center gap-2">
             <a
-              href="https://recolabs.in/network"
+              href={sidebarAd?.destination_url || "https://recolabs.in/projects"}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                if (sidebarAd?.id) {
+                  fetch("/api/network/ads/click", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: sidebarAd.id }),
+                  }).catch(() => {})
+                }
+              }}
               className="flex-1 text-center py-1.5 px-3 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-mono text-[11px] font-bold hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-colors"
             >
               Visit site ↗
@@ -866,7 +941,7 @@ export function ProjectsPage() {
         {/* ======================================================== */}
         {/* 1. DESKTOP LEFT SIDEBAR                                  */}
         {/* ======================================================== */}
-        <aside className="hidden md:flex w-64 lg:w-72 flex-none border-r border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-[#0c0c0e]/80 backdrop-blur-md p-5 flex-col justify-between h-full overflow-y-auto">
+        <aside className="hidden md:flex w-64 lg:w-72 flex-none border-r border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-[#0c0c0e]/80 backdrop-blur-md p-5 flex-col justify-between h-full overflow-y-auto sliderbar">
           {renderSidebarContent()}
         </aside>
 
@@ -875,7 +950,7 @@ export function ProjectsPage() {
         {/* ======================================================== */}
         {mobileSidebarOpen && (
           <div className="md:hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex justify-start animate-in fade-in duration-200">
-            <div className="w-72 max-w-[85vw] h-full bg-white dark:bg-[#0c0c0e] p-5 shadow-2xl border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto animate-in slide-in-from-left duration-200">
+            <div className="w-72 max-w-[85vw] h-full bg-white dark:bg-[#0c0c0e] p-5 shadow-2xl border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto sliderbar animate-in slide-in-from-left duration-200">
               {renderSidebarContent()}
             </div>
             <div className="flex-1" onClick={() => setMobileSidebarOpen(false)} />
@@ -974,7 +1049,7 @@ export function ProjectsPage() {
           </div>
 
           {/* Scrollable Bottom Content Area */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-32">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-32 sliderbar">
             
             {/* Central Hero Headline (Matching designeer.xyz) */}
             <div className="pt-10 pb-8 text-center max-w-3xl mx-auto">

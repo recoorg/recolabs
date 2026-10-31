@@ -290,143 +290,94 @@ export function NetworkPage() {
 
       <div className="relative z-10 mx-auto max-w-6xl">
         
-        {/* PEERLIST-STYLE HERO SECTION (Matching Image 1 & Image 2) */}
-        <div className="text-center max-w-4xl mx-auto pb-12 pt-4">
-          
-          {/* Top Pill / Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-mono text-xs font-bold tracking-wide shadow-md mb-6 hover:opacity-90 transition-opacity">
-            <span className="text-amber-400">✨</span>
-            <span>NEW: Introducing Reco Network</span>
-            <ArrowUpRight className="w-3.5 h-3.5 opacity-75" />
-          </div>
-
-          {/* Headline */}
-          <h1 className="font-serif italic text-4xl sm:text-6xl lg:text-7xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-[1.12]">
-            The Professional Network
-            <br />
-            <span className="not-italic">for builders to show & tell!</span>
-          </h1>
-
-          {/* Subtitle */}
-          <p className="mt-5 font-sans text-base sm:text-lg text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed max-w-xl mx-auto">
-            Showcase your work, launch projects, find jobs, and connect with the most (in)credible people.
-          </p>
-
-          {/* Username Claim Pill Input (Extended width with real Reco logo) */}
-          <div className="mt-8 max-w-xl sm:max-w-2xl mx-auto w-full px-2 sm:px-4">
-            <div className="flex items-center gap-2 sm:gap-3 px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-full border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg hover:border-[#FA5D00] focus-within:border-[#FA5D00] transition-all">
-              {/* Reco Small Logo Mark */}
-              <div className="w-8 h-8 rounded-full bg-[#FA5D00] p-1.5 flex items-center justify-center flex-none shadow-sm overflow-hidden">
-                <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
-              </div>
-              <span className="font-mono text-xs sm:text-sm font-semibold text-zinc-500 dark:text-zinc-400 select-none whitespace-nowrap">
-                recolabs.in/builder/
-              </span>
-              <input
-                type="text"
-                value={claimUsername}
-                onChange={(e) => setClaimUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleClaimUsername()
-                }}
-                placeholder="username"
-                className="flex-grow min-w-0 bg-transparent font-mono text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none"
-              />
-              <button
-                onClick={() => handleClaimUsername()}
-                title="Claim or view builder profile"
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black flex items-center justify-center transition-all shadow-sm active:scale-95 flex-none cursor-pointer"
-              >
-                <ArrowRight className="w-4 h-4" />
-              </button>
+        {/* ======================================================== */}
+        {/* 1. GUEST HERO SECTION (Visible ONLY when not logged in)   */}
+        {/* ======================================================== */}
+        {!currentUser ? (
+          <div className="text-center max-w-4xl mx-auto pb-12 pt-4">
+            {/* Top Pill / Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-mono text-xs font-bold tracking-wide shadow-md mb-6 hover:opacity-90 transition-opacity">
+              <span className="text-amber-400">✨</span>
+              <span>NEW: Introducing Reco Network</span>
+              <ArrowUpRight className="w-3.5 h-3.5 opacity-75" />
             </div>
-            <p className="mt-2 text-center font-mono text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400">
-              Claim your username before it's too late!
+
+            {/* Headline */}
+            <h1 className="font-serif italic text-4xl sm:text-6xl lg:text-7xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-[1.12]">
+              The Professional Network
+              <br />
+              <span className="not-italic">for builders to show & tell!</span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className="mt-5 font-sans text-base sm:text-lg text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed max-w-xl mx-auto">
+              Showcase your work, launch projects, find jobs, and connect with the most (in)credible people.
             </p>
-          </div>
 
-          {/* Interactive Avatar Honeycomb Cloud */}
-          <div className="mt-8">
-            <NetworkAvatarCloud
-              realUsers={networkStats.builders}
-              onSelectUsername={(u) => handleClaimUsername(u)}
-            />
-          </div>
-
-          {/* Clean Real Peers Counter (Live Database Health Report removed) */}
-          <div className="mt-6 flex flex-col items-center justify-center">
-            <div className="font-serif text-lg sm:text-xl text-zinc-700 dark:text-zinc-300">
-              <span className="font-bold text-zinc-950 dark:text-zinc-50">
-                {networkStats.totalBuilders || (networkStats.builders?.length || 0)}
-              </span>{" "}
-              <span>peers and counting...</span>
+            {/* Username Claim Pill Input */}
+            <div className="mt-8 max-w-xl sm:max-w-2xl mx-auto w-full px-2 sm:px-4">
+              <div className="flex items-center gap-2 sm:gap-3 px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-full border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg hover:border-[#FA5D00] focus-within:border-[#FA5D00] transition-all">
+                <div className="w-8 h-8 rounded-full bg-[#FA5D00] p-1.5 flex items-center justify-center flex-none shadow-sm overflow-hidden">
+                  <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
+                </div>
+                <span className="font-mono text-xs sm:text-sm font-semibold text-zinc-500 dark:text-zinc-400 select-none whitespace-nowrap">
+                  recolabs.in/builder/
+                </span>
+                <input
+                  type="text"
+                  value={claimUsername}
+                  onChange={(e) => setClaimUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleClaimUsername()
+                  }}
+                  placeholder="username"
+                  className="flex-grow min-w-0 bg-transparent font-mono text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none"
+                />
+                <button
+                  onClick={() => handleClaimUsername()}
+                  title="Claim or view builder profile"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black flex items-center justify-center transition-all shadow-sm active:scale-95 flex-none cursor-pointer"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="mt-2 text-center font-mono text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400">
+                Claim your username before it's too late!
+              </p>
             </div>
-          </div>
 
-          {/* Action Row */}
-          <div className="mt-10 flex flex-wrap justify-center items-center gap-3 pt-8 border-t editorial-hairline">
-            <button
-              onClick={() => {
-                if (!currentUser) {
+            {/* Interactive Avatar Honeycomb Cloud */}
+            <div className="mt-8">
+              <NetworkAvatarCloud
+                realUsers={networkStats.builders}
+                onSelectUsername={(u) => handleClaimUsername(u)}
+              />
+            </div>
+
+            {/* Real Peers Counter */}
+            <div className="mt-6 flex flex-col items-center justify-center">
+              <div className="font-serif text-lg sm:text-xl text-zinc-700 dark:text-zinc-300">
+                <span className="font-bold text-zinc-950 dark:text-zinc-50">
+                  {networkStats.totalBuilders || (networkStats.builders?.length || 0)}
+                </span>{" "}
+                <span>peers and counting...</span>
+              </div>
+            </div>
+
+            {/* Guest Action Row */}
+            <div className="mt-10 flex flex-wrap justify-center items-center gap-3 pt-8 border-t editorial-hairline">
+              <button
+                onClick={() => {
                   setAuthMode("signup")
                   setShowAuthModal(true)
-                } else {
-                  setShowPostModal(true)
-                }
-              }}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
-            >
-              <Rocket className="w-3.5 h-3.5 fill-black" />
-              <span>List Your Startup</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
+                }}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
+                <Rocket className="w-3.5 h-3.5 fill-black" />
+                <span>List Your Startup</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
 
-            {/* Founder Profile Pill */}
-            {currentUser ? (
-              <div className="flex items-center gap-2">
-                <Link
-                  to={`/builder/${currentUser.username}`}
-                  title="View your public builder profile"
-                  className="group inline-flex items-center gap-2.5 px-4 py-2 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-[#FA5D00] font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 shadow-sm transition-all"
-                >
-                  {currentUser.avatar_url ? (
-                    <img
-                      src={currentUser.avatar_url}
-                      alt={currentUser.name}
-                      className="w-5 h-5 rounded-full object-cover flex-none"
-                    />
-                  ) : (
-                    <span className="w-5 h-5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center flex-none">
-                      {(currentUser.name || "B")[0].toUpperCase()}
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>@{currentUser.username}</span>
-                  </span>
-                  <span className="text-zinc-400 group-hover:text-[#FA5D00] text-[10px] font-normal transition-colors">
-                    (My Profile)
-                  </span>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
-                </Link>
-
-                <button
-                  onClick={() => setShowProfileModal(true)}
-                  title="Edit Profile"
-                  className="px-3 py-2 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 font-mono text-xs text-zinc-600 dark:text-zinc-300 hover:border-[#FA5D00] hover:text-[#FA5D00] transition-colors cursor-pointer"
-                >
-                  Edit
-                </button>
-
-                <button
-                  onClick={handleLogout}
-                  title="Sign out"
-                  className="p-2 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-red-500 hover:border-red-500 transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
               <button
                 onClick={() => {
                   setAuthMode("login")
@@ -437,14 +388,78 @@ export function NetworkPage() {
                 <LogIn className="w-3.5 h-3.5 text-[#FA5D00]" />
                 <span>Founder Sign In / Register</span>
               </button>
-            )}
+            </div>
           </div>
-        </div>
+        ) : (
+          /* ======================================================== */
+          /* 2. AUTHENTICATED FOUNDER BAR (Replaces big hero on login) */
+          /* ======================================================== */
+          <div className="pb-8 pt-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b editorial-hairline">
+            <div>
+              <div className="flex items-center gap-2 text-[#FA5D00] text-xs font-mono font-bold uppercase tracking-wider mb-1">
+                <Rocket className="w-3.5 h-3.5" />
+                <span>Founder Workspace</span>
+              </div>
+              <h1 className="font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal">
+                Startups & Founder Directory
+              </h1>
+              <p className="font-sans text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                Explore, vote, and collaborate with early-stage builder startups across the guild.
+              </p>
+            </div>
 
-        {/* Search & Category Filter Bar + Startups Grid (Removed when user is signed in/logged in) */}
-        {!currentUser && (
-          <>
-            <div className="mt-10 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Link
+                to={`/builder/${currentUser.username}`}
+                title="View your public builder profile"
+                className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-[#FA5D00] font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 shadow-sm transition-all"
+              >
+                {currentUser.avatar_url ? (
+                  <img
+                    src={currentUser.avatar_url}
+                    alt={currentUser.name}
+                    className="w-5 h-5 rounded-full object-cover flex-none"
+                  />
+                ) : (
+                  <span className="w-5 h-5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center flex-none">
+                    {(currentUser.name || "B")[0].toUpperCase()}
+                  </span>
+                )}
+                <span>@{currentUser.username}</span>
+                <ArrowUpRight className="w-3 h-3 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
+              </Link>
+
+              <button
+                onClick={() => setShowProfileModal(true)}
+                title="Edit Profile"
+                className="px-3 py-1.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 font-mono text-xs text-zinc-600 dark:text-zinc-300 hover:border-[#FA5D00] hover:text-[#FA5D00] transition-colors cursor-pointer"
+              >
+                Edit Profile
+              </button>
+
+              <button
+                onClick={() => setShowPostModal(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
+                <Rocket className="w-3.5 h-3.5 fill-black" />
+                <span>List Your Startup</span>
+              </button>
+
+              <button
+                onClick={handleLogout}
+                title="Sign out"
+                className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-red-500 hover:border-red-500 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* 3. STARTUPS DIRECTORY (Always visible for all builders!)   */}
+        {/* ======================================================== */}
+        <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
           {/* Search Input */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -665,8 +680,6 @@ export function NetworkPage() {
             </div>
           )}
         </div>
-          </>
-        )}
 
       </div>
 

@@ -1,10 +1,17 @@
 "use client"
 
 import * as React from "react"
+import { useLocation } from "react-router-dom"
 import DoodleCrewFooter from "@/components/ui/doodle-crew-footer"
 
 export function FooterWrapper() {
+  const location = useLocation()
   const [isDark, setIsDark] = React.useState(false)
+
+  // Hide global footer on desktop catalogue app (/projects) so sidebar and cards extend full height
+  if (location.pathname.startsWith("/projects") || location.pathname.startsWith("/project")) {
+    return null
+  }
 
   React.useEffect(() => {
     const checkDark = () => {

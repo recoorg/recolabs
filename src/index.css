@@ -109,3 +109,33 @@
 .dark * {
   scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
+
+
+/* Tactile visible sliderbar for side section and catalog cards */
+.sliderbar {
+  scrollbar-width: thin;
+  scrollbar-color: #FA5D00 rgba(0, 0, 0, 0.05);
+}
+
+.sliderbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.sliderbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 9999px;
+}
+
+.dark .sliderbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sliderbar::-webkit-scrollbar-thumb {
+  background-color: #FA5D00;
+  border-radius: 9999px;
+}
+
+.sliderbar::-webkit-scrollbar-thumb:hover {
+  background-color: #e05300;
+}
