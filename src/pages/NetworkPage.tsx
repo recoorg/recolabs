@@ -312,13 +312,14 @@ export function NetworkPage() {
             Showcase your work, launch projects, find jobs, and connect with the most (in)credible people.
           </p>
 
-          {/* Username Claim Pill Input */}
-          <div className="mt-8 max-w-md mx-auto w-full px-2">
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-md hover:border-[#FA5D00] focus-within:border-[#FA5D00] transition-all">
-              <div className="w-8 h-8 rounded-full bg-[#FA5D00] text-black font-mono font-bold text-sm flex items-center justify-center flex-none shadow-sm">
-                R
+          {/* Username Claim Pill Input (Extended width with real Reco logo) */}
+          <div className="mt-8 max-w-xl sm:max-w-2xl mx-auto w-full px-2 sm:px-4">
+            <div className="flex items-center gap-2 sm:gap-3 px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-full border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg hover:border-[#FA5D00] focus-within:border-[#FA5D00] transition-all">
+              {/* Reco Small Logo Mark */}
+              <div className="w-8 h-8 rounded-full bg-[#FA5D00] p-1.5 flex items-center justify-center flex-none shadow-sm overflow-hidden">
+                <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
               </div>
-              <span className="font-mono text-xs sm:text-sm font-semibold text-zinc-500 dark:text-zinc-400 select-none">
+              <span className="font-mono text-xs sm:text-sm font-semibold text-zinc-500 dark:text-zinc-400 select-none whitespace-nowrap">
                 recolabs.in/builder/
               </span>
               <input
@@ -334,12 +335,12 @@ export function NetworkPage() {
               <button
                 onClick={() => handleClaimUsername()}
                 title="Claim or view builder profile"
-                className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black flex items-center justify-center transition-all shadow-sm active:scale-95 flex-none cursor-pointer"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black flex items-center justify-center transition-all shadow-sm active:scale-95 flex-none cursor-pointer"
               >
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-            <p className="mt-2.5 text-center font-mono text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mt-2 text-center font-mono text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400">
               Claim your username before it's too late!
             </p>
           </div>
@@ -352,61 +353,14 @@ export function NetworkPage() {
             />
           </div>
 
-          {/* Live Report Counter & Accordion Card */}
-          <div className="mt-6 flex flex-col items-center justify-center gap-2">
+          {/* Clean Real Peers Counter (Live Database Health Report removed) */}
+          <div className="mt-6 flex flex-col items-center justify-center">
             <div className="font-serif text-lg sm:text-xl text-zinc-700 dark:text-zinc-300">
               <span className="font-bold text-zinc-950 dark:text-zinc-50">
                 {networkStats.totalBuilders || (networkStats.builders?.length || 0)}
               </span>{" "}
               <span>peers and counting...</span>
             </div>
-
-            {/* Clickable Live Report Pill */}
-            <button
-              onClick={() => setShowLiveReport(!showLiveReport)}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold hover:bg-emerald-500/20 transition-all cursor-pointer mt-1"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Live Database Health Report</span>
-              <span className="text-[10px]">{showLiveReport ? "▲" : "▼"}</span>
-            </button>
-
-            {/* Expandable Live Database Report Detail */}
-            {showLiveReport && (
-              <div className="mt-4 p-5 rounded-2xl border-2 border-emerald-500/30 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-2xl max-w-lg w-full text-left font-mono text-xs animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
-                  <div className="flex items-center gap-2 font-bold text-zinc-900 dark:text-zinc-100">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    <span>Supabase PostgreSQL Index Status</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
-                    OPTIMIZED
-                  </span>
-                </div>
-                <div className="mt-3 space-y-2 text-zinc-600 dark:text-zinc-400">
-                  <div className="flex justify-between">
-                    <span>Sequential Scans:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">0 (Missing indexes resolved)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Indexed Columns:</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">created_at, user_id, category, username, email</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Query Plan:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">Index Scan / QuickSort ({networkStats.queryTimeMs} ms)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Active Startups Indexed:</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">{startups.length} live entries</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Supabase Host:</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">aws-0-eu-west-1 pooler (Port 6543)</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Action Row */}

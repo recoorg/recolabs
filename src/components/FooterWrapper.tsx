@@ -60,40 +60,28 @@ export function FooterWrapper() {
           {
             title: "Guild",
             links: [
-              { label: "Read Founders Story", href: "/about" },
-              { label: "The Skill Exchange", href: "/" },
-              { label: "Grade 10 Origins", href: "/about" },
-              { label: "Beginner Roadmaps", href: "/about" },
-              { label: "Privacy Policy", href: "/privacy" },
-              { label: "Blog ↗", href: "https://blog.recolabs.in" },
+              { label: "About Reco Labs", href: "/about" },
+              { label: "Skill Exchange", href: "/" },
+              { label: "Curated Projects", href: "/projects" },
+              { label: "Technical Blog ↗", href: "https://blog.recolabs.in" },
             ],
           },
           {
-            title: "Codebases",
-            links: [
-              { label: "recolabs (Flagship)", href: "https://github.com/recoorg/recolabs" },
-              { label: "Hardware Workbench", href: "/projects" },
-              { label: "Hacker Toolkit", href: "/projects" },
-              { label: "All Repositories", href: "https://github.com/recoorg" },
-            ],
-          },
-          {
-            title: "Participate",
+            title: "Ecosystem",
             links: [
               { label: "Founder Network", href: "/network" },
               { label: "Hackathons & Sprints", href: "/hackathons" },
-              { label: "Sponsor Reco Labs", href: "/sponsors" },
               { label: "Guild Roles & Jobs", href: "/jobs" },
-              { label: "Discord Build Calls", href: "https://discord.com/invite/7dk4w37BhP" },
+              { label: "GitHub Codebases ↗", href: "https://github.com/recoorg" },
             ],
           },
           {
-            title: "Network",
+            title: "Community",
             links: [
-              { label: "Discord Guild", href: "https://discord.com/invite/7dk4w37BhP" },
-              { label: "Instagram (@rawenergon)", href: "https://instagram.com/rawenergon" },
-              { label: "X (@adibxr)", href: "https://x.com/adibxr" },
-              { label: "GitHub (@recoorg)", href: "https://github.com/recoorg" },
+              { label: "Sponsor Reco Labs", href: "/sponsors" },
+              { label: "Discord Guild ↗", href: "https://discord.com/invite/7dk4w37BhP" },
+              { label: "Founder X (@adibxr) ↗", href: "https://x.com/adibxr" },
+              { label: "Instagram (@rawenergon) ↗", href: "https://instagram.com/rawenergon" },
             ],
           },
         ]}

@@ -204,10 +204,10 @@ export function StartupScreenshotModal({ startup, onClose }: StartupScreenshotMo
 
               {/* Reco Labs Brand Mark (Upper Right) */}
               <div
-                className="w-10 h-10 rounded-xl bg-black dark:bg-[#FA5D00] text-[#FA5D00] dark:text-black font-serif text-2xl font-bold flex items-center justify-center shadow-sm flex-none select-none"
+                className="w-10 h-10 rounded-xl bg-[#FA5D00] p-1.5 flex items-center justify-center shadow-sm flex-none select-none overflow-hidden"
                 title="Reco Labs Network"
               >
-                R
+                <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
               </div>
             </div>
 
