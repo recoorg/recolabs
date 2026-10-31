@@ -45,99 +45,105 @@ export function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-full px-5 sm:px-6 py-4 sm:py-5 pointer-events-none">
-      <div className="mx-auto max-w-7xl flex items-center justify-between">
+      <div className="relative mx-auto max-w-7xl flex items-center justify-between">
         
         {/* Left: Raw Logo Mark */}
-        <Link
-          to="/"
-          className="pointer-events-auto flex items-center gap-2 hover:opacity-85 transition-opacity"
-          aria-label="Reco Labs Home"
-        >
-          <img
-            src="/logo-black.png"
-            alt="Reco Labs Logo"
-            className="h-8 sm:h-10 w-auto object-contain dark:hidden"
-          />
-          <img
-            src="/logo-white.png"
-            alt="Reco Labs Logo"
-            className="h-8 sm:h-10 w-auto object-contain hidden dark:block"
-          />
-        </Link>
+        <div className="flex items-center flex-1 justify-start">
+          <Link
+            to="/"
+            className="pointer-events-auto flex items-center gap-2 hover:opacity-85 transition-opacity"
+            aria-label="Reco Labs Home"
+          >
+            <img
+              src="/logo-black.png"
+              alt="Reco Labs Logo"
+              className="h-8 sm:h-10 w-auto object-contain dark:hidden"
+            />
+            <img
+              src="/logo-white.png"
+              alt="Reco Labs Logo"
+              className="h-8 sm:h-10 w-auto object-contain hidden dark:block"
+            />
+          </Link>
+        </div>
 
-        {/* Center: Desktop Vibrant Orange Pill Navigation */}
-        <nav
-          className="pointer-events-auto hidden sm:flex items-center gap-6 md:gap-8 px-7 py-2 rounded-full bg-[#FA5D00] border-2 border-black text-black font-mono text-[13px] font-bold tracking-wider uppercase shadow-sm"
-          aria-label="Main Navigation"
-        >
-          {navLinks.map((link) =>
-            link.external ? (
+        {/* Center: Desktop Vibrant Orange Pill Navigation - Pinned Mathematically to Exact Center on ALL pages */}
+        <div className="pointer-events-none hidden sm:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <nav
+            className="pointer-events-auto flex items-center gap-6 md:gap-8 px-7 py-2 rounded-full bg-[#FA5D00] border-2 border-black text-black font-mono text-[13px] font-bold tracking-wider uppercase shadow-sm"
+            aria-label="Main Navigation"
+          >
+            {navLinks.map((link) =>
+              link.external ? (
+                <a
+                  key={link.label}
+                  href={link.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:opacity-75 transition-opacity inline-flex items-center gap-0.5"
+                  title="Reco Labs Blog (opens in new tab)"
+                >
+                  <span>{link.label}</span>
+                  <span className="text-[10px] leading-none opacity-70">↗</span>
+                </a>
+              ) : (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`transition-opacity ${isActive(link.path) ? "underline underline-offset-4 decoration-2" : "hover:opacity-75"}`}
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
+          </nav>
+        </div>
+
+        {/* Right: Discord Button / Spacer & Mobile Hamburger */}
+        <div className="flex items-center justify-end flex-1 pointer-events-auto">
+          {isHomePage && (
+            <div className="hidden sm:flex items-center gap-3">
               <a
-                key={link.label}
-                href={link.path}
+                href="https://discord.com/invite/7dk4w37BhP"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:opacity-75 transition-opacity inline-flex items-center gap-0.5"
-                title="Reco Labs Blog (opens in new tab)"
+                className="px-5 py-2 rounded-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-sans text-xs sm:text-sm font-semibold tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center"
               >
-                <span>{link.label}</span>
-                <span className="text-[10px] leading-none opacity-70">↗</span>
+                Discord
               </a>
-            ) : (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`transition-opacity ${isActive(link.path) ? "underline underline-offset-4 decoration-2" : "hover:opacity-75"}`}
+            </div>
+          )}
+
+          {/* Right Mobile: 3-line Hamburger Button */}
+          <div className="flex sm:hidden items-center gap-2">
+            {isHomePage && (
+              <a
+                href="https://discord.com/invite/7dk4w37BhP"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-1.5 rounded-full bg-[#5865F2] text-white font-mono text-[11px] font-bold tracking-wider uppercase shadow-sm"
               >
-                {link.label}
-              </Link>
-            )
-          )}
-        </nav>
-
-        {/* Right Desktop: Discord Button */}
-        {isHomePage && (
-          <div className="hidden sm:flex items-center gap-3">
-            <a
-              href="https://discord.com/invite/7dk4w37BhP"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="pointer-events-auto px-5 py-2 rounded-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-sans text-xs sm:text-sm font-semibold tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center"
-            >
-              Discord
-            </a>
-          </div>
-        )}
-
-        {/* Right Mobile: 3-line Hamburger Button */}
-        <div className="flex sm:hidden items-center gap-2 pointer-events-auto">
-          {isHomePage && (
-            <a
-              href="https://discord.com/invite/7dk4w37BhP"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3.5 py-1.5 rounded-full bg-[#5865F2] text-white font-mono text-[11px] font-bold tracking-wider uppercase shadow-sm"
-            >
-              Discord
-            </a>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            className="flex items-center justify-center w-9 h-9 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-white shadow-sm active:scale-90 transition-all cursor-pointer"
-          >
-            {mobileOpen ? (
-              <X className="w-5 h-5 text-[#FA5D00]" />
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-1 w-4">
-                <span className="w-4 h-[2px] bg-black dark:bg-white rounded-full transition-transform" />
-                <span className="w-4 h-[2px] bg-black dark:bg-white rounded-full transition-transform" />
-                <span className="w-4 h-[2px] bg-black dark:bg-white rounded-full transition-transform" />
-              </div>
+                Discord
+              </a>
             )}
-          </button>
+
+            <button
+              type="button"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              className="flex items-center justify-center w-9 h-9 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-white shadow-sm active:scale-90 transition-all cursor-pointer"
+            >
+              {mobileOpen ? (
+                <X className="w-5 h-5 text-[#FA5D00]" />
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-1 w-4">
+                  <span className="w-4 h-[2px] bg-black dark:bg-white rounded-full transition-transform" />
+                  <span className="w-4 h-[2px] bg-black dark:bg-white rounded-full transition-transform" />
+                  <span className="w-4 h-[2px] bg-black dark:bg-white rounded-full transition-transform" />
+                </div>
+              )}
+            </button>
+          </div>
         </div>
 
       </div>

@@ -441,8 +441,10 @@ export function NetworkPage() {
           </div>
         </div>
 
-        {/* Search & Category Filter Bar */}
-        <div className="mt-10 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
+        {/* Search & Category Filter Bar + Startups Grid (Removed when user is signed in/logged in) */}
+        {!currentUser && (
+          <>
+            <div className="mt-10 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
           {/* Search Input */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -663,6 +665,8 @@ export function NetworkPage() {
             </div>
           )}
         </div>
+          </>
+        )}
 
       </div>
 

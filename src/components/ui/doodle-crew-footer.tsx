@@ -1210,8 +1210,22 @@ export default function DoodleCrewFooter({
         </div>
       </div>
 
-      <div className="dcf-bar dcf-rise" style={{ "--d": "120ms", justifyContent: "center", textAlign: "center" } as React.CSSProperties}>
+      <div className="dcf-bar dcf-rise" style={{ "--d": "120ms", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: "6px" } as React.CSSProperties}>
         <p className="dcf-copy" style={{ textAlign: "center", width: "100%", margin: 0 }}>{copyright}</p>
+        {legal && legal.length > 0 && (
+          <div className="dcf-legal" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "16px", fontSize: "12px", marginTop: "4px" }}>
+            {legal.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className="dcf-link"
+                style={{ color: "var(--dcf-soft)", textDecoration: "underline", textUnderlineOffset: "3px" }}
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </footer>
   )

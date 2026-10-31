@@ -62,6 +62,7 @@ export function FooterWrapper() {
               { label: "Skill Exchange", href: "/" },
               { label: "Curated Projects", href: "/projects" },
               { label: "Technical Blog ↗", href: "https://blog.recolabs.in" },
+              { label: "Privacy Policy", href: "/privacy" },
             ],
           },
           {
