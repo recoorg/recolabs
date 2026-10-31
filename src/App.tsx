@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom"
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom"
 import { Navbar } from "@/components/Navbar"
 import { FooterWrapper } from "@/components/FooterWrapper"
 import { ScrollToTop } from "@/components/ScrollToTop"
@@ -43,41 +43,54 @@ function GlobalOAuthListener() {
   return null
 }
 
+function AppContent() {
+  const location = useLocation()
+  const isProjects = location.pathname.startsWith("/projects") || location.pathname.startsWith("/project")
+
+  return (
+    <div
+      className={`relative w-full font-sans selection:bg-[#FA5D00] selection:text-white bg-white dark:bg-[#09090b] ${
+        isProjects ? "h-screen overflow-hidden flex flex-col" : "min-h-screen flex flex-col justify-between"
+      }`}
+    >
+      {/* Floating Pill Navigation (Hidden automatically on /projects) */}
+      <Navbar />
+
+      {/* Dynamic Route Pages with Strict Flex Constraint */}
+      <main className={`w-full ${isProjects ? "flex-1 min-h-0 flex flex-col overflow-hidden" : "flex-grow"}`}>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/jobs" element={<JobsPage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/project" element={<ProjectsPage />} />
+            <Route path="/hackathons" element={<HackathonsPage />} />
+            <Route path="/hackathon" element={<HackathonsPage />} />
+            <Route path="/sponsors" element={<SponsorsPage />} />
+            <Route path="/sponsor" element={<SponsorsPage />} />
+            <Route path="/network" element={<NetworkPage />} />
+            <Route path="/builder/:username" element={<BuilderProfilePage />} />
+            <Route path="/builders/:username" element={<BuilderProfilePage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/privary" element={<PrivacyPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </ErrorBoundary>
+      </main>
+
+      {/* Torn Poster Pushpin Footer on Every Page (Hidden automatically on /projects) */}
+      <FooterWrapper />
+    </div>
+  )
+}
+
 export function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
       <GlobalOAuthListener />
-      <div className="relative min-h-screen w-full bg-white dark:bg-[#09090b] font-sans selection:bg-[#FA5D00] selection:text-white flex flex-col justify-between">
-        {/* Floating Pill Navigation (Hidden automatically on /projects) */}
-        <Navbar />
-
-        {/* Dynamic Route Pages with Global Intercept Shield */}
-        <main className="w-full flex-grow">
-          <ErrorBoundary>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/jobs" element={<JobsPage />} />
-              <Route path="/projects" element={<ProjectsPage />} />
-              <Route path="/project" element={<ProjectsPage />} />
-              <Route path="/hackathons" element={<HackathonsPage />} />
-              <Route path="/hackathon" element={<HackathonsPage />} />
-              <Route path="/sponsors" element={<SponsorsPage />} />
-              <Route path="/sponsor" element={<SponsorsPage />} />
-              <Route path="/network" element={<NetworkPage />} />
-              <Route path="/builder/:username" element={<BuilderProfilePage />} />
-              <Route path="/builders/:username" element={<BuilderProfilePage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
-              <Route path="/privary" element={<PrivacyPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </ErrorBoundary>
-        </main>
-
-        {/* Torn Poster Pushpin Footer on Every Page (Hidden automatically on /projects) */}
-        <FooterWrapper />
-      </div>
+      <AppContent />
     </BrowserRouter>
   )
 }

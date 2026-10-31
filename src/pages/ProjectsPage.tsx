@@ -325,6 +325,12 @@ export function ProjectsPage() {
     return () => window.removeEventListener("reco_auth_changed", syncUser)
   }, [])
 
+  // Handle User Logout
+  const handleLogout = () => {
+    networkApi.logout()
+    setCurrentUser(null)
+  }
+
   // Auto screenshot preview when url changes
   const handleUrlBlur = (url: string) => {
     if (!url) return
@@ -935,17 +941,20 @@ export function ProjectsPage() {
             </button>
             <button
               onClick={() => {
-                setShowFavoritesOnly(true)
+                setShowFavoritesOnly(!showFavoritesOnly)
                 setMobileSidebarOpen(false)
               }}
               className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
                 showFavoritesOnly
-                  ? "text-[#FA5D00] font-bold"
+                  ? "bg-[#FA5D00]/10 text-[#FA5D00] font-bold border border-[#FA5D00]/30"
                   : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
               }`}
             >
-              <span>♥ My Favourites</span>
-              <span className="text-[10px] opacity-60 font-mono">{favorites.length}</span>
+              <div className="flex items-center gap-2">
+                <Heart className={`w-3.5 h-3.5 ${showFavoritesOnly ? "fill-[#FA5D00] text-[#FA5D00]" : ""}`} />
+                <span>Favourites</span>
+              </div>
+              <span className="text-[10px] opacity-70 font-mono font-semibold">({favorites.length})</span>
             </button>
             <button
               onClick={() => {
@@ -1043,10 +1052,10 @@ export function ProjectsPage() {
   )
 
   return (
-    <div className="relative w-full h-screen bg-white dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 flex flex-col pt-0 overflow-hidden">
+    <div className="relative w-full h-full min-h-0 bg-white dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 flex flex-col overflow-hidden">
       
       {/* App Body: Split Layout */}
-      <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden relative">
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden relative">
         
         {/* ======================================================== */}
         {/* 1. DESKTOP LEFT SIDEBAR (Collapsible with smooth slide)  */}
@@ -1078,97 +1087,29 @@ export function ProjectsPage() {
         {/* ======================================================== */}
         <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
           
-          {/* Permanently Fixed Top Control Bar with Sidebar Toggle & Reco Nav */}
+          {/* Permanently Fixed Top Control Bar */}
           <div className="flex-none z-20 flex flex-wrap items-center justify-between gap-2.5 px-4 sm:px-8 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-[#09090b]/95 backdrop-blur-md shadow-xs">
             
-            {/* Left Controls: Reco Logo Link, Sidebar Collapse Button & Auth */}
+            {/* Left Controls: Reco Logo Toggles Sidebar */}
             <div className="flex items-center gap-2">
-              {/* Back to Reco Labs Home Brand Mark */}
-              <Link
-                to="/"
-                title="Return to Reco Labs Home"
-                className="flex items-center gap-2 group mr-1 cursor-pointer"
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined" && window.innerWidth < 768) {
+                    setMobileSidebarOpen(!mobileSidebarOpen)
+                  } else {
+                    setIsSidebarCollapsed(!isSidebarCollapsed)
+                  }
+                }}
+                title={isSidebarCollapsed ? "Open sidebar" : "Toggle sidebar"}
+                className="flex items-center gap-2 group cursor-pointer p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
               >
-                <div className="w-7 h-7 rounded-full bg-[#FA5D00] p-1 flex items-center justify-center flex-none shadow-xs group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 rounded-full bg-[#FA5D00] p-1.5 flex items-center justify-center flex-none shadow-xs group-hover:scale-105 transition-transform">
                   <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
                 </div>
                 <span className="font-mono text-xs font-bold tracking-tight text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors hidden sm:inline">
                   recolabs
                 </span>
-              </Link>
-
-              {/* Desktop Sidebar Collapse Toggle */}
-              <button
-                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                title={isSidebarCollapsed ? "Show Sidebar" : "Collapse Sidebar"}
-                className="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs text-zinc-700 dark:text-zinc-300 hover:border-[#FA5D00] hover:text-black dark:hover:text-white transition-colors cursor-pointer"
-              >
-                {isSidebarCollapsed ? (
-                  <>
-                    <PanelLeftOpen className="w-3.5 h-3.5 text-[#FA5D00]" />
-                    <span>Sidebar</span>
-                  </>
-                ) : (
-                  <>
-                    <PanelLeftClose className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>Collapse</span>
-                  </>
-                )}
-              </button>
-
-              {/* Mobile Sidebar Drawer Trigger */}
-              <button
-                onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-[#FA5D00]" />
-                <span className="hidden xs:inline">Browse</span>
-              </button>
-
-              {/* Quick links to Network & Home */}
-              <div className="hidden lg:flex items-center gap-2 font-mono text-xs text-zinc-400 ml-1">
-                <Link to="/" className="hover:text-[#FA5D00] transition-colors">Home</Link>
-                <span>/</span>
-                <Link to="/network" className="hover:text-[#FA5D00] transition-colors">Network</Link>
-              </div>
-
-              {currentUser ? (
-                <Link
-                  to={`/builder/${currentUser.username}`}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors"
-                >
-                  {currentUser.avatar_url ? (
-                    <img src={currentUser.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
-                  ) : (
-                    <span className="w-4 h-4 rounded-full bg-[#FA5D00] text-black text-[9px] font-bold flex items-center justify-center">
-                      {(currentUser.name || "B")[0].toUpperCase()}
-                    </span>
-                  )}
-                  <span>@{currentUser.username}</span>
-                </Link>
-              ) : (
-                <button
-                  onClick={() => {
-                    setAuthMode("login")
-                    setShowAuthModal(true)
-                  }}
-                  className="px-3.5 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
-                >
-                  Login
-                </button>
-              )}
-
-              <button
-                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                className={`px-3 py-1.5 rounded-full font-mono text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                  showFavoritesOnly
-                    ? "bg-[#FA5D00] text-black"
-                    : "border border-zinc-200 dark:border-zinc-800 hover:border-[#FA5D00]"
-                }`}
-              >
-                <Heart className={`w-3.5 h-3.5 ${showFavoritesOnly ? "fill-black" : ""}`} />
-                <span className="hidden sm:inline">Favourites</span>
-                <span>({favorites.length})</span>
               </button>
             </div>
 
@@ -1184,8 +1125,43 @@ export function ProjectsPage() {
               />
             </div>
 
-            {/* Right Action Buttons */}
+            {/* Right Action Buttons: Login / User Profile with Logout */}
             <div className="flex items-center gap-2">
+              {currentUser ? (
+                <div className="flex items-center gap-1.5">
+                  <Link
+                    to={`/builder/${currentUser.username}`}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors"
+                  >
+                    {currentUser.avatar_url ? (
+                      <img src={currentUser.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                    ) : (
+                      <span className="w-4 h-4 rounded-full bg-[#FA5D00] text-black text-[9px] font-bold flex items-center justify-center">
+                        {(currentUser.name || "B")[0].toUpperCase()}
+                      </span>
+                    )}
+                    <span className="max-w-[100px] truncate">@{currentUser.username}</span>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    title="Log out"
+                    className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 hover:border-rose-500 hover:text-rose-500 text-zinc-400 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setAuthMode("login")
+                    setShowAuthModal(true)
+                  }}
+                  className="px-3.5 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
+                >
+                  Login / Sign up
+                </button>
+              )}
+
               <button
                 onClick={() => setShowSponsorModal(true)}
                 className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 hover:border-[#FA5D00] font-mono text-xs font-semibold text-[#FA5D00] transition-colors cursor-pointer"
@@ -1333,15 +1309,32 @@ export function ProjectsPage() {
 
                           {/* Bottom Footer Info */}
                           <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-zinc-400">
-                            <span className="truncate">
-                              by <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">@{p.authorHandle}</strong>
-                            </span>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              {p.url && (
+                                <img
+                                  src={`https://www.google.com/s2/favicons?domain=${(() => {
+                                    try {
+                                      return new URL(p.url.startsWith("http") ? p.url : `https://${p.url}`).hostname
+                                    } catch {
+                                      return "recolabs.in"
+                                    }
+                                  })()}&sz=32`}
+                                  alt=""
+                                  loading="lazy"
+                                  className="w-3.5 h-3.5 rounded-xs flex-none object-contain opacity-80"
+                                  onError={(e) => { e.currentTarget.style.display = "none" }}
+                                />
+                              )}
+                              <span className="truncate">
+                                by <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">@{p.authorHandle}</strong>
+                              </span>
+                            </div>
 
                             <a
                               href={p.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="hover:text-[#FA5D00] flex items-center gap-1 transition-colors"
+                              className="hover:text-[#FA5D00] flex items-center gap-1 transition-colors flex-none"
                             >
                               <span>Visit</span>
                               <ArrowUpRight className="w-3 h-3" />
