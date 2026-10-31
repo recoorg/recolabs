@@ -40,7 +40,7 @@ interface CatalogProject {
   author: string
   authorHandle: string
   thumbnailBg: string
-  visualType: "wireframe" | "landscape" | "pixel" | "buttons" | "terminal" | "hardware" | "cyber"
+  visualType: "wireframe" | "landscape" | "pixel" | "buttons" | "terminal" | "hardware" | "cyber" | "space" | "quote" | "tools"
   isSponsored?: boolean
   sponsoredLabel?: string
   tags: string[]
@@ -64,6 +64,86 @@ const INITIAL_PROJECTS: CatalogProject[] = [
     stars: 124,
   },
   {
+    id: "typingmind-ui",
+    title: "TypingMind Canvas",
+    url: "https://typingmind.com",
+    category: "Inspiration",
+    description: "Spring pink polysheets and the hill. Visual prompt canvases and spatial generative workspace.",
+    author: "Tuan Nguyen",
+    authorHandle: "tuan",
+    thumbnailBg: "#f8f8f6",
+    visualType: "landscape",
+    tags: ["AI", "UI Craft", "Productivity"],
+    stars: 512,
+  },
+  {
+    id: "ai-ui-synthesis",
+    title: "AI for UI",
+    url: "https://recolabs.in/network",
+    category: "Interface",
+    description: "Design and build with AI. Next-generation generative tokens, components, and design systems.",
+    author: "Reco AI Labs",
+    authorHandle: "recolabs",
+    thumbnailBg: "#121214",
+    visualType: "cyber",
+    isSponsored: true,
+    sponsoredLabel: "Sponsored",
+    tags: ["AI", "Generative", "UI"],
+    stars: 489,
+  },
+  {
+    id: "skeuo-buttons",
+    title: "Tactile Neumorphic Buttons",
+    url: "https://recolabs.in/projects",
+    category: "Interface",
+    description: "Multi-state tactile skeuomorphic button components with physical lighting and easing curves.",
+    author: "Designeer Guild",
+    authorHandle: "curated",
+    thumbnailBg: "#e7e6e3",
+    visualType: "buttons",
+    tags: ["CSS", "Skeuomorphism", "Design System"],
+    stars: 342,
+  },
+  {
+    id: "celestial-pixel",
+    title: "Starlight Constellation Rig",
+    url: "https://github.com/recoorg",
+    category: "Motion",
+    description: "Interactive celestial sprite simulator with gravitational physics in deep midnight space.",
+    author: "Elena Rostova",
+    authorHandle: "erostova",
+    thumbnailBg: "#060714",
+    visualType: "space",
+    tags: ["WebGL", "Motion", "Canvas"],
+    stars: 275,
+  },
+  {
+    id: "conversations-ui",
+    title: "People, and the Work They Start",
+    url: "https://recolabs.in",
+    category: "Finds",
+    description: "Simple tools for the startup. Built for real customer conversations and shared thread context.",
+    author: "Dhruv Jaradi",
+    authorHandle: "dhruv",
+    thumbnailBg: "#ffffff",
+    visualType: "quote",
+    tags: ["Product", "UI", "Brutalist"],
+    stars: 410,
+  },
+  {
+    id: "shared-tools",
+    title: "Your Tools. A Shared Understanding",
+    url: "https://recolabs.in/network",
+    category: "Resources",
+    description: "Unified team context, knowledge graphs, and asynchronous collaboration pipelines.",
+    author: "Tanish",
+    authorHandle: "fluxstudio",
+    thumbnailBg: "#ffffff",
+    visualType: "tools",
+    tags: ["Workflow", "Knowledge", "Async"],
+    stars: 198,
+  },
+  {
     id: "shafire-tools",
     title: "Shafire Kernel Tools",
     url: "https://github.com/recoorg",
@@ -77,21 +157,6 @@ const INITIAL_PROJECTS: CatalogProject[] = [
     stars: 88,
   },
   {
-    id: "board-ui",
-    title: "BoardUI Component Kit",
-    url: "https://recolabs.in/projects",
-    category: "Interface",
-    description: "Tables, charts, and agent-interface components in a React and Tailwind brutalist design system.",
-    author: "Reco Labs",
-    authorHandle: "recolabs",
-    thumbnailBg: "#18181b",
-    visualType: "buttons",
-    isSponsored: true,
-    sponsoredLabel: "Sponsored by Reco Guild",
-    tags: ["React", "Tailwind", "Design System"],
-    stars: 342,
-  },
-  {
     id: "hardware-glitcher",
     title: "ESP32-S3 Crowbar Rig",
     url: "https://github.com/recoorg",
@@ -103,73 +168,6 @@ const INITIAL_PROJECTS: CatalogProject[] = [
     visualType: "hardware",
     tags: ["KiCAD", "ESP32", "Firmware"],
     stars: 76,
-  },
-  {
-    id: "afxdp-network",
-    title: "Zero-Copy Network Stack",
-    url: "https://github.com/recoorg",
-    category: "Tools",
-    description: "High-throughput Linux AF_XDP raw packet driver with kernel bypass written in safe Rust.",
-    author: "Devin Patel",
-    authorHandle: "devinp",
-    thumbnailBg: "#022c22",
-    visualType: "cyber",
-    tags: ["Rust", "AF_XDP", "eBPF"],
-    stars: 198,
-  },
-  {
-    id: "typingmind-ui",
-    title: "TypingMind Canvas",
-    url: "https://typingmind.com",
-    category: "Inspiration",
-    description: "Beautiful next-generation generative AI workspace with local memory and prompt trees.",
-    author: "Community",
-    authorHandle: "curated",
-    thumbnailBg: "#172554",
-    visualType: "landscape",
-    tags: ["AI", "UI Craft", "Productivity"],
-    stars: 512,
-  },
-  {
-    id: "ai-ui-synthesis",
-    title: "AI for UI Synthesis",
-    url: "https://recolabs.in/network",
-    category: "Interface",
-    description: "Design and build generative design tokens, state graphs, and autonomous interfaces.",
-    author: "Reco AI Labs",
-    authorHandle: "recolabs",
-    thumbnailBg: "#1e1b4b",
-    visualType: "cyber",
-    isSponsored: true,
-    sponsoredLabel: "Featured Tool",
-    tags: ["AI", "Generative", "UI"],
-    stars: 265,
-  },
-  {
-    id: "raylib-wasm",
-    title: "Raylib WebGL Playground",
-    url: "https://raylib.com",
-    category: "3D",
-    description: "Hardware-accelerated 3D mathematics, spatial lighting caustics, and procedural shaders.",
-    author: "Maksym Solomkin",
-    authorHandle: "makssolomkin",
-    thumbnailBg: "#09090b",
-    visualType: "wireframe",
-    tags: ["WebGL", "C99", "Shaders"],
-    stars: 430,
-  },
-  {
-    id: "hackclub-sprig",
-    title: "Hack Club Sprig Console",
-    url: "https://sprig.hackclub.com",
-    category: "Resources",
-    description: "Handheld open-hardware console with a tile-based engine for high school developers.",
-    author: "Hack Club",
-    authorHandle: "hackclub",
-    thumbnailBg: "#3b0764",
-    visualType: "pixel",
-    tags: ["Hardware", "Education", "Gaming"],
-    stars: 820,
   },
 ]
 
@@ -386,42 +384,161 @@ export function ProjectsPage() {
     return matchesCategory && matchesSearch && matchesFav
   })
 
-  // Render stylized visual mockup preview inside the card
+  // Render stylized visual mockup preview inside the card matching screenshot
   const renderVisualMockup = (p: CatalogProject) => {
     switch (p.visualType) {
       case "wireframe":
         return (
-          <div className="w-full h-full flex items-center justify-center bg-zinc-950 p-6 relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
-            <div className="relative w-28 h-28 border border-zinc-700/80 rounded-2xl flex items-center justify-center shadow-inner">
-              <span className="font-serif italic text-6xl text-white font-normal select-none">1</span>
-              <div className="absolute inset-0 border border-dashed border-[#FA5D00]/40 rounded-2xl animate-pulse" />
+          <div className="w-full h-full flex items-center justify-center bg-[#0d0d10] p-6 relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
+            {/* Crosshair grid lines */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-full h-[1px] bg-zinc-800/80" />
+              <div className="h-full w-[1px] bg-zinc-800/80 absolute" />
+            </div>
+            {/* Intricate Wireframe numeral 1 */}
+            <div className="relative z-10 select-none flex items-center justify-center">
+              <svg viewBox="0 0 100 120" className="w-24 h-28 stroke-zinc-200 fill-none" strokeWidth="1.2">
+                <path d="M 40 30 C 45 28 50 20 54 16 L 56 16 L 56 100 M 35 100 L 70 100" strokeDasharray="3 2" />
+                <path d="M 38 32 Q 48 24 54 18 L 54 98 M 38 98 L 68 98" />
+                <path d="M 42 34 C 47 30 52 24 55 20 M 52 22 L 52 96" strokeWidth="0.8" strokeDasharray="1 1.5" />
+                <circle cx="54" cy="18" r="2" fill="white" />
+                <circle cx="56" cy="100" r="2.5" fill="white" />
+                <circle cx="35" cy="100" r="2" fill="white" />
+                <circle cx="70" cy="100" r="2" fill="white" />
+              </svg>
             </div>
           </div>
         )
       case "landscape":
         return (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-900/60 via-purple-900/40 to-black p-6 relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
-            <div className="w-full max-w-[200px] h-24 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-2 flex flex-col justify-between shadow-xl">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-rose-500" />
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <div className="w-full h-full flex flex-col justify-between bg-[#faf9f5] text-zinc-800 p-4 relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
+            {/* Canvas Header */}
+            <div className="text-center font-mono text-[9px] text-zinc-500 leading-tight">
+              <span className="block font-bold text-zinc-700">TypingMind Canvas</span>
+              <span>spring - pink polysheets and the hill</span>
+            </div>
+            {/* Scenic painting illustration */}
+            <div className="relative my-2 w-full flex-1 rounded-xl overflow-hidden border border-zinc-200/80 bg-gradient-to-b from-sky-200 via-emerald-100 to-emerald-200 flex flex-col justify-end p-2 shadow-inner">
+              <div className="absolute top-2 right-4 w-6 h-6 rounded-full bg-amber-200/60 blur-xs" />
+              <div className="relative z-10 flex items-center justify-center gap-1.5 flex-wrap">
+                {["🌸", "🪷", "🌸", "🌺", "🌸"].map((flower, i) => (
+                  <span key={i} className="text-base drop-shadow-sm animate-pulse">{flower}</span>
+                ))}
               </div>
-              <div className="h-2 w-3/4 rounded bg-white/30" />
-              <div className="h-2 w-1/2 rounded bg-white/20" />
+            </div>
+            {/* Thumbnails row */}
+            <div className="flex items-center justify-center gap-2 pt-1 border-t border-zinc-200/60">
+              <span className="w-5 h-3.5 rounded bg-pink-200 border border-pink-300" />
+              <span className="w-5 h-3.5 rounded bg-emerald-200 border border-emerald-300" />
+              <span className="w-5 h-3.5 rounded bg-sky-200 border border-sky-300" />
+            </div>
+          </div>
+        )
+      case "cyber":
+        return (
+          <div className="w-full h-full flex flex-col justify-between bg-[#121215] p-5 relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
+            {/* Sponsored Mosaic Tile Icon */}
+            <div className="flex-1 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-zinc-800 p-3 shadow-xl flex items-center justify-center relative">
+                <div className="grid grid-cols-4 gap-1 w-full h-full p-1 bg-cyan-950/40 rounded-xl">
+                  {[...Array(16)].map((_, i) => (
+                    <span
+                      key={i}
+                      className={`rounded-xs ${
+                        [5, 6, 9, 10, 1, 14].includes(i) ? "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" : "bg-cyan-900/40"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="absolute font-serif italic text-2xl font-bold text-white select-none">e</span>
+              </div>
+            </div>
+            {/* Bottom info & blue action button */}
+            <div className="flex items-end justify-between pt-2">
+              <div>
+                <h4 className="font-mono text-xs font-bold text-white leading-none">AI for UI</h4>
+                <p className="text-[10px] font-sans text-zinc-400 mt-0.5">Design and build with AI</p>
+              </div>
+              <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md">
+                <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+              </div>
             </div>
           </div>
         )
       case "buttons":
         return (
-          <div className="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 p-6 relative group-hover:scale-105 transition-transform duration-300">
-            <div className="flex items-center gap-3">
-              <div className="px-4 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-md font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                Click
+          <div className="w-full h-full flex flex-col items-center justify-center bg-[#e7e6e2] p-6 relative group-hover:scale-105 transition-transform duration-300 select-none">
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="px-5 py-2.5 rounded-xl bg-[#e7e6e2] shadow-[3px_3px_8px_rgba(0,0,0,0.12),-3px_-3px_8px_rgba(255,255,255,0.9)] font-sans text-xs font-semibold text-zinc-800 border border-white/50 active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.15)]">
+                  Button
+                </div>
+                <span className="font-mono text-[10px] text-zinc-500">click</span>
               </div>
-              <div className="px-4 py-2 rounded-xl bg-[#FA5D00] text-black font-mono text-xs font-bold shadow-md">
-                Loading
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="px-5 py-2.5 rounded-xl bg-[#e7e6e2] shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] font-sans text-xs font-semibold text-zinc-500 border border-zinc-300/40">
+                  Button
+                </div>
+                <span className="font-mono text-[10px] text-zinc-500">loading</span>
               </div>
+            </div>
+          </div>
+        )
+      case "space":
+        return (
+          <div className="w-full h-full flex items-center justify-center bg-[#070814] p-6 relative overflow-hidden group-hover:scale-105 transition-transform duration-300 select-none">
+            {/* Space dot matrix */}
+            <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px] opacity-60" />
+            {/* Golden pixel constellation creature */}
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="grid grid-cols-6 gap-1 w-20 h-10">
+                {[...Array(24)].map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-xs ${
+                      [2, 3, 7, 8, 9, 13, 14, 15, 20].includes(i)
+                        ? "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)]"
+                        : [1, 10, 16, 21].includes(i)
+                        ? "bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.8)]"
+                        : "opacity-0"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      case "quote":
+        return (
+          <div className="w-full h-full flex flex-col justify-between bg-white text-zinc-900 p-5 relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
+            <div className="text-center font-sans">
+              <h4 className="font-serif text-sm font-normal text-zinc-950">People, and the work they start.</h4>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Simple tools for the startup.</p>
+            </div>
+            {/* Speech bubble card */}
+            <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200/80 shadow-xs text-[10px] text-zinc-700 font-sans leading-relaxed">
+              <p className="italic">"The references and the reason we chose a direction stay with the work."</p>
+              <div className="mt-2 flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 text-[8px] text-white flex items-center justify-center font-bold">R</span>
+                <span className="w-3.5 h-3.5 rounded-full bg-purple-500 text-[8px] text-white flex items-center justify-center font-bold">A</span>
+                <span className="text-[9px] font-mono text-zinc-400 ml-1">2 replies</span>
+              </div>
+            </div>
+          </div>
+        )
+      case "tools":
+        return (
+          <div className="w-full h-full flex flex-col justify-between bg-white text-zinc-900 p-5 relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded bg-zinc-900 text-white font-mono text-[9px] font-bold flex items-center justify-center">M</div>
+              <div>
+                <h4 className="font-serif text-xs font-normal text-zinc-950">Your tools. A shared understanding.</h4>
+                <p className="text-[9px] text-zinc-400">Everything stays in context.</p>
+              </div>
+            </div>
+            <div className="p-2.5 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 font-mono text-[10px] text-zinc-500 flex items-center justify-between">
+              <span>● Canvas Graph Active</span>
+              <span className="text-[#FA5D00] font-bold">Sync ↗</span>
             </div>
           </div>
         )

@@ -88,8 +88,6 @@ export function FooterWrapper() {
         copyright="© 2026 Reco Labs · Founded by Aditya & Tanish · Built by curious minds worldwide."
         legal={[
           { label: "Privacy Policy", href: "/privacy" },
-          { label: "Blog ↗", href: "https://blog.recolabs.in" },
-          { label: "Sponsors & Partners", href: "/sponsors" },
         ]}
         palette={
           isDark
