@@ -10,6 +10,7 @@ import {
   updateUserProfile,
   listStartups,
   createStartup,
+  getNetworkStats,
 } from "./db.js"
 
 export async function handleNetworkRequest(req: IncomingMessage | any, res: ServerResponse | any): Promise<void> {
@@ -180,6 +181,14 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const startups = await listStartups({ username })
       res.statusCode = 200
       res.end(JSON.stringify({ success: true, user, startups }))
+      return
+    }
+
+    // 9. GET NETWORK STATS: GET /api/network/stats
+    if (req.method === "GET" && pathname === "/api/network/stats") {
+      const stats = await getNetworkStats()
+      res.statusCode = 200
+      res.end(JSON.stringify({ success: true, ...stats }))
       return
     }
 
