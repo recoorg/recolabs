@@ -694,6 +694,143 @@ async function updateStartup(id, data) {
     client.release();
   }
 }
+async function listCatalogProjects(category) {
+  const client = await pool.connect();
+  try {
+    let query = "SELECT * FROM catalog_projects WHERE is_approved = true";
+    const params = [];
+    if (category && category !== "All") {
+      query += " AND LOWER(category) = LOWER($1)";
+      params.push(category);
+    }
+    query += " ORDER BY id ASC";
+    const res = await client.query(query, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function listAllCatalogProjectsAdmin() {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("SELECT * FROM catalog_projects ORDER BY id DESC");
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function createCatalogProject(data) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO catalog_projects (
+        title, url, category, description, author, author_handle, thumbnail_bg, visual_type, preview_image_url, tags, stars, is_sponsored, sponsored_label
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING *`,
+      [
+        data.title,
+        data.url,
+        data.category || "Finds",
+        data.description || null,
+        data.author || "Community",
+        data.author_handle || "builder",
+        data.thumbnail_bg || "#121214",
+        data.visual_type || "screenshot",
+        data.preview_image_url || null,
+        data.tags || ["Community", "Curated"],
+        data.stars || 1,
+        data.is_sponsored || false,
+        data.sponsored_label || null
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function updateCatalogProject(id, data) {
+  const client = await pool.connect();
+  try {
+    const fields = [];
+    const values = [];
+    let idx = 1;
+    if (data.title !== void 0) {
+      fields.push(`title = $${idx++}`);
+      values.push(data.title);
+    }
+    if (data.url !== void 0) {
+      fields.push(`url = $${idx++}`);
+      values.push(data.url);
+    }
+    if (data.category !== void 0) {
+      fields.push(`category = $${idx++}`);
+      values.push(data.category);
+    }
+    if (data.description !== void 0) {
+      fields.push(`description = $${idx++}`);
+      values.push(data.description);
+    }
+    if (data.author !== void 0) {
+      fields.push(`author = $${idx++}`);
+      values.push(data.author);
+    }
+    if (data.author_handle !== void 0) {
+      fields.push(`author_handle = $${idx++}`);
+      values.push(data.author_handle);
+    }
+    if (data.thumbnail_bg !== void 0) {
+      fields.push(`thumbnail_bg = $${idx++}`);
+      values.push(data.thumbnail_bg);
+    }
+    if (data.visual_type !== void 0) {
+      fields.push(`visual_type = $${idx++}`);
+      values.push(data.visual_type);
+    }
+    if (data.preview_image_url !== void 0) {
+      fields.push(`preview_image_url = $${idx++}`);
+      values.push(data.preview_image_url);
+    }
+    if (data.tags !== void 0) {
+      fields.push(`tags = $${idx++}`);
+      values.push(data.tags);
+    }
+    if (data.stars !== void 0) {
+      fields.push(`stars = $${idx++}`);
+      values.push(data.stars);
+    }
+    if (data.is_sponsored !== void 0) {
+      fields.push(`is_sponsored = $${idx++}`);
+      values.push(data.is_sponsored);
+    }
+    if (data.sponsored_label !== void 0) {
+      fields.push(`sponsored_label = $${idx++}`);
+      values.push(data.sponsored_label);
+    }
+    if (data.is_approved !== void 0) {
+      fields.push(`is_approved = $${idx++}`);
+      values.push(data.is_approved);
+    }
+    fields.push(`updated_at = NOW()`);
+    if (fields.length === 1) return null;
+    values.push(id);
+    const res = await client.query(
+      `UPDATE catalog_projects SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function deleteCatalogProject(id) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("DELETE FROM catalog_projects WHERE id = $1 RETURNING id", [id]);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
 
 // server/apiRouter.ts
 function checkAdminAuth(req) {
@@ -1116,6 +1253,75 @@ async function handleNetworkRequest(req, res) {
       const updated = await updateStartup(id, body);
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, startup: updated }));
+      return;
+    }
+    if (req.method === "GET" && (pathname === "/api/network/projects" || pathname === "/api/projects" || pathname === "/api/network/catalog")) {
+      const category = searchParams.get("category") || void 0;
+      const projects = await listCatalogProjects(category);
+      res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, projects }));
+      return;
+    }
+    if (req.method === "GET" && (pathname === "/api/network/admin/projects" || pathname === "/api/admin/projects")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required." }));
+        return;
+      }
+      const projects = await listAllCatalogProjectsAdmin();
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, projects }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/projects" || pathname === "/api/projects" || pathname === "/api/network/catalog")) {
+      const body = await parseBody();
+      if (!body.title || !body.url) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Title and url are required." }));
+        return;
+      }
+      const created = await createCatalogProject(body);
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, project: created }));
+      return;
+    }
+    if (req.method === "PUT" && (pathname.startsWith("/api/network/projects/") || pathname.startsWith("/api/projects/")) || req.method === "POST" && (pathname === "/api/network/projects/update" || pathname === "/api/projects/update")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to edit projects." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid project ID is required." }));
+        return;
+      }
+      const updated = await updateCatalogProject(id, body);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, project: updated }));
+      return;
+    }
+    if (req.method === "DELETE" && (pathname.startsWith("/api/network/projects/") || pathname.startsWith("/api/projects/")) || req.method === "POST" && (pathname === "/api/network/projects/delete" || pathname === "/api/projects/delete")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to delete projects." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid project ID is required." }));
+        return;
+      }
+      const deleted = await deleteCatalogProject(id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, deleted }));
       return;
     }
     res.statusCode = 404;

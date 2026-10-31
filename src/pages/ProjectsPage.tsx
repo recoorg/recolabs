@@ -179,17 +179,48 @@ const CATEGORIES = ["All", "Finds", "Interface", "Motion", "3D", "Tools", "Resou
 
 export function ProjectsPage() {
   const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(null)
-  const [projects, setProjects] = React.useState<CatalogProject[]>(() => {
-    if (typeof window === "undefined") return INITIAL_PROJECTS
+  
+  // Database Projects state (fetched live from Supabase)
+  const [dbProjects, setDbProjects] = React.useState<CatalogProject[]>([])
+  const [loadingProjects, setLoadingProjects] = React.useState(true)
+  const [projects, setProjects] = React.useState<CatalogProject[]>(INITIAL_PROJECTS)
+
+  // Fetch all live curated projects from Supabase database
+  const fetchDatabaseProjects = async () => {
     try {
-      const stored = localStorage.getItem("reco_catalog_projects")
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        return [...parsed, ...INITIAL_PROJECTS.filter((p) => !parsed.some((x: any) => x.id === p.id))]
+      setLoadingProjects(true)
+      const res = await fetch(`/api/network/projects?_t=${Date.now()}`)
+      const data = await res.json()
+      if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
+        const mapped: CatalogProject[] = data.projects.map((item: any) => ({
+          id: String(item.id),
+          title: item.title || "Untitled Project",
+          url: item.url || "https://recolabs.in",
+          category: (item.category || "Finds") as CatalogProject["category"],
+          description: item.description || "",
+          author: item.author || "Community",
+          authorHandle: item.author_handle || "builder",
+          thumbnailBg: item.thumbnail_bg || "#121214",
+          visualType: (item.visual_type || "wireframe") as CatalogProject["visualType"],
+          preview_image_url: item.preview_image_url || undefined,
+          tags: Array.isArray(item.tags) ? item.tags : ["Community", "Curated"],
+          stars: item.stars || 1,
+          isSponsored: Boolean(item.is_sponsored),
+          sponsoredLabel: item.sponsored_label || undefined,
+        }))
+        setDbProjects(mapped)
+        setProjects(mapped)
       }
-    } catch {}
-    return INITIAL_PROJECTS
-  })
+    } catch (err) {
+      console.warn("Database projects fetch note:", err)
+    } finally {
+      setLoadingProjects(false)
+    }
+  }
+
+  React.useEffect(() => {
+    fetchDatabaseProjects()
+  }, [])
 
   // Filter & Search states
   const [activeCategory, setActiveCategory] = React.useState<string>("All")
@@ -269,7 +300,10 @@ export function ProjectsPage() {
   React.useEffect(() => {
     fetchLiveAds()
     const timer = setInterval(fetchLiveAds, 8000)
-    const onFocus = () => fetchLiveAds()
+    const onFocus = () => {
+      fetchLiveAds()
+      fetchDatabaseProjects()
+    }
     window.addEventListener("focus", onFocus)
     return () => {
       clearInterval(timer)
@@ -379,6 +413,29 @@ export function ProjectsPage() {
           submitted_at: new Date().toISOString(),
         }),
       })
+
+      // Post directly to Supabase database for persistent live storage
+      try {
+        await fetch("/api/network/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: submitForm.title,
+            url: finalUrl,
+            category: submitForm.category,
+            description: submitForm.description || `Curated ${submitForm.category} project submitted by @${submitterUsername}.`,
+            author: submitterName,
+            author_handle: submitterUsername,
+            preview_image_url: finalScreenshot,
+            visual_type: "screenshot",
+            tags: [submitForm.category, "Community"],
+            stars: 1,
+          }),
+        })
+        fetchDatabaseProjects()
+      } catch (dbErr) {
+        console.warn("DB insert note:", dbErr)
+      }
 
       // Add to local projects catalog with live preview
       const newProj: CatalogProject = {
@@ -508,13 +565,13 @@ export function ProjectsPage() {
 
   // Merge live sponsors from Supabase into project feed
   const allProjects = React.useMemo(() => {
-    const liveSponsors: CatalogProject[] = liveAds
-      .filter((a) => a.is_active && (a.placement === "projects_card" || a.placement === "all"))
+    const liveSponsors: CatalogProject[] = (liveAds || [])
+      .filter((a) => a && a.is_active && (a.placement === "projects_card" || a.placement === "all"))
       .map((a) => ({
         id: `live-ad-${a.id}`,
-        title: a.title,
-        url: a.destination_url,
-        category: "Interface" as const,
+        title: a.title || "Featured Placement",
+        url: a.destination_url || "https://recolabs.in",
+        category: (a.category || "Interface") as CatalogProject["category"],
         description: a.description || "Sponsored showcase in the Reco Labs curated ecosystem.",
         author: a.sponsor_name || "Reco Sponsor",
         authorHandle: "sponsor",
@@ -527,25 +584,39 @@ export function ProjectsPage() {
         stars: (a.clicks_count || 0) + 120,
       }))
 
-    // Deduplicate against existing static projects
+    const baseList = projects && projects.length > 0 ? projects : INITIAL_PROJECTS
+
+    // Deduplicate against existing database projects safely
     const combined = [
       ...liveSponsors,
-      ...projects.filter((p) => !liveSponsors.some((s) => s.title.toLowerCase() === p.title.toLowerCase())),
+      ...baseList.filter((p) => {
+        if (!p || !p.title) return false
+        return !liveSponsors.some((s) => (s.title || "").toLowerCase() === (p.title || "").toLowerCase())
+      }),
     ]
     return combined
   }, [projects, liveAds])
 
-  // Filter projects
-  const filteredProjects = allProjects.filter((p) => {
-    const matchesCategory = activeCategory === "All" || p.category.toLowerCase() === activeCategory.toLowerCase()
-    const matchesSearch =
-      !searchQuery ||
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()))
-    const matchesFav = !showFavoritesOnly || favorites.includes(p.id)
-    return matchesCategory && matchesSearch && matchesFav
-  })
+  // Filter projects with bulletproof optional chaining
+  const filteredProjects = React.useMemo(() => {
+    return allProjects.filter((p) => {
+      if (!p) return false
+      const title = (p.title || "").toLowerCase()
+      const desc = (p.description || "").toLowerCase()
+      const cat = (p.category || "Finds").toLowerCase()
+      const tags = Array.isArray(p.tags) ? p.tags : []
+      const q = (searchQuery || "").toLowerCase()
+
+      const matchesCategory = activeCategory === "All" || cat === activeCategory.toLowerCase()
+      const matchesSearch =
+        !q ||
+        title.includes(q) ||
+        desc.includes(q) ||
+        tags.some((t) => (t || "").toLowerCase().includes(q))
+      const matchesFav = !showFavoritesOnly || favorites.includes(p.id)
+      return matchesCategory && matchesSearch && matchesFav
+    })
+  }, [allProjects, activeCategory, searchQuery, showFavoritesOnly, favorites])
 
   // Render stylized visual mockup preview inside the card matching screenshot
   const renderVisualMockup = (p: CatalogProject) => {

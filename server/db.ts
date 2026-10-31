@@ -785,3 +785,139 @@ export async function updateStartup(id: number, data: {
     client.release();
   }
 }
+
+// ==========================================
+// CATALOG PROJECTS (DATABASE CURATED ARTIFACTS)
+// ==========================================
+
+export async function listCatalogProjects(category?: string) {
+  const client = await pool.connect();
+  try {
+    let query = "SELECT * FROM catalog_projects WHERE is_approved = true";
+    const params: any[] = [];
+    if (category && category !== "All") {
+      query += " AND LOWER(category) = LOWER($1)";
+      params.push(category);
+    }
+    query += " ORDER BY id ASC";
+    const res = await client.query(query, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function listAllCatalogProjectsAdmin() {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("SELECT * FROM catalog_projects ORDER BY id DESC");
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createCatalogProject(data: {
+  title: string;
+  url: string;
+  category?: string;
+  description?: string;
+  author?: string;
+  author_handle?: string;
+  thumbnail_bg?: string;
+  visual_type?: string;
+  preview_image_url?: string;
+  tags?: string[];
+  stars?: number;
+  is_sponsored?: boolean;
+  sponsored_label?: string;
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO catalog_projects (
+        title, url, category, description, author, author_handle, thumbnail_bg, visual_type, preview_image_url, tags, stars, is_sponsored, sponsored_label
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING *`,
+      [
+        data.title,
+        data.url,
+        data.category || 'Finds',
+        data.description || null,
+        data.author || 'Community',
+        data.author_handle || 'builder',
+        data.thumbnail_bg || '#121214',
+        data.visual_type || 'screenshot',
+        data.preview_image_url || null,
+        data.tags || ['Community', 'Curated'],
+        data.stars || 1,
+        data.is_sponsored || false,
+        data.sponsored_label || null,
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateCatalogProject(id: number, data: Partial<{
+  title: string;
+  url: string;
+  category: string;
+  description: string;
+  author: string;
+  author_handle: string;
+  thumbnail_bg: string;
+  visual_type: string;
+  preview_image_url: string;
+  tags: string[];
+  stars: number;
+  is_sponsored: boolean;
+  sponsored_label: string;
+  is_approved: boolean;
+}>) {
+  const client = await pool.connect();
+  try {
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (data.title !== undefined) { fields.push(`title = $${idx++}`); values.push(data.title); }
+    if (data.url !== undefined) { fields.push(`url = $${idx++}`); values.push(data.url); }
+    if (data.category !== undefined) { fields.push(`category = $${idx++}`); values.push(data.category); }
+    if (data.description !== undefined) { fields.push(`description = $${idx++}`); values.push(data.description); }
+    if (data.author !== undefined) { fields.push(`author = $${idx++}`); values.push(data.author); }
+    if (data.author_handle !== undefined) { fields.push(`author_handle = $${idx++}`); values.push(data.author_handle); }
+    if (data.thumbnail_bg !== undefined) { fields.push(`thumbnail_bg = $${idx++}`); values.push(data.thumbnail_bg); }
+    if (data.visual_type !== undefined) { fields.push(`visual_type = $${idx++}`); values.push(data.visual_type); }
+    if (data.preview_image_url !== undefined) { fields.push(`preview_image_url = $${idx++}`); values.push(data.preview_image_url); }
+    if (data.tags !== undefined) { fields.push(`tags = $${idx++}`); values.push(data.tags); }
+    if (data.stars !== undefined) { fields.push(`stars = $${idx++}`); values.push(data.stars); }
+    if (data.is_sponsored !== undefined) { fields.push(`is_sponsored = $${idx++}`); values.push(data.is_sponsored); }
+    if (data.sponsored_label !== undefined) { fields.push(`sponsored_label = $${idx++}`); values.push(data.sponsored_label); }
+    if (data.is_approved !== undefined) { fields.push(`is_approved = $${idx++}`); values.push(data.is_approved); }
+    fields.push(`updated_at = NOW()`);
+
+    if (fields.length === 1) return null;
+
+    values.push(id);
+    const res = await client.query(
+      `UPDATE catalog_projects SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteCatalogProject(id: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("DELETE FROM catalog_projects WHERE id = $1 RETURNING id", [id]);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}

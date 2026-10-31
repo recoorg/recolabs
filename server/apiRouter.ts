@@ -24,6 +24,11 @@ import {
   deleteStoreLink,
   deleteStartup,
   updateStartup,
+  listCatalogProjects,
+  listAllCatalogProjectsAdmin,
+  createCatalogProject,
+  updateCatalogProject,
+  deleteCatalogProject,
 } from "./db.js"
 
 // Anti-misuse security guard: Verifies admin master credentials
@@ -531,6 +536,97 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const updated = await updateStartup(id, body);
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, startup: updated }));
+      return;
+    }
+
+    // 14. CATALOG PROJECTS LIST (Public): GET /api/network/projects or GET /api/network/catalog
+    if (
+      req.method === "GET" &&
+      (pathname === "/api/network/projects" || pathname === "/api/projects" || pathname === "/api/network/catalog")
+    ) {
+      const category = searchParams.get("category") || undefined;
+      const projects = await listCatalogProjects(category);
+      res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, projects }));
+      return;
+    }
+
+    // 14B. ADMIN CATALOG PROJECTS LIST (All): GET /api/network/admin/projects
+    if (req.method === "GET" && (pathname === "/api/network/admin/projects" || pathname === "/api/admin/projects")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required." }));
+        return;
+      }
+      const projects = await listAllCatalogProjectsAdmin();
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, projects }));
+      return;
+    }
+
+    // 14C. CREATE CATALOG PROJECT: POST /api/network/projects or POST /api/projects
+    if (
+      req.method === "POST" &&
+      (pathname === "/api/network/projects" || pathname === "/api/projects" || pathname === "/api/network/catalog")
+    ) {
+      const body = await parseBody();
+      if (!body.title || !body.url) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Title and url are required." }));
+        return;
+      }
+      const created = await createCatalogProject(body);
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, project: created }));
+      return;
+    }
+
+    // 14D. UPDATE CATALOG PROJECT (Admin Protected): PUT /api/network/projects/:id or POST /api/network/projects/update
+    if (
+      (req.method === "PUT" && (pathname.startsWith("/api/network/projects/") || pathname.startsWith("/api/projects/"))) ||
+      (req.method === "POST" && (pathname === "/api/network/projects/update" || pathname === "/api/projects/update"))
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to edit projects." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid project ID is required." }));
+        return;
+      }
+      const updated = await updateCatalogProject(id, body);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, project: updated }));
+      return;
+    }
+
+    // 14E. DELETE CATALOG PROJECT (Admin Protected): DELETE /api/network/projects/:id or POST /api/network/projects/delete
+    if (
+      (req.method === "DELETE" && (pathname.startsWith("/api/network/projects/") || pathname.startsWith("/api/projects/"))) ||
+      (req.method === "POST" && (pathname === "/api/network/projects/delete" || pathname === "/api/projects/delete"))
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to delete projects." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid project ID is required." }));
+        return;
+      }
+      const deleted = await deleteCatalogProject(id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, deleted }));
       return;
     }
 
