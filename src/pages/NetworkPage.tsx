@@ -96,8 +96,8 @@ export function NetworkPage() {
     indexStatus: string
     builders: any[]
   }>({
-    totalBuilders: 42,
-    totalStartups: 2,
+    totalBuilders: 0,
+    totalStartups: 0,
     queryTimeMs: 0.045,
     indexStatus: "active (7 indexes, zero sequential scans)",
     builders: [],
@@ -356,7 +356,7 @@ export function NetworkPage() {
           <div className="mt-6 flex flex-col items-center justify-center gap-2">
             <div className="font-serif text-lg sm:text-xl text-zinc-700 dark:text-zinc-300">
               <span className="font-bold text-zinc-950 dark:text-zinc-50">
-                {networkStats.totalBuilders > 0 ? networkStats.totalBuilders + 270330 : 270337}+
+                {networkStats.totalBuilders || (networkStats.builders?.length || 0)}
               </span>{" "}
               <span>peers and counting...</span>
             </div>
