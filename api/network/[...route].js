@@ -390,6 +390,93 @@ async function getNetworkStats() {
     client.release();
   }
 }
+async function listAds(placement) {
+  const client = await pool.connect();
+  try {
+    let query = "SELECT * FROM ads WHERE is_active = true";
+    const params = [];
+    if (placement) {
+      query += " AND placement = $1";
+      params.push(placement);
+    }
+    query += " ORDER BY id DESC";
+    const res = await client.query(query, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function incrementAdClick(id) {
+  const client = await pool.connect();
+  try {
+    await client.query("UPDATE ads SET clicks_count = clicks_count + 1 WHERE id = $1", [id]);
+    return { success: true };
+  } finally {
+    client.release();
+  }
+}
+async function createAd(data) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO ads (
+        title, description, image_url, destination_url, placement, badge_label, sponsor_name, sponsor_email
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *`,
+      [
+        data.title,
+        data.description || null,
+        data.image_url || null,
+        data.destination_url,
+        data.placement || "projects_sidebar",
+        data.badge_label || "Sponsored",
+        data.sponsor_name || null,
+        data.sponsor_email || null
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function listStoreLinks(category) {
+  const client = await pool.connect();
+  try {
+    let query = "SELECT * FROM store_links WHERE is_active = true";
+    const params = [];
+    if (category) {
+      query += " AND category = $1";
+      params.push(category);
+    }
+    query += " ORDER BY id ASC";
+    const res = await client.query(query, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function createStoreLink(data) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO store_links (
+        title, description, url, category, price, icon_url
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *`,
+      [
+        data.title,
+        data.description || null,
+        data.url,
+        data.category || "Tools",
+        data.price || null,
+        data.icon_url || null
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
 
 // server/apiRouter.ts
 async function handleNetworkRequest(req, res) {
@@ -529,6 +616,55 @@ async function handleNetworkRequest(req, res) {
       }
       const user = await getUserByUsername(username);
       if (!user) {
+        if (req.method === "GET" && (pathname === "/api/network/ads" || pathname === "/api/ads")) {
+          const placement = searchParams.get("placement") || void 0;
+          const ads = await listAds(placement);
+          res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+          res.statusCode = 200;
+          res.end(JSON.stringify({ success: true, ads }));
+          return;
+        }
+        if (req.method === "POST" && (pathname === "/api/network/ads/click" || pathname === "/api/ads/click")) {
+          const body = await parseBody();
+          if (body.id) {
+            await incrementAdClick(Number(body.id));
+          }
+          res.statusCode = 200;
+          res.end(JSON.stringify({ success: true }));
+          return;
+        }
+        if (req.method === "POST" && (pathname === "/api/network/ads" || pathname === "/api/ads")) {
+          const body = await parseBody();
+          if (!body.title || !body.destination_url) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: "Title and destination_url are required." }));
+            return;
+          }
+          const ad = await createAd(body);
+          res.statusCode = 200;
+          res.end(JSON.stringify({ success: true, ad }));
+          return;
+        }
+        if (req.method === "GET" && (pathname === "/api/network/store-links" || pathname === "/api/store-links")) {
+          const category = searchParams.get("category") || void 0;
+          const links = await listStoreLinks(category);
+          res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+          res.statusCode = 200;
+          res.end(JSON.stringify({ success: true, store_links: links }));
+          return;
+        }
+        if (req.method === "POST" && (pathname === "/api/network/store-links" || pathname === "/api/store-links")) {
+          const body = await parseBody();
+          if (!body.title || !body.url) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: "Title and url are required." }));
+            return;
+          }
+          const link = await createStoreLink(body);
+          res.statusCode = 200;
+          res.end(JSON.stringify({ success: true, store_link: link }));
+          return;
+        }
         res.statusCode = 404;
         res.end(JSON.stringify({ error: `Builder @${username} not found.` }));
         return;
