@@ -26,6 +26,7 @@ export function Navbar() {
     }
   }, [mobileOpen])
 
+  const isHomePage = location.pathname === "/"
   const isActive = (path: string) => location.pathname === path
 
   interface NavItem {
@@ -95,27 +96,31 @@ export function Navbar() {
         </nav>
 
         {/* Right Desktop: Discord Button */}
-        <div className="hidden sm:flex items-center gap-3">
-          <a
-            href="https://discord.com/invite/7dk4w37BhP"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="pointer-events-auto px-5 py-2 rounded-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-sans text-xs sm:text-sm font-semibold tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center"
-          >
-            Discord
-          </a>
-        </div>
+        {isHomePage && (
+          <div className="hidden sm:flex items-center gap-3">
+            <a
+              href="https://discord.com/invite/7dk4w37BhP"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pointer-events-auto px-5 py-2 rounded-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-sans text-xs sm:text-sm font-semibold tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center"
+            >
+              Discord
+            </a>
+          </div>
+        )}
 
         {/* Right Mobile: 3-line Hamburger Button */}
         <div className="flex sm:hidden items-center gap-2 pointer-events-auto">
-          <a
-            href="https://discord.com/invite/7dk4w37BhP"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3.5 py-1.5 rounded-full bg-[#5865F2] text-white font-mono text-[11px] font-bold tracking-wider uppercase shadow-sm"
-          >
-            Discord
-          </a>
+          {isHomePage && (
+            <a
+              href="https://discord.com/invite/7dk4w37BhP"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-1.5 rounded-full bg-[#5865F2] text-white font-mono text-[11px] font-bold tracking-wider uppercase shadow-sm"
+            >
+              Discord
+            </a>
+          )}
 
           <button
             type="button"
@@ -196,15 +201,17 @@ export function Navbar() {
 
             {/* Bottom Actions */}
             <div className="pt-4 border-t editorial-hairline flex flex-col gap-3">
-              <a
-                href="https://discord.com/invite/7dk4w37BhP"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-[#5865F2] text-white font-mono text-xs font-bold uppercase tracking-wider shadow-sm"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span>Join Discord Guild</span>
-              </a>
+              {isHomePage && (
+                <a
+                  href="https://discord.com/invite/7dk4w37BhP"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-[#5865F2] text-white font-mono text-xs font-bold uppercase tracking-wider shadow-sm"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Join Discord Guild</span>
+                </a>
+              )}
 
               <a
                 href="https://github.com/recoorg"

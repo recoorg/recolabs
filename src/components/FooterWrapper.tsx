@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import DoodleCrewFooter from "@/components/ui/doodle-crew-footer"
-import { SponsorSection } from "@/components/SponsorSection"
 
 export function FooterWrapper() {
   const [isDark, setIsDark] = React.useState(false)
@@ -23,7 +22,6 @@ export function FooterWrapper() {
 
   return (
     <>
-      <SponsorSection />
       <footer className="relative w-full overflow-hidden bg-transparent">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-[#FA5D00]/[0.02] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />

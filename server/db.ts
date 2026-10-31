@@ -473,3 +473,120 @@ export async function getNetworkStats() {
     client.release()
   }
 }
+
+
+// ==========================================
+// ADS & SPONSORSHIPS METHODS
+// ==========================================
+
+export async function listAds(placement?: string) {
+  const client = await pool.connect();
+  try {
+    let query = "SELECT * FROM ads WHERE is_active = true";
+    const params: any[] = [];
+    if (placement) {
+      query += " AND placement = $1";
+      params.push(placement);
+    }
+    query += " ORDER BY id DESC";
+    const res = await client.query(query, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function incrementAdClick(id: number) {
+  const client = await pool.connect();
+  try {
+    await client.query("UPDATE ads SET clicks_count = clicks_count + 1 WHERE id = $1", [id]);
+    return { success: true };
+  } finally {
+    client.release();
+  }
+}
+
+export async function createAd(data: {
+  title: string;
+  description?: string;
+  image_url?: string;
+  destination_url: string;
+  placement?: string;
+  badge_label?: string;
+  sponsor_name?: string;
+  sponsor_email?: string;
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO ads (
+        title, description, image_url, destination_url, placement, badge_label, sponsor_name, sponsor_email
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *`,
+      [
+        data.title,
+        data.description || null,
+        data.image_url || null,
+        data.destination_url,
+        data.placement || 'projects_sidebar',
+        data.badge_label || 'Sponsored',
+        data.sponsor_name || null,
+        data.sponsor_email || null,
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+// ==========================================
+// STORE LINKS METHODS
+// ==========================================
+
+export async function listStoreLinks(category?: string) {
+  const client = await pool.connect();
+  try {
+    let query = "SELECT * FROM store_links WHERE is_active = true";
+    const params: any[] = [];
+    if (category) {
+      query += " AND category = $1";
+      params.push(category);
+    }
+    query += " ORDER BY id ASC";
+    const res = await client.query(query, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createStoreLink(data: {
+  title: string;
+  description?: string;
+  url: string;
+  category?: string;
+  price?: string;
+  icon_url?: string;
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO store_links (
+        title, description, url, category, price, icon_url
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *`,
+      [
+        data.title,
+        data.description || null,
+        data.url,
+        data.category || 'Tools',
+        data.price || null,
+        data.icon_url || null,
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}

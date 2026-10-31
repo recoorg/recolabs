@@ -27,6 +27,10 @@ import {
   Globe,
   Layers,
   Sparkle,
+  Image as ImageIcon,
+  Upload,
+  DollarSign,
+  Megaphone,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile } from "@/services/networkApi"
@@ -39,8 +43,9 @@ interface CatalogProject {
   description: string
   author: string
   authorHandle: string
-  thumbnailBg: string
-  visualType: "wireframe" | "landscape" | "pixel" | "buttons" | "terminal" | "hardware" | "cyber" | "space" | "quote" | "tools"
+  thumbnailBg?: string
+  visualType?: "wireframe" | "landscape" | "pixel" | "buttons" | "terminal" | "hardware" | "cyber" | "space" | "quote" | "tools" | "screenshot"
+  preview_image_url?: string
   isSponsored?: boolean
   sponsoredLabel?: string
   tags: string[]
@@ -48,7 +53,6 @@ interface CatalogProject {
   timestamp?: string
 }
 
-// Initial rich curated projects
 const INITIAL_PROJECTS: CatalogProject[] = [
   {
     id: "reco-flagship",
@@ -201,12 +205,16 @@ export function ProjectsPage() {
   })
   const [showFavoritesOnly, setShowFavoritesOnly] = React.useState(false)
 
+  // Mobile drawer state
+  const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false)
+
   // Modals
   const [showSubmitModal, setShowSubmitModal] = React.useState(false)
   const [showAuthModal, setShowAuthModal] = React.useState(false)
   const [showInfoModal, setShowInfoModal] = React.useState(false)
+  const [showSponsorModal, setShowSponsorModal] = React.useState(false)
 
-  // Auth Form State (for quick signin if not logged in)
+  // Auth Form State
   const [authEmail, setAuthEmail] = React.useState("")
   const [authPassword, setAuthPassword] = React.useState("")
   const [authName, setAuthName] = React.useState("")
@@ -221,9 +229,22 @@ export function ProjectsPage() {
     category: "Finds" as CatalogProject["category"],
     description: "",
   })
+  const [previewImageUrl, setPreviewImageUrl] = React.useState("")
   const [submitLoading, setSubmitLoading] = React.useState(false)
   const [submitSuccess, setSubmitSuccess] = React.useState(false)
   const [submitError, setSubmitError] = React.useState("")
+
+  // Sponsor Submission Form State
+  const [sponsorForm, setSponsorForm] = React.useState({
+    title: "",
+    url: "",
+    description: "",
+    placement: "projects_sidebar",
+    sponsor_name: "",
+    sponsor_email: "",
+  })
+  const [sponsorLoading, setSponsorLoading] = React.useState(false)
+  const [sponsorSuccess, setSponsorSuccess] = React.useState(false)
 
   // Sync user session
   React.useEffect(() => {
@@ -234,6 +255,31 @@ export function ProjectsPage() {
     window.addEventListener("reco_auth_changed", syncUser)
     return () => window.removeEventListener("reco_auth_changed", syncUser)
   }, [])
+
+  // Auto screenshot preview when url changes
+  const handleUrlBlur = (url: string) => {
+    if (!url) return
+    const formatted = url.startsWith("http") ? url : `https://${url}`
+    if (!previewImageUrl) {
+      // Live automated website screenshot
+      const autoScreenshot = `https://s0.wp.com/mshots/v1/${encodeURIComponent(formatted)}?w=800&h=600`
+      setPreviewImageUrl(autoScreenshot)
+    }
+  }
+
+  // Handle Photo Upload
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setPreviewImageUrl(event.target.result as string)
+      }
+    }
+    reader.readAsDataURL(file)
+  }
 
   // Toggle Favorite
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
@@ -252,7 +298,7 @@ export function ProjectsPage() {
     } catch {}
   }
 
-  // Handle Submit button click
+  // Handle Submit button click (requires login)
   const handleOpenSubmit = () => {
     if (!currentUser) {
       setAuthMode("signup")
@@ -262,7 +308,7 @@ export function ProjectsPage() {
     }
   }
 
-  // Submit Website to Formspree endpoint (the same email endpoint) & local state
+  // Submit Website to Formspree endpoint & store locally
   const handleWebsiteSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!submitForm.title || !submitForm.url) {
@@ -277,9 +323,11 @@ export function ProjectsPage() {
     const submitterName = currentUser?.name || "Anonymous Builder"
     const submitterEmail = currentUser?.email || "builder@recolabs.in"
     const submitterUsername = currentUser?.username || "builder"
+    const finalUrl = submitForm.url.startsWith("http") ? submitForm.url : `https://${submitForm.url}`
+    const finalScreenshot = previewImageUrl || `https://s0.wp.com/mshots/v1/${encodeURIComponent(finalUrl)}?w=800&h=600`
 
     try {
-      // Send email payload to the Formspree endpoint
+      // Send email payload to Formspree endpoint
       await fetch(FORMSPREE_ENDPOINT, {
         method: "POST",
         headers: {
@@ -289,9 +337,10 @@ export function ProjectsPage() {
         body: JSON.stringify({
           _subject: `New Reco Labs Project Submission: ${submitForm.title}`,
           title: submitForm.title,
-          url: submitForm.url,
+          url: finalUrl,
           category: submitForm.category,
           description: submitForm.description || "No description provided.",
+          screenshot_url: finalScreenshot,
           submitter_name: submitterName,
           submitter_email: submitterEmail,
           submitter_username: submitterUsername,
@@ -300,17 +349,18 @@ export function ProjectsPage() {
         }),
       })
 
-      // Create new visual project in local catalog
+      // Add to local projects catalog with live preview
       const newProj: CatalogProject = {
         id: `user-${Date.now()}`,
         title: submitForm.title,
-        url: submitForm.url.startsWith("http") ? submitForm.url : `https://${submitForm.url}`,
+        url: finalUrl,
         category: submitForm.category,
         description: submitForm.description || `Curated ${submitForm.category} project submitted by @${submitterUsername}.`,
         author: submitterName,
         authorHandle: submitterUsername,
         thumbnailBg: "#121214",
-        visualType: "cyber",
+        visualType: "screenshot",
+        preview_image_url: finalScreenshot,
         tags: [submitForm.category, "Community"],
         stars: 1,
         timestamp: new Date().toISOString(),
@@ -328,9 +378,10 @@ export function ProjectsPage() {
         setSubmitSuccess(false)
         setShowSubmitModal(false)
         setSubmitForm({ title: "", url: "", category: "Finds", description: "" })
+        setPreviewImageUrl("")
       }, 2000)
     } catch (err: any) {
-      console.warn("Formspree email dispatch notice:", err)
+      console.warn("Formspree dispatch notice:", err)
       setSubmitSuccess(true)
       setTimeout(() => {
         setSubmitSuccess(false)
@@ -338,6 +389,58 @@ export function ProjectsPage() {
       }, 2000)
     } finally {
       setSubmitLoading(false)
+    }
+  }
+
+  // Handle Sponsor Application Submission
+  const handleSponsorSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!sponsorForm.title || !sponsorForm.url) return
+    setSponsorLoading(true)
+
+    try {
+      // 1. Post to Formspree
+      await fetch("https://formspree.io/f/mvkkrjez", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          _subject: `Reco Labs Sponsor Application: ${sponsorForm.title}`,
+          ...sponsorForm,
+          source: "Projects Page Sponsor Slot Application",
+          submitted_at: new Date().toISOString(),
+        }),
+      })
+
+      // 2. Post to Supabase Ads endpoint
+      await fetch("/api/network/ads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: sponsorForm.title,
+          description: sponsorForm.description,
+          destination_url: sponsorForm.url.startsWith("http") ? sponsorForm.url : `https://${sponsorForm.url}`,
+          placement: sponsorForm.placement,
+          sponsor_name: sponsorForm.sponsor_name,
+          sponsor_email: sponsorForm.sponsor_email,
+        }),
+      }).catch(() => {})
+
+      confetti({ particleCount: 90, spread: 60, origin: { y: 0.5 } })
+      setSponsorSuccess(true)
+      setTimeout(() => {
+        setSponsorSuccess(false)
+        setShowSponsorModal(false)
+        setSponsorForm({
+          title: "",
+          url: "",
+          description: "",
+          placement: "projects_sidebar",
+          sponsor_name: "",
+          sponsor_email: "",
+        })
+      }, 2000)
+    } finally {
+      setSponsorLoading(false)
     }
   }
 
@@ -386,6 +489,23 @@ export function ProjectsPage() {
 
   // Render stylized visual mockup preview inside the card matching screenshot
   const renderVisualMockup = (p: CatalogProject) => {
+    // If card has an uploaded screenshot or preview image
+    if (p.preview_image_url) {
+      return (
+        <div className="w-full h-full relative overflow-hidden bg-zinc-950 group-hover:scale-105 transition-transform duration-300">
+          <img
+            src={p.preview_image_url}
+            alt={p.title}
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = "none"
+            }}
+            className="w-full h-full object-cover object-top"
+          />
+        </div>
+      )
+    }
+
     switch (p.visualType) {
       case "wireframe":
         return (
@@ -412,12 +532,10 @@ export function ProjectsPage() {
       case "landscape":
         return (
           <div className="w-full h-full flex flex-col justify-between bg-[#faf9f5] text-zinc-800 p-4 relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
-            {/* Canvas Header */}
             <div className="text-center font-mono text-[9px] text-zinc-500 leading-tight">
               <span className="block font-bold text-zinc-700">TypingMind Canvas</span>
               <span>spring - pink polysheets and the hill</span>
             </div>
-            {/* Scenic painting illustration */}
             <div className="relative my-2 w-full flex-1 rounded-xl overflow-hidden border border-zinc-200/80 bg-gradient-to-b from-sky-200 via-emerald-100 to-emerald-200 flex flex-col justify-end p-2 shadow-inner">
               <div className="absolute top-2 right-4 w-6 h-6 rounded-full bg-amber-200/60 blur-xs" />
               <div className="relative z-10 flex items-center justify-center gap-1.5 flex-wrap">
@@ -426,7 +544,6 @@ export function ProjectsPage() {
                 ))}
               </div>
             </div>
-            {/* Thumbnails row */}
             <div className="flex items-center justify-center gap-2 pt-1 border-t border-zinc-200/60">
               <span className="w-5 h-3.5 rounded bg-pink-200 border border-pink-300" />
               <span className="w-5 h-3.5 rounded bg-emerald-200 border border-emerald-300" />
@@ -437,7 +554,6 @@ export function ProjectsPage() {
       case "cyber":
         return (
           <div className="w-full h-full flex flex-col justify-between bg-[#121215] p-5 relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
-            {/* Sponsored Mosaic Tile Icon */}
             <div className="flex-1 flex items-center justify-center">
               <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-zinc-800 p-3 shadow-xl flex items-center justify-center relative">
                 <div className="grid grid-cols-4 gap-1 w-full h-full p-1 bg-cyan-950/40 rounded-xl">
@@ -453,7 +569,6 @@ export function ProjectsPage() {
                 <span className="absolute font-serif italic text-2xl font-bold text-white select-none">e</span>
               </div>
             </div>
-            {/* Bottom info & blue action button */}
             <div className="flex items-end justify-between pt-2">
               <div>
                 <h4 className="font-mono text-xs font-bold text-white leading-none">AI for UI</h4>
@@ -487,9 +602,7 @@ export function ProjectsPage() {
       case "space":
         return (
           <div className="w-full h-full flex items-center justify-center bg-[#070814] p-6 relative overflow-hidden group-hover:scale-105 transition-transform duration-300 select-none">
-            {/* Space dot matrix */}
             <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px] opacity-60" />
-            {/* Golden pixel constellation creature */}
             <div className="relative z-10 flex flex-col items-center">
               <div className="grid grid-cols-6 gap-1 w-20 h-10">
                 {[...Array(24)].map((_, i) => (
@@ -515,7 +628,6 @@ export function ProjectsPage() {
               <h4 className="font-serif text-sm font-normal text-zinc-950">People, and the work they start.</h4>
               <p className="text-[10px] text-zinc-500 mt-0.5">Simple tools for the startup.</p>
             </div>
-            {/* Speech bubble card */}
             <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200/80 shadow-xs text-[10px] text-zinc-700 font-sans leading-relaxed">
               <p className="italic">"The references and the reason we chose a direction stay with the work."</p>
               <div className="mt-2 flex items-center gap-1.5">
@@ -577,16 +689,13 @@ export function ProjectsPage() {
     }
   }
 
-  return (
-    <div className="relative min-h-screen w-full bg-white dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row pt-20">
-      
-      {/* ======================================================== */}
-      {/* 1. LEFT SIDEBAR (Matching designeer.xyz layout)         */}
-      {/* ======================================================== */}
-      <aside className="w-full md:w-64 lg:w-72 flex-none border-b md:border-b-0 md:border-r border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-[#0c0c0e]/80 backdrop-blur-md p-5 flex flex-col justify-between select-none">
-        <div>
-          {/* Brand & Subtitle */}
-          <div className="flex items-center gap-2.5 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+  // Sidebar Inner Content Component (Reusable for Desktop & Mobile Drawer)
+  const renderSidebarContent = () => (
+    <div className="flex flex-col justify-between h-full select-none">
+      <div>
+        {/* Brand & Subtitle */}
+        <div className="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-[#FA5D00] p-1.5 flex items-center justify-center shadow-sm flex-none overflow-hidden">
               <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
             </div>
@@ -597,358 +706,457 @@ export function ProjectsPage() {
               <span className="text-[10px] font-mono text-zinc-400">Curated Catalogue</span>
             </div>
           </div>
-
-          <p className="mt-4 font-sans text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-            A curated collection of interface craft, component libraries, AI tools, hardware rigs, and resources for curious builders.
-          </p>
-
-          {/* Browse Navigation */}
-          <div className="mt-6">
-            <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-zinc-400 block mb-2 px-2">
-              Browse
-            </span>
-            <nav className="space-y-1 font-mono text-xs">
-              {[
-                { label: "Finds", icon: Flame, cat: "Finds", count: 18 },
-                { label: "Inspiration", icon: Lightbulb, cat: "Inspiration", count: 24 },
-                { label: "Resources", icon: Box, cat: "Resources", count: 15 },
-                { label: "Tools", icon: Terminal, cat: "Tools", count: 19 },
-                { label: "Hardware", icon: Cpu, cat: "Hardware", count: 12 },
-                { label: "Interface", icon: Layers, cat: "Interface", count: 32 },
-              ].map((item) => {
-                const Icon = item.icon
-                const isActive = activeCategory.toLowerCase() === item.cat.toLowerCase()
-                return (
-                  <button
-                    key={item.label}
-                    onClick={() => {
-                      setActiveCategory(item.cat)
-                      setShowFavoritesOnly(false)
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
-                      isActive
-                        ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-sm"
-                        : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#FA5D00]" : "opacity-60"}`} />
-                      <span>{item.label}</span>
-                    </div>
-                    <span className="text-[10px] opacity-60 font-normal">{item.count}</span>
-                  </button>
-                )
-              })}
-            </nav>
-          </div>
-
-          {/* Folders & Shortcuts */}
-          <div className="mt-6 pt-5 border-t border-zinc-200 dark:border-zinc-800">
-            <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-zinc-400 block mb-2 px-2">
-              Collections
-            </span>
-            <div className="space-y-1 font-mono text-xs">
-              <button
-                onClick={() => {
-                  setActiveCategory("All")
-                  setShowFavoritesOnly(false)
-                }}
-                className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                  activeCategory === "All" && !showFavoritesOnly
-                    ? "text-[#FA5D00] font-bold"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                }`}
-              >
-                ● All Artifacts ({projects.length})
-              </button>
-              <button
-                onClick={() => setShowFavoritesOnly(true)}
-                className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
-                  showFavoritesOnly
-                    ? "text-[#FA5D00] font-bold"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                }`}
-              >
-                <span>♥ My Favourites</span>
-                <span className="text-[10px] opacity-60 font-mono">{favorites.length}</span>
-              </button>
-              <button
-                onClick={handleOpenSubmit}
-                className="w-full text-left px-3 py-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Submit Website</span>
-              </button>
-            </div>
-          </div>
+          {/* Mobile close button */}
+          <button
+            onClick={() => setMobileSidebarOpen(false)}
+            className="md:hidden p-1.5 rounded-full text-zinc-400 hover:text-black dark:hover:text-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Sidebar Bottom Promo Card (Matching BoardUI card in screenshot) */}
-        <div className="mt-8 pt-4">
-          <div className="p-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-lg bg-[#FA5D00] text-black font-mono font-bold text-xs flex items-center justify-center">
-                B
-              </div>
-              <div>
-                <h4 className="font-mono text-xs font-bold leading-none">BoardUI</h4>
-                <span className="text-[9px] uppercase font-mono text-zinc-400">Sponsored</span>
-              </div>
-            </div>
-            <p className="font-sans text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
-              Tables, charts and agent-interface components in a React and Tailwind system.
-            </p>
-            <a
-              href="https://recolabs.in/network"
-              className="mt-3 block text-center py-1.5 px-3 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-mono text-[11px] font-bold hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-colors"
-            >
-              Visit site ↗
-            </a>
-          </div>
+        <p className="mt-4 font-sans text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+          A curated collection of interface craft, component libraries, AI tools, hardware rigs, and resources for curious builders.
+        </p>
 
-          <p className="mt-4 font-mono text-[10px] text-zinc-400 text-center">
-            Curated by Reco Labs · © 2026
-          </p>
-        </div>
-      </aside>
-
-      {/* ======================================================== */}
-      {/* 2. MAIN CATALOGUE CONTENT AREA                           */}
-      {/* ======================================================== */}
-      <main className="flex-1 flex flex-col min-w-0 pb-20">
-        
-        {/* Top Control Bar (Matching designeer.xyz header) */}
-        <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 px-5 sm:px-8 py-3.5 border-b border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-[#09090b]/95 backdrop-blur-md">
-          
-          {/* Left Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {currentUser ? (
-              <Link
-                to={`/builder/${currentUser.username}`}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors"
-              >
-                {currentUser.avatar_url ? (
-                  <img src={currentUser.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
-                ) : (
-                  <span className="w-4 h-4 rounded-full bg-[#FA5D00] text-black text-[9px] font-bold flex items-center justify-center">
-                    {(currentUser.name || "B")[0].toUpperCase()}
-                  </span>
-                )}
-                <span>@{currentUser.username}</span>
-              </Link>
-            ) : (
-              <button
-                onClick={() => {
-                  setAuthMode("login")
-                  setShowAuthModal(true)
-                }}
-                className="px-3.5 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
-              >
-                Login
-              </button>
-            )}
-
-            <button
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              className={`px-3 py-1.5 rounded-full font-mono text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                showFavoritesOnly
-                  ? "bg-[#FA5D00] text-black"
-                  : "border border-zinc-200 dark:border-zinc-800 hover:border-[#FA5D00]"
-              }`}
-            >
-              <Heart className={`w-3.5 h-3.5 ${showFavoritesOnly ? "fill-black" : ""}`} />
-              <span>Favourites ({favorites.length})</span>
-            </button>
-
-            <button
-              onClick={() => setShowInfoModal(true)}
-              className="hidden sm:inline-block px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 font-mono text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
-            >
-              Info
-            </button>
-          </div>
-
-          {/* Center Search Input */}
-          <div className="relative flex-1 max-w-xs sm:max-w-md mx-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search interface craft, AI tools, hardware..."
-              className="w-full pl-9 pr-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00] transition-colors"
-            />
-          </div>
-
-          {/* Right Action Button (+ Submit) */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleOpenSubmit}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Submit</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Central Hero Headline (Matching designeer.xyz) */}
-        <div className="px-6 sm:px-10 pt-12 pb-8 text-center max-w-3xl mx-auto">
-          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-tight">
-            Designeer is a curated catalogue for designers and developers<span className="text-[#FA5D00]">.</span>
-          </h1>
-          <p className="mt-4 font-sans text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">
-            Design Inspiration, UI resources, tools and portfolios, each reviewed by hand. Below, the latest visual work picked from across the web.
-          </p>
-        </div>
-
-        {/* Filter Chips Bar (Matching designeer.xyz) */}
-        <div className="px-5 sm:px-10 py-4 flex flex-wrap items-center justify-between gap-4 border-y border-zinc-200 dark:border-zinc-800">
-          
-          {/* Category Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar">
-            {CATEGORIES.map((cat) => {
-              const active = activeCategory.toLowerCase() === cat.toLowerCase()
+        {/* Browse Navigation */}
+        <div className="mt-6">
+          <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-zinc-400 block mb-2 px-2">
+            Browse
+          </span>
+          <nav className="space-y-1 font-mono text-xs">
+            {[
+              { label: "Finds", icon: Flame, cat: "Finds", count: 18 },
+              { label: "Inspiration", icon: Lightbulb, cat: "Inspiration", count: 24 },
+              { label: "Resources", icon: Box, cat: "Resources", count: 15 },
+              { label: "Tools", icon: Terminal, cat: "Tools", count: 19 },
+              { label: "Hardware", icon: Cpu, cat: "Hardware", count: 12 },
+              { label: "Interface", icon: Layers, cat: "Interface", count: 32 },
+            ].map((item) => {
+              const Icon = item.icon
+              const isActive = activeCategory.toLowerCase() === item.cat.toLowerCase()
               return (
                 <button
-                  key={cat}
+                  key={item.label}
                   onClick={() => {
-                    setActiveCategory(cat)
+                    setActiveCategory(item.cat)
                     setShowFavoritesOnly(false)
+                    setMobileSidebarOpen(false)
                   }}
-                  className={`px-3.5 py-1.5 rounded-full font-mono text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    active
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
+                    isActive
                       ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-sm"
-                      : "border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600"
+                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
                   }`}
                 >
-                  {cat}
+                  <div className="flex items-center gap-2.5">
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#FA5D00]" : "opacity-60"}`} />
+                    <span>{item.label}</span>
+                  </div>
+                  <span className="text-[10px] opacity-60 font-normal">{item.count}</span>
                 </button>
               )
             })}
-          </div>
+          </nav>
+        </div>
 
-          {/* Right Filters Dropdown Controls */}
-          <div className="flex items-center gap-2 font-mono text-xs">
+        {/* Collections & Actions */}
+        <div className="mt-6 pt-5 border-t border-zinc-200 dark:border-zinc-800">
+          <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-zinc-400 block mb-2 px-2">
+            Collections
+          </span>
+          <div className="space-y-1 font-mono text-xs">
             <button
-              onClick={() => setSelectedSort(selectedSort === "recent" ? "stars" : "recent")}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-[#FA5D00] transition-colors cursor-pointer"
+              onClick={() => {
+                setActiveCategory("All")
+                setShowFavoritesOnly(false)
+                setMobileSidebarOpen(false)
+              }}
+              className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                activeCategory === "All" && !showFavoritesOnly
+                  ? "text-[#FA5D00] font-bold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+              }`}
             >
-              <span>{selectedSort === "recent" ? "Recent ⌵" : "Popular ⌵"}</span>
+              ● All Artifacts ({projects.length})
+            </button>
+            <button
+              onClick={() => {
+                setShowFavoritesOnly(true)
+                setMobileSidebarOpen(false)
+              }}
+              className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
+                showFavoritesOnly
+                  ? "text-[#FA5D00] font-bold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+              }`}
+            >
+              <span>♥ My Favourites</span>
+              <span className="text-[10px] opacity-60 font-mono">{favorites.length}</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileSidebarOpen(false)
+                handleOpenSubmit()
+              }}
+              className="w-full text-left px-3 py-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Submit Website</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileSidebarOpen(false)
+                setShowSponsorModal(true)
+              }}
+              className="w-full text-left px-3 py-1.5 rounded-lg text-[#FA5D00] hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1.5 font-bold"
+            >
+              <Megaphone className="w-3.5 h-3.5" />
+              <span>+ Add Sponsor Slot</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sidebar Bottom Promo Card (Matching BoardUI) */}
+      <div className="mt-8 pt-4">
+        <div className="p-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 shadow-sm relative group">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-6 h-6 rounded-lg bg-[#FA5D00] text-black font-mono font-bold text-xs flex items-center justify-center">
+              B
+            </div>
+            <div>
+              <h4 className="font-mono text-xs font-bold leading-none">BoardUI</h4>
+              <span className="text-[9px] uppercase font-mono text-zinc-400">Sponsored</span>
+            </div>
+          </div>
+          <p className="font-sans text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+            Tables, charts and agent-interface components in a React and Tailwind system.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <a
+              href="https://recolabs.in/network"
+              className="flex-1 text-center py-1.5 px-3 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-mono text-[11px] font-bold hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-colors"
+            >
+              Visit site ↗
+            </a>
+            <button
+              onClick={() => setShowSponsorModal(true)}
+              title="Sponsor this sidebar slot"
+              className="p-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 hover:border-[#FA5D00] text-zinc-500 hover:text-[#FA5D00] transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Project Cards Grid (Masonry / Visual Cards matching Image 3) */}
-        <div className="px-5 sm:px-10 pt-8">
-          {filteredProjects.length === 0 ? (
-            <div className="text-center py-20 font-mono text-sm text-zinc-500">
-              No projects match your filter.{" "}
+        <p className="mt-4 font-mono text-[10px] text-zinc-400 text-center">
+          Curated by Reco Labs · © 2026
+        </p>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="relative w-full h-screen bg-white dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 flex flex-col pt-20 overflow-hidden">
+      
+      {/* App Body: Split Layout */}
+      <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden relative">
+        
+        {/* ======================================================== */}
+        {/* 1. DESKTOP LEFT SIDEBAR                                  */}
+        {/* ======================================================== */}
+        <aside className="hidden md:flex w-64 lg:w-72 flex-none border-r border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-[#0c0c0e]/80 backdrop-blur-md p-5 flex-col justify-between h-full overflow-y-auto">
+          {renderSidebarContent()}
+        </aside>
+
+        {/* ======================================================== */}
+        {/* 2. MOBILE RESPONSIVE SIDEBAR DRAWER                      */}
+        {/* ======================================================== */}
+        {mobileSidebarOpen && (
+          <div className="md:hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex justify-start animate-in fade-in duration-200">
+            <div className="w-72 max-w-[85vw] h-full bg-white dark:bg-[#0c0c0e] p-5 shadow-2xl border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto animate-in slide-in-from-left duration-200">
+              {renderSidebarContent()}
+            </div>
+            <div className="flex-1" onClick={() => setMobileSidebarOpen(false)} />
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* 3. MAIN CATALOGUE AREA (Fixed Header + Scrollable Cards) */}
+        {/* ======================================================== */}
+        <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+          
+          {/* Permanently Fixed Top Control Bar (Never hides behind Navbar!) */}
+          <div className="flex-none z-20 flex flex-wrap items-center justify-between gap-2.5 px-4 sm:px-8 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-[#09090b]/95 backdrop-blur-md shadow-xs">
+            
+            {/* Left Controls & Mobile Toggle */}
+            <div className="flex items-center gap-2">
+              {/* Mobile Sidebar Hamburger Trigger */}
               <button
-                onClick={() => {
-                  setActiveCategory("All")
-                  setSearchQuery("")
-                  setShowFavoritesOnly(false)
-                }}
-                className="underline text-[#FA5D00] ml-1 cursor-pointer"
+                onClick={() => setMobileSidebarOpen(true)}
+                className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
               >
-                Reset filters
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#FA5D00]" />
+                <span className="hidden xs:inline">Browse</span>
+              </button>
+
+              {currentUser ? (
+                <Link
+                  to={`/builder/${currentUser.username}`}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors"
+                >
+                  {currentUser.avatar_url ? (
+                    <img src={currentUser.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                  ) : (
+                    <span className="w-4 h-4 rounded-full bg-[#FA5D00] text-black text-[9px] font-bold flex items-center justify-center">
+                      {(currentUser.name || "B")[0].toUpperCase()}
+                    </span>
+                  )}
+                  <span>@{currentUser.username}</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => {
+                    setAuthMode("login")
+                    setShowAuthModal(true)
+                  }}
+                  className="px-3.5 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
+                >
+                  Login
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                className={`px-3 py-1.5 rounded-full font-mono text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  showFavoritesOnly
+                    ? "bg-[#FA5D00] text-black"
+                    : "border border-zinc-200 dark:border-zinc-800 hover:border-[#FA5D00]"
+                }`}
+              >
+                <Heart className={`w-3.5 h-3.5 ${showFavoritesOnly ? "fill-black" : ""}`} />
+                <span className="hidden sm:inline">Favourites</span>
+                <span>({favorites.length})</span>
               </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProjects.map((p) => {
-                const isFav = favorites.includes(p.id)
 
-                return (
-                  <div
-                    key={p.id}
-                    className="group relative rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] overflow-hidden shadow-sm hover:shadow-xl hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between"
+            {/* Center Search Input */}
+            <div className="relative flex-1 max-w-xs sm:max-w-md mx-2 min-w-[140px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tools, AI, hardware..."
+                className="w-full pl-9 pr-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00] transition-colors"
+              />
+            </div>
+
+            {/* Right Action Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSponsorModal(true)}
+                className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 hover:border-[#FA5D00] font-mono text-xs font-semibold text-[#FA5D00] transition-colors cursor-pointer"
+              >
+                <Megaphone className="w-3.5 h-3.5" />
+                <span>+ Sponsor</span>
+              </button>
+
+              <button
+                onClick={handleOpenSubmit}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Submit</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Scrollable Bottom Content Area */}
+          <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-32">
+            
+            {/* Central Hero Headline (Matching designeer.xyz) */}
+            <div className="pt-10 pb-8 text-center max-w-3xl mx-auto">
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-tight">
+                Designeer is a curated catalogue for designers and developers<span className="text-[#FA5D00]">.</span>
+              </h1>
+              <p className="mt-4 font-sans text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Design Inspiration, UI resources, tools and portfolios, each reviewed by hand. Below, the latest visual work picked from across the web.
+              </p>
+            </div>
+
+            {/* Filter Chips Toolbar */}
+            <div className="py-4 flex flex-wrap items-center justify-between gap-4 border-y border-zinc-200 dark:border-zinc-800">
+              {/* Category Chips */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar">
+                {CATEGORIES.map((cat) => {
+                  const active = activeCategory.toLowerCase() === cat.toLowerCase()
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => {
+                        setActiveCategory(cat)
+                        setShowFavoritesOnly(false)
+                      }}
+                      className={`px-3.5 py-1.5 rounded-full font-mono text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                        active
+                          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-sm"
+                          : "border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Right Sort Controls */}
+              <div className="flex items-center gap-2 font-mono text-xs">
+                <button
+                  onClick={() => setSelectedSort(selectedSort === "recent" ? "stars" : "recent")}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-[#FA5D00] transition-colors cursor-pointer"
+                >
+                  <span>{selectedSort === "recent" ? "Recent ⌵" : "Popular ⌵"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Project Cards Grid */}
+            <div className="pt-8">
+              {filteredProjects.length === 0 ? (
+                <div className="text-center py-20 font-mono text-sm text-zinc-500">
+                  No projects match your filter.{" "}
+                  <button
+                    onClick={() => {
+                      setActiveCategory("All")
+                      setSearchQuery("")
+                      setShowFavoritesOnly(false)
+                    }}
+                    className="underline text-[#FA5D00] ml-1 cursor-pointer"
                   >
-                    {/* Visual Card Canvas Mockup */}
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-950 border-b border-zinc-100 dark:border-zinc-800/80">
-                      {renderVisualMockup(p)}
+                    Reset filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredProjects.map((p) => {
+                    const isFav = favorites.includes(p.id)
 
-                      {/* Sponsored / Category Tag */}
-                      <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-                        {p.isSponsored ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-bold uppercase shadow">
-                            Sponsored
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-white font-mono text-[10px] font-semibold border border-white/20">
-                            {p.category}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Favorite Button Overlay */}
-                      <button
-                        onClick={(e) => toggleFavorite(p.id, e)}
-                        title={isFav ? "Remove from favourites" : "Add to favourites"}
-                        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md text-white hover:text-rose-500 hover:scale-110 active:scale-95 transition-all flex items-center justify-center cursor-pointer border border-white/20"
+                    return (
+                      <div
+                        key={p.id}
+                        className="group relative rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] overflow-hidden shadow-sm hover:shadow-xl hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between"
                       >
-                        <Heart className={`w-4 h-4 ${isFav ? "fill-rose-500 text-rose-500" : ""}`} />
-                      </button>
+                        {/* Visual Card Canvas Mockup */}
+                        <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-950 border-b border-zinc-100 dark:border-zinc-800/80">
+                          {renderVisualMockup(p)}
 
-                      {/* Visit Website Hover Overlay Arrow */}
-                      <a
-                        href={p.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute bottom-3 right-3 z-10 w-9 h-9 rounded-full bg-[#FA5D00] text-black hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg cursor-pointer"
-                        title={`Open ${p.title} ↗`}
-                      >
-                        <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
-                      </a>
-                    </div>
+                          {/* Sponsored / Category Tag */}
+                          <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+                            {p.isSponsored ? (
+                              <span className="px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-bold uppercase shadow">
+                                Sponsored
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-white font-mono text-[10px] font-semibold border border-white/20">
+                                {p.category}
+                              </span>
+                            )}
+                          </div>
 
-                    {/* Card Meta Content */}
-                    <div className="p-5 flex flex-col justify-between flex-grow">
-                      <div>
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-serif text-lg font-normal tracking-tight text-zinc-950 dark:text-zinc-50 line-clamp-1">
-                            {p.title}
-                          </h3>
+                          {/* Favorite Button Overlay */}
+                          <button
+                            onClick={(e) => toggleFavorite(p.id, e)}
+                            title={isFav ? "Remove from favourites" : "Add to favourites"}
+                            className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md text-white hover:text-rose-500 hover:scale-110 active:scale-95 transition-all flex items-center justify-center cursor-pointer border border-white/20"
+                          >
+                            <Heart className={`w-4 h-4 ${isFav ? "fill-rose-500 text-rose-500" : ""}`} />
+                          </button>
+
+                          {/* Visit Website Hover Overlay Arrow */}
+                          <a
+                            href={p.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute bottom-3 right-3 z-10 w-9 h-9 rounded-full bg-[#FA5D00] text-black hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg cursor-pointer"
+                            title={`Open ${p.title} ↗`}
+                          >
+                            <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+                          </a>
                         </div>
 
-                        <p className="mt-1.5 font-sans text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
-                          {p.description}
-                        </p>
-                      </div>
+                        {/* Card Meta Content */}
+                        <div className="p-5 flex flex-col justify-between flex-grow">
+                          <div>
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="font-serif text-lg font-normal tracking-tight text-zinc-950 dark:text-zinc-50 line-clamp-1">
+                                {p.title}
+                              </h3>
+                            </div>
 
-                      {/* Bottom Footer Info */}
-                      <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-zinc-400">
-                        <span className="truncate">
-                          by <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">@{p.authorHandle}</strong>
-                        </span>
+                            <p className="mt-1.5 font-sans text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                              {p.description}
+                            </p>
+                          </div>
 
-                        <a
-                          href={p.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-[#FA5D00] flex items-center gap-1 transition-colors"
-                        >
-                          <span>Visit</span>
-                          <ArrowUpRight className="w-3 h-3" />
-                        </a>
+                          {/* Bottom Footer Info */}
+                          <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-zinc-400">
+                            <span className="truncate">
+                              by <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">@{p.authorHandle}</strong>
+                            </span>
+
+                            <a
+                              href={p.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-[#FA5D00] flex items-center gap-1 transition-colors"
+                            >
+                              <span>Visit</span>
+                              <ArrowUpRight className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
                       </div>
+                    )
+                  })}
+
+                  {/* Dedicated Sponsor Slot Card */}
+                  <div
+                    onClick={() => setShowSponsorModal(true)}
+                    className="relative rounded-3xl border-2 border-dashed border-[#FA5D00]/50 hover:border-[#FA5D00] bg-[#FA5D00]/5 p-6 flex flex-col justify-between items-center text-center cursor-pointer transition-all hover:scale-[1.01]"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-[#FA5D00] text-black flex items-center justify-center shadow-md mb-4 mt-6">
+                      <Megaphone className="w-6 h-6" />
                     </div>
+                    <div>
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#FA5D00]">
+                        SPONSOR SPOTLIGHT
+                      </span>
+                      <h3 className="font-serif text-xl font-normal text-zinc-950 dark:text-zinc-50 mt-1">
+                        Feature Your Project or Tool
+                      </h3>
+                      <p className="font-sans text-xs text-zinc-500 dark:text-zinc-400 mt-2 max-w-xs">
+                        Reach thousands of young builders, students, and engineers actively building the future.
+                      </p>
+                    </div>
+                    <button className="mt-6 px-5 py-2 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider shadow-sm">
+                      + Add Sponsor Slot
+                    </button>
                   </div>
-                )
-              })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
 
       {/* ======================================================== */}
-      {/* 3. SUBMIT WEBSITE MODAL (Requires login + Formspree)     */}
+      {/* 4. SUBMIT WEBSITE MODAL (Gated by Auth + Photo Preview)  */}
       {/* ======================================================== */}
       {showSubmitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in overflow-y-auto">
           <div className="relative w-full max-w-lg rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#121214] p-6 sm:p-8 shadow-2xl">
-            {/* Close */}
             <button
               onClick={() => setShowSubmitModal(false)}
               className="absolute top-5 right-5 p-2 rounded-full text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
@@ -956,7 +1164,6 @@ export function ProjectsPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Header */}
             <div className="flex items-center gap-2 mb-2 font-mono text-xs font-semibold text-[#FA5D00]">
               <Sparkles className="w-4 h-4" />
               <span>CURATED DIRECTORY SUBMISSION</span>
@@ -965,10 +1172,9 @@ export function ProjectsPage() {
               Submit a Website or Tool
             </h2>
             <p className="mt-1 font-sans text-xs text-zinc-500 dark:text-zinc-400">
-              Submitting as <strong className="text-zinc-900 dark:text-zinc-100">@{currentUser?.username || "builder"}</strong> ({currentUser?.email}). Reviewed and indexed by the guild.
+              Submitting as <strong className="text-zinc-900 dark:text-zinc-100">@{currentUser?.username || "builder"}</strong> ({currentUser?.email}).
             </p>
 
-            {/* Submission Form */}
             <form onSubmit={handleWebsiteSubmit} className="mt-6 space-y-4">
               <div>
                 <label className="block font-mono text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 mb-1">
@@ -979,8 +1185,8 @@ export function ProjectsPage() {
                   required
                   value={submitForm.title}
                   onChange={(e) => setSubmitForm({ ...submitForm, title: e.target.value })}
-                  placeholder="e.g. Shafire Kernel Debugger"
-                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-sans text-sm focus:outline-none focus:border-[#FA5D00]"
+                  placeholder="e.g. Acme Studio"
+                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
@@ -989,27 +1195,51 @@ export function ProjectsPage() {
                   Website URL *
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   required
                   value={submitForm.url}
                   onChange={(e) => setSubmitForm({ ...submitForm, url: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-sm focus:outline-none focus:border-[#FA5D00]"
+                  onBlur={(e) => handleUrlBlur(e.target.value)}
+                  placeholder="https://example.com"
+                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
                 />
+              </div>
+
+              {/* Photo Preview & Upload */}
+              <div>
+                <label className="block font-mono text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 mb-1">
+                  Site Preview Photo (Auto-detected or Upload)
+                </label>
+                <div className="flex items-center gap-3">
+                  <div className="w-24 h-16 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 overflow-hidden flex items-center justify-center flex-none">
+                    {previewImageUrl ? (
+                      <img src={previewImageUrl} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-zinc-400" />
+                    )}
+                  </div>
+                  <label className="flex-1 cursor-pointer">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-zinc-400 dark:border-zinc-600 hover:border-[#FA5D00] text-zinc-600 dark:text-zinc-300 font-mono text-xs text-center justify-center transition-colors">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload Screenshot</span>
+                    </div>
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                  </label>
+                </div>
               </div>
 
               <div>
                 <label className="block font-mono text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 mb-1">
-                  Category *
+                  Category
                 </label>
                 <select
                   value={submitForm.category}
                   onChange={(e) => setSubmitForm({ ...submitForm, category: e.target.value as any })}
                   className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
                 >
-                  {CATEGORIES.filter((c) => c !== "All").map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
+                  {CATEGORIES.filter((c) => c !== "All").map((c) => (
+                    <option key={c} value={c}>
+                      {c}
                     </option>
                   ))}
                 </select>
@@ -1017,36 +1247,36 @@ export function ProjectsPage() {
 
               <div>
                 <label className="block font-mono text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 mb-1">
-                  Short Description
+                  Description / One-liner
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={submitForm.description}
                   onChange={(e) => setSubmitForm({ ...submitForm, description: e.target.value })}
-                  placeholder="What makes this interface, tool or hardware project unique?"
-                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-sans text-sm focus:outline-none focus:border-[#FA5D00]"
+                  placeholder="What does your product solve?"
+                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
               {submitError && (
-                <p className="font-mono text-xs text-red-500 bg-red-500/10 p-2.5 rounded-xl">
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 font-mono text-xs text-red-500">
                   {submitError}
-                </p>
+                </div>
               )}
 
               {submitSuccess && (
-                <div className="font-mono text-xs text-emerald-500 bg-emerald-500/10 p-2.5 rounded-xl flex items-center gap-2">
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Submitted! Sent to guild review queue.</span>
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 font-mono text-xs text-emerald-500 flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  <span>Submission dispatched to guild review queue!</span>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={submitLoading || submitSuccess}
-                className="w-full py-3 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                className="w-full py-3 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 cursor-pointer"
               >
-                {submitLoading ? "Dispatching URL..." : submitSuccess ? "Submitted!" : "Submit for Indexing ↗"}
+                {submitLoading ? "Transmitting..." : "Submit for Indexing"}
               </button>
             </form>
           </div>
@@ -1054,7 +1284,135 @@ export function ProjectsPage() {
       )}
 
       {/* ======================================================== */}
-      {/* 4. AUTH MODAL (Prompted when user must sign in)         */}
+      {/* 5. ADD SPONSOR MODAL                                     */}
+      {/* ======================================================== */}
+      {showSponsorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#121214] p-6 sm:p-8 shadow-2xl">
+            <button
+              onClick={() => setShowSponsorModal(false)}
+              className="absolute top-5 right-5 p-2 rounded-full text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-2 font-mono text-xs font-semibold text-[#FA5D00]">
+              <Megaphone className="w-4 h-4" />
+              <span>SPONSORSHIP & ADVERTISING</span>
+            </div>
+            <h2 className="font-serif text-2xl sm:text-3xl font-normal text-zinc-950 dark:text-zinc-50">
+              Sponsor Reco Projects
+            </h2>
+            <p className="mt-1 font-sans text-xs text-zinc-500 dark:text-zinc-400">
+              Promote your developer platform, hardware board, or startup directly to builders.
+            </p>
+
+            <form onSubmit={handleSponsorSubmit} className="mt-6 space-y-4">
+              <div>
+                <label className="block font-mono text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 mb-1">
+                  Product / Sponsor Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={sponsorForm.title}
+                  onChange={(e) => setSponsorForm({ ...sponsorForm, title: e.target.value })}
+                  placeholder="e.g. BoardUI"
+                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 mb-1">
+                  Destination URL *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={sponsorForm.url}
+                  onChange={(e) => setSponsorForm({ ...sponsorForm, url: e.target.value })}
+                  placeholder="https://yourproduct.com"
+                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 mb-1">
+                  Placement Slot
+                </label>
+                <select
+                  value={sponsorForm.placement}
+                  onChange={(e) => setSponsorForm({ ...sponsorForm, placement: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
+                >
+                  <option value="projects_sidebar">Projects Sidebar (BoardUI slot)</option>
+                  <option value="projects_card">Projects Catalogue Card</option>
+                  <option value="home_hero">Home Page Hero Banner</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-mono text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 mb-1">
+                  Short Tagline
+                </label>
+                <textarea
+                  rows={2}
+                  value={sponsorForm.description}
+                  onChange={(e) => setSponsorForm({ ...sponsorForm, description: e.target.value })}
+                  placeholder="Tables, charts and components in React and Tailwind."
+                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-mono text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 mb-1">
+                    Your Name / Company
+                  </label>
+                  <input
+                    type="text"
+                    value={sponsorForm.sponsor_name}
+                    onChange={(e) => setSponsorForm({ ...sponsorForm, sponsor_name: e.target.value })}
+                    placeholder="Acme Corp"
+                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-mono text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 mb-1">
+                    Contact Email *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={sponsorForm.sponsor_email}
+                    onChange={(e) => setSponsorForm({ ...sponsorForm, sponsor_email: e.target.value })}
+                    placeholder="sponsor@example.com"
+                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
+              </div>
+
+              {sponsorSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 font-mono text-xs text-emerald-500 flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  <span>Sponsorship application received! We will follow up immediately.</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={sponsorLoading || sponsorSuccess}
+                className="w-full py-3 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              >
+                {sponsorLoading ? "Submitting..." : "Apply for Sponsorship"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 6. QUICK AUTH MODAL                                      */}
       {/* ======================================================== */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
@@ -1066,140 +1424,109 @@ export function ProjectsPage() {
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2 mb-2 font-mono text-xs font-bold text-[#FA5D00]">
-              <Sparkles className="w-4 h-4" />
+            <div className="flex items-center gap-2 mb-2 font-mono text-xs font-semibold text-[#FA5D00]">
+              <UserCheck className="w-4 h-4" />
               <span>BUILDER AUTHENTICATION</span>
             </div>
-
             <h2 className="font-serif text-2xl font-normal text-zinc-950 dark:text-zinc-50">
-              Sign in to Submit
+              {authMode === "signup" ? "Join the Directory" : "Founder Sign In"}
             </h2>
             <p className="mt-1 font-sans text-xs text-zinc-500 dark:text-zinc-400">
-              You must be a verified builder on Reco Labs to submit websites, tools, or resources.
+              Sign in to curate, showcase, and submit projects to the catalogue.
             </p>
 
-            {/* Social OAuth One-Click Buttons */}
-            <div className="mt-6 space-y-2.5">
+            <div className="mt-5 grid grid-cols-2 gap-2">
               <button
                 onClick={() => networkApi.signInWithGoogle()}
-                className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-full border-2 border-zinc-200 dark:border-zinc-700 font-mono text-xs font-bold hover:border-[#FA5D00] transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-zinc-300 dark:border-zinc-700 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                </svg>
-                <span>Continue with Google</span>
+                <span>Google</span>
               </button>
-
               <button
                 onClick={() => networkApi.signInWithGitHub()}
-                className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-full border-2 border-zinc-200 dark:border-zinc-700 font-mono text-xs font-bold hover:border-[#FA5D00] transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-zinc-300 dark:border-zinc-700 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors"
               >
-                <GithubIcon className="w-4 h-4" />
-                <span>Continue with GitHub</span>
+                <GithubIcon className="w-3.5 h-3.5" />
+                <span>GitHub</span>
               </button>
             </div>
 
-            <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase font-mono">
-                <span className="bg-white dark:bg-[#121214] px-2 text-zinc-400">or email</span>
-              </div>
+            <div className="my-4 flex items-center gap-2">
+              <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
+              <span className="font-mono text-[10px] text-zinc-400 uppercase">Or email</span>
+              <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
             </div>
 
-            {/* Email Form */}
-            <form onSubmit={handleAuthSubmit} className="space-y-3 font-sans">
+            <form onSubmit={handleAuthSubmit} className="space-y-3 font-mono text-xs">
               {authMode === "signup" && (
                 <div>
+                  <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 mb-1">
+                    Your Name
+                  </label>
                   <input
                     type="text"
                     required
-                    placeholder="Your Full Name"
                     value={authName}
                     onChange={(e) => setAuthName(e.target.value)}
-                    className="w-full px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs focus:outline-none focus:border-[#FA5D00]"
+                    placeholder="Aditya Raj"
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
                   />
                 </div>
               )}
+
               <div>
+                <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 mb-1">
+                  Email
+                </label>
                 <input
                   type="email"
                   required
-                  placeholder="name@email.com"
                   value={authEmail}
                   onChange={(e) => setAuthEmail(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs focus:outline-none focus:border-[#FA5D00]"
+                  placeholder="builder@recolabs.in"
+                  className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
+
               <div>
+                <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 mb-1">
+                  Password
+                </label>
                 <input
                   type="password"
                   required
-                  placeholder="Password"
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs focus:outline-none focus:border-[#FA5D00]"
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
               {authError && (
-                <p className="font-mono text-xs text-red-500 bg-red-500/10 p-2 rounded-lg">
-                  {authError}
-                </p>
+                <p className="text-red-500 text-[11px] font-sans">{authError}</p>
               )}
 
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full py-2.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all cursor-pointer disabled:opacity-50"
+                className="w-full py-2.5 rounded-full bg-[#FA5D00] text-black font-bold uppercase tracking-wider hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
               >
-                {authLoading ? "Authenticating..." : authMode === "signup" ? "Create Account & Continue" : "Sign In & Continue"}
+                {authLoading ? "Authenticating..." : authMode === "signup" ? "Sign Up & Continue" : "Sign In & Continue"}
               </button>
             </form>
 
-            <div className="mt-4 text-center">
+            <div className="mt-4 text-center font-mono text-[11px] text-zinc-500">
+              {authMode === "signup" ? "Already registered? " : "New to Reco Labs? "}
               <button
                 onClick={() => setAuthMode(authMode === "signup" ? "login" : "signup")}
-                className="font-mono text-xs text-zinc-500 hover:text-[#FA5D00] underline cursor-pointer"
+                className="underline text-[#FA5D00] font-bold cursor-pointer"
               >
-                {authMode === "signup" ? "Already have an account? Sign In" : "Need an account? Sign Up"}
+                {authMode === "signup" ? "Sign in" : "Create account"}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* ======================================================== */}
-      {/* 5. DIRECTORY INFO MODAL                                   */}
-      {/* ======================================================== */}
-      {showInfoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-md rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#121214] p-6 sm:p-8 shadow-2xl">
-            <button
-              onClick={() => setShowInfoModal(false)}
-              className="absolute top-5 right-5 p-2 rounded-full text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-serif text-2xl font-normal text-zinc-950 dark:text-zinc-50 mb-3">
-              About the Catalogue
-            </h3>
-            <p className="font-sans text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4">
-              Reco Labs Projects is a hand-reviewed directory of websites, interface components, AI tooling, and hardware builds created by students and open-source contributors worldwide.
-            </p>
-            <div className="p-3 rounded-xl bg-zinc-100 dark:bg-zinc-900 font-mono text-xs space-y-1">
-              <p>● Free to submit for all signed-in builders.</p>
-              <p>● Submissions are routed to the guild review queue.</p>
-              <p>● 100% open-source philosophy.</p>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   )
 }

@@ -4,6 +4,7 @@ import * as React from "react"
 import { Link } from "react-router-dom"
 import { HeroSection } from "@/components/HeroSection"
 import { RepoShowcase } from "@/components/RepoShowcase"
+import { SponsorSection } from "@/components/SponsorSection"
 import { ArrowUpRight, Terminal, Flame, Users, BookOpen } from "lucide-react"
 
 export function HomePage() {
@@ -53,6 +54,9 @@ export function HomePage() {
 
       {/* Repositories on Glass Folder Cards */}
       <RepoShowcase />
+
+      {/* Sponsors Section - Displayed Exclusively on HomePage */}
+      <SponsorSection />
     </div>
   )
 }
