@@ -578,9 +578,35 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         res.end(JSON.stringify({ error: "Title and url are required." }));
         return;
       }
-      const created = await createCatalogProject(body);
+      const isAdmin = checkAdminAuth(req);
+      const isApproved = isAdmin ? (body.is_approved !== undefined ? Boolean(body.is_approved) : true) : false;
+      const created = await createCatalogProject({ ...body, is_approved: isApproved });
       res.statusCode = 201;
       res.end(JSON.stringify({ success: true, project: created }));
+      return;
+    }
+
+    // 14C-2. APPROVE / TOGGLE STATUS CATALOG PROJECT: POST /api/network/projects/approve
+    if (
+      req.method === "POST" &&
+      (pathname === "/api/network/projects/approve" || pathname === "/api/projects/approve" || pathname === "/api/network/admin/projects/approve")
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required." }));
+        return;
+      }
+      const body = await parseBody();
+      const id = Number(body.id);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid project ID is required." }));
+        return;
+      }
+      const isApproved = body.is_approved !== undefined ? Boolean(body.is_approved) : true;
+      const updated = await updateCatalogProject(id, { is_approved: isApproved });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, project: updated }));
       return;
     }
 

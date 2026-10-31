@@ -9,11 +9,6 @@ export function Navbar() {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
-  // Project page is an independent standalone catalogue app with its own dedicated topbar - hide global navbar
-  if (location.pathname.startsWith("/projects") || location.pathname.startsWith("/project")) {
-    return null
-  }
-
   // Close mobile menu whenever route changes
   React.useEffect(() => {
     setMobileOpen(false)
@@ -30,6 +25,12 @@ export function Navbar() {
       document.body.style.overflow = ""
     }
   }, [mobileOpen])
+
+  // Project page is an independent standalone catalogue app with its own dedicated topbar - hide global navbar
+  // Keep check after all hooks so React hook execution order is always stable
+  if (location.pathname.startsWith("/projects") || location.pathname.startsWith("/project")) {
+    return null
+  }
 
   const isHomePage = location.pathname === "/"
   const isActive = (path: string) => location.pathname === path

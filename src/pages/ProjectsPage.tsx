@@ -885,12 +885,12 @@ export function ProjectsPage() {
           </span>
           <nav className="space-y-1 font-mono text-xs">
             {[
-              { label: "Finds", icon: Flame, cat: "Finds", count: 18 },
-              { label: "Inspiration", icon: Lightbulb, cat: "Inspiration", count: 24 },
-              { label: "Resources", icon: Box, cat: "Resources", count: 15 },
-              { label: "Tools", icon: Terminal, cat: "Tools", count: 19 },
-              { label: "Hardware", icon: Cpu, cat: "Hardware", count: 12 },
-              { label: "Interface", icon: Layers, cat: "Interface", count: 32 },
+              { label: "Finds", icon: Flame, cat: "Finds" },
+              { label: "Inspiration", icon: Lightbulb, cat: "Inspiration" },
+              { label: "Resources", icon: Box, cat: "Resources" },
+              { label: "Tools", icon: Terminal, cat: "Tools" },
+              { label: "Hardware", icon: Cpu, cat: "Hardware" },
+              { label: "Interface", icon: Layers, cat: "Interface" },
             ].map((item) => {
               const Icon = item.icon
               const isActive = activeCategory.toLowerCase() === item.cat.toLowerCase()
@@ -902,7 +902,7 @@ export function ProjectsPage() {
                     setShowFavoritesOnly(false)
                     setMobileSidebarOpen(false)
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
+                  className={`w-full flex items-center px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
                     isActive
                       ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-sm"
                       : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
@@ -912,7 +912,6 @@ export function ProjectsPage() {
                     <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#FA5D00]" : "opacity-60"}`} />
                     <span>{item.label}</span>
                   </div>
-                  <span className="text-[10px] opacity-60 font-normal">{item.count}</span>
                 </button>
               )
             })}

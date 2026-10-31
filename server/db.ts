@@ -124,6 +124,30 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_ads_placement ON ads(placement);
       CREATE INDEX IF NOT EXISTS idx_ads_is_active ON ads(is_active);
       CREATE INDEX IF NOT EXISTS idx_store_links_category ON store_links(category);
+
+      CREATE TABLE IF NOT EXISTS catalog_projects (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        url TEXT NOT NULL,
+        category TEXT DEFAULT 'Finds',
+        description TEXT,
+        author TEXT DEFAULT 'Community',
+        author_handle TEXT DEFAULT 'builder',
+        thumbnail_bg TEXT DEFAULT '#121214',
+        visual_type TEXT DEFAULT 'screenshot',
+        preview_image_url TEXT,
+        tags TEXT[] DEFAULT ARRAY['Community', 'Curated']::TEXT[],
+        stars INTEGER DEFAULT 1,
+        is_sponsored BOOLEAN DEFAULT false,
+        sponsored_label TEXT,
+        is_approved BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      ALTER TABLE catalog_projects ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT true;
+      CREATE INDEX IF NOT EXISTS idx_catalog_projects_approved ON catalog_projects(is_approved);
+      CREATE INDEX IF NOT EXISTS idx_catalog_projects_category ON catalog_projects(LOWER(category));
     `)
   } finally {
     client.release()
@@ -831,13 +855,15 @@ export async function createCatalogProject(data: {
   stars?: number;
   is_sponsored?: boolean;
   sponsored_label?: string;
+  is_approved?: boolean;
 }) {
   const client = await pool.connect();
   try {
+    const isApproved = data.is_approved !== undefined ? Boolean(data.is_approved) : false;
     const res = await client.query(
       `INSERT INTO catalog_projects (
-        title, url, category, description, author, author_handle, thumbnail_bg, visual_type, preview_image_url, tags, stars, is_sponsored, sponsored_label
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        title, url, category, description, author, author_handle, thumbnail_bg, visual_type, preview_image_url, tags, stars, is_sponsored, sponsored_label, is_approved
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *`,
       [
         data.title,
@@ -853,6 +879,7 @@ export async function createCatalogProject(data: {
         data.stars || 1,
         data.is_sponsored || false,
         data.sponsored_label || null,
+        isApproved,
       ]
     );
     return res.rows[0];

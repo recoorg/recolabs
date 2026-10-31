@@ -50,7 +50,8 @@ export function BuilderProfilePage() {
 
   React.useEffect(() => {
     if (!username) return
-    loadProfile(username)
+    const clean = username.startsWith('@') ? username.slice(1) : username
+    loadProfile(clean.trim())
   }, [username])
 
   const loadProfile = async (u: string) => {

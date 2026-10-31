@@ -8,11 +8,6 @@ export function FooterWrapper() {
   const location = useLocation()
   const [isDark, setIsDark] = React.useState(false)
 
-  // Hide global footer on desktop catalogue app (/projects) so sidebar and cards extend full height
-  if (location.pathname.startsWith("/projects") || location.pathname.startsWith("/project")) {
-    return null
-  }
-
   React.useEffect(() => {
     const checkDark = () => {
       setIsDark(document.documentElement.classList.contains("dark"))
@@ -26,6 +21,12 @@ export function FooterWrapper() {
     })
     return () => observer.disconnect()
   }, [])
+
+  // Hide global footer on desktop catalogue app (/projects) so sidebar and cards extend full height
+  // Kept after all hooks to strictly adhere to React rules of hooks
+  if (location.pathname.startsWith("/projects") || location.pathname.startsWith("/project")) {
+    return null
+  }
 
   return (
     <>

@@ -113,6 +113,30 @@ async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_ads_placement ON ads(placement);
       CREATE INDEX IF NOT EXISTS idx_ads_is_active ON ads(is_active);
       CREATE INDEX IF NOT EXISTS idx_store_links_category ON store_links(category);
+
+      CREATE TABLE IF NOT EXISTS catalog_projects (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        url TEXT NOT NULL,
+        category TEXT DEFAULT 'Finds',
+        description TEXT,
+        author TEXT DEFAULT 'Community',
+        author_handle TEXT DEFAULT 'builder',
+        thumbnail_bg TEXT DEFAULT '#121214',
+        visual_type TEXT DEFAULT 'screenshot',
+        preview_image_url TEXT,
+        tags TEXT[] DEFAULT ARRAY['Community', 'Curated']::TEXT[],
+        stars INTEGER DEFAULT 1,
+        is_sponsored BOOLEAN DEFAULT false,
+        sponsored_label TEXT,
+        is_approved BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      ALTER TABLE catalog_projects ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT true;
+      CREATE INDEX IF NOT EXISTS idx_catalog_projects_approved ON catalog_projects(is_approved);
+      CREATE INDEX IF NOT EXISTS idx_catalog_projects_category ON catalog_projects(LOWER(category));
     `);
   } finally {
     client.release();
@@ -722,10 +746,11 @@ async function listAllCatalogProjectsAdmin() {
 async function createCatalogProject(data) {
   const client = await pool.connect();
   try {
+    const isApproved = data.is_approved !== void 0 ? Boolean(data.is_approved) : false;
     const res = await client.query(
       `INSERT INTO catalog_projects (
-        title, url, category, description, author, author_handle, thumbnail_bg, visual_type, preview_image_url, tags, stars, is_sponsored, sponsored_label
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        title, url, category, description, author, author_handle, thumbnail_bg, visual_type, preview_image_url, tags, stars, is_sponsored, sponsored_label, is_approved
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *`,
       [
         data.title,
@@ -740,7 +765,8 @@ async function createCatalogProject(data) {
         data.tags || ["Community", "Curated"],
         data.stars || 1,
         data.is_sponsored || false,
-        data.sponsored_label || null
+        data.sponsored_label || null,
+        isApproved
       ]
     );
     return res.rows[0];
@@ -1312,9 +1338,30 @@ async function handleNetworkRequest(req, res) {
         res.end(JSON.stringify({ error: "Title and url are required." }));
         return;
       }
-      const created = await createCatalogProject(body);
+      const isAdmin = checkAdminAuth(req);
+      const isApproved = isAdmin ? body.is_approved !== void 0 ? Boolean(body.is_approved) : true : false;
+      const created = await createCatalogProject({ ...body, is_approved: isApproved });
       res.statusCode = 201;
       res.end(JSON.stringify({ success: true, project: created }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/projects/approve" || pathname === "/api/projects/approve" || pathname === "/api/network/admin/projects/approve")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required." }));
+        return;
+      }
+      const body = await parseBody();
+      const id = Number(body.id);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid project ID is required." }));
+        return;
+      }
+      const isApproved = body.is_approved !== void 0 ? Boolean(body.is_approved) : true;
+      const updated = await updateCatalogProject(id, { is_approved: isApproved });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, project: updated }));
       return;
     }
     if (req.method === "PUT" && (pathname.startsWith("/api/network/projects/") || pathname.startsWith("/api/projects/")) || req.method === "POST" && (pathname === "/api/network/projects/update" || pathname === "/api/projects/update")) {

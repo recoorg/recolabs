@@ -58,7 +58,7 @@ function AppContent() {
 
       {/* Dynamic Route Pages with Strict Flex Constraint */}
       <main className={`w-full ${isProjects ? "flex-1 min-h-0 flex flex-col overflow-hidden" : "flex-grow"}`}>
-        <ErrorBoundary>
+        <ErrorBoundary key={location.pathname}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
