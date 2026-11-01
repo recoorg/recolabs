@@ -35,6 +35,10 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Home,
+  Images,
+  LayoutGrid,
+  Code2,
+  Users,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile } from "@/services/networkApi"
@@ -44,18 +48,36 @@ import { usePageMeta } from "@/hooks/usePageMeta"
 const CATEGORIES = ["All", "Finds", "Interface", "Motion", "3D", "Tools", "Resources", "Hardware", "Inspiration"]
 
 
-function getCategoryIcon(name: string) {
-  const n = (name || "").toLowerCase()
-  if (n.includes("design") || n.includes("interface")) return Layers
-  if (n.includes("develop") || n.includes("code") || n.includes("tool") || n.includes("terminal")) return Terminal
-  if (n.includes("resource") || n.includes("box")) return Box
-  if (n.includes("hardware") || n.includes("rig") || n.includes("chip")) return Cpu
-  if (n.includes("motion") || n.includes("3d")) return Sparkles
-  if (n.includes("ai") || n.includes("intel")) return Cpu
-  return Layers
+function OrbIcon({ className = "w-7 h-7" }: { className?: string }) {
+  return (
+    <div className={`relative ${className} rounded-full overflow-hidden flex-none shadow-md ring-1 ring-white/10`}>
+      <div className="absolute inset-0 bg-gradient-to-tr from-[#38bdf8] via-[#818cf8] to-[#c084fc]" />
+      <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:2px_2px] opacity-40 mix-blend-overlay" />
+      <div className="absolute inset-0 rounded-full border border-white/20" />
+    </div>
+  )
 }
 
-const DEFAULT_CATEGORIES = ["Design", "Develop", "Resources"]
+function getCategoryIcon(name: string) {
+  const n = (name || "").toLowerCase()
+  if (n.includes("find")) return Images
+  if (n.includes("insp")) return Lightbulb
+  if (n.includes("resourc")) return LayoutGrid
+  if (n.includes("tool") || n.includes("code") || n.includes("dev")) return Code2
+  if (n.includes("portfoli") || n.includes("user") || n.includes("peer")) return Users
+  if (n.includes("design") || n.includes("interface")) return Layers
+  if (n.includes("motion") || n.includes("3d")) return Sparkles
+  if (n.includes("hard") || n.includes("rig") || n.includes("chip")) return Cpu
+  return LayoutGrid
+}
+
+const DEFAULT_BROWSE_SECTIONS = [
+  { name: "Finds" },
+  { name: "Inspiration" },
+  { name: "Resources" },
+  { name: "Tools" },
+  { name: "Portfolios" },
+]
 
 export function ProjectsPage() {
   usePageMeta({
@@ -122,6 +144,21 @@ export function ProjectsPage() {
   React.useEffect(() => {
     fetchDatabaseProjects()
   }, [])
+
+  // Selected project for detail modal + recommendations below
+  const [selectedProject, setSelectedProject] = React.useState<CatalogProject | null>(null)
+
+  // Merge default browse sections (Finds, Inspiration, Resources, Tools, Portfolios) with any custom sections
+  const browseList = React.useMemo(() => {
+    const defaultNames = ["Finds", "Inspiration", "Resources", "Tools", "Portfolios"]
+    const list = defaultNames.map((name) => ({ name }))
+    sections.forEach((sec) => {
+      if (sec.name && !defaultNames.some((d) => d.toLowerCase() === sec.name.toLowerCase())) {
+        list.push({ name: sec.name })
+      }
+    })
+    return list
+  }, [sections])
 
   // Filter & Search states
   const [activeCategory, setActiveCategory] = React.useState<string>("All")
@@ -523,6 +560,29 @@ export function ProjectsPage() {
     return combined
   }, [projects, liveAds])
 
+// Recommendations computed for the currently selected project
+  const recommendations = React.useMemo(() => {
+    if (!selectedProject) return []
+    const currentCat = (selectedProject.category || "").toLowerCase()
+    const currentTags = (selectedProject.tags || []).map((t) => (t || "").toLowerCase())
+
+    return allProjects
+      .filter((p) => p && String(p.id) !== String(selectedProject.id))
+      .map((p) => {
+        let score = 0
+        const pCat = (p.category || "").toLowerCase()
+        if (pCat === currentCat) score += 5
+        const pTags = (p.tags || []).map((t) => (t || "").toLowerCase())
+        pTags.forEach((t) => {
+          if (currentTags.includes(t)) score += 2
+        })
+        return { project: p, score }
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4)
+      .map((item) => item.project)
+  }, [selectedProject, allProjects])
+
   // Filter projects with bulletproof optional chaining
   const filteredProjects = React.useMemo(() => {
     return allProjects.filter((p) => {
@@ -533,7 +593,25 @@ export function ProjectsPage() {
       const tags = Array.isArray(p.tags) ? p.tags : []
       const q = (searchQuery || "").toLowerCase()
 
-      const matchesCategory = activeCategory === "All" || cat === activeCategory.toLowerCase()
+      let matchesCategory = false
+      if (activeCategory === "All") {
+        matchesCategory = true
+      } else {
+        const act = activeCategory.toLowerCase()
+        if (cat === act) {
+          matchesCategory = true
+        } else if (act === "tools" && (cat === "develop" || cat === "tool" || cat === "tools" || cat === "code")) {
+          matchesCategory = true
+        } else if (act === "portfolios" && (cat === "portfolio" || cat === "portfolios" || cat === "design")) {
+          matchesCategory = true
+        } else if (act === "inspiration" && (cat === "inspiration" || cat === "design" || cat === "finds" || cat === "interface")) {
+          matchesCategory = true
+        } else if (act === "resources" && (cat === "resources" || cat === "resource")) {
+          matchesCategory = true
+        } else if (act === "finds" && (cat === "finds" || cat === "resources" || cat === "design")) {
+          matchesCategory = true
+        }
+      }
       const matchesSearch =
         !q ||
         title.includes(q) ||
@@ -746,43 +824,53 @@ export function ProjectsPage() {
     }
   }
 
-  // Sidebar Inner Content Component (Reusable for Desktop & Mobile Drawer)
+  // Sidebar Inner Content Component (Exact match to media_1793513281908_c994aba5.png)
   const renderSidebarContent = () => (
-    <div className="flex flex-col justify-between h-full select-none">
+    <div className="flex flex-col justify-between h-full select-none text-zinc-300">
       <div>
-        {/* Brand & Subtitle */}
-        <div className="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#FA5D00] p-1.5 flex items-center justify-center shadow-sm flex-none overflow-hidden">
-              <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
-            </div>
-            <div>
-              <h2 className="font-mono text-sm font-bold tracking-tight text-zinc-950 dark:text-zinc-50 leading-tight">
-                recolabs.projects
-              </h2>
-              <span className="text-[10px] font-mono text-zinc-400">Curated Catalogue</span>
-            </div>
-          </div>
+        {/* Top Header: Orb Icon + designeer.xyz */}
+        <div className="flex items-center justify-between pb-3">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveCategory("All")
+              setShowFavoritesOnly(false)
+              setMobileSidebarOpen(false)
+            }}
+            className="flex items-center gap-3 text-left group cursor-pointer"
+          >
+            <OrbIcon className="w-7 h-7" />
+            <h2 className="font-mono text-[15px] font-normal tracking-tight text-zinc-100 group-hover:text-white transition-colors">
+              designeer.xyz
+            </h2>
+          </button>
           {/* Mobile close button */}
           <button
             onClick={() => setMobileSidebarOpen(false)}
-            className="md:hidden p-1.5 rounded-full text-zinc-400 hover:text-black dark:hover:text-white"
+            className="md:hidden p-1.5 rounded-full text-zinc-400 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="mt-4 font-sans text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-          A curated collection of interface craft, component libraries, AI tools, hardware rigs, and resources for curious builders.
+        {/* Dotted Divider Line */}
+        <div className="border-b border-dotted border-zinc-700/60 dark:border-zinc-800 my-3" />
+
+        {/* Curated Collection Description */}
+        <p className="font-sans text-xs sm:text-[13px] text-zinc-300 dark:text-zinc-300 leading-relaxed py-1">
+          A curated collection of interface craft, component libraries, AI tools, and resources for builders.
         </p>
 
-        {/* Browse Navigation (Dynamic sections: Design, Develop, Resources & custom) */}
-        <div className="mt-6">
-          <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-zinc-400 block mb-2 px-2">
-            Sections
+        {/* Dotted Divider Line */}
+        <div className="border-b border-dotted border-zinc-700/60 dark:border-zinc-800 my-3" />
+
+        {/* Browse Navigation (Finds, Inspiration, Resources, Tools, Portfolios) */}
+        <div className="mt-3">
+          <span className="font-sans text-xs font-medium text-zinc-500 block mb-2.5 px-2">
+            Browse
           </span>
-          <nav className="space-y-1 font-mono text-xs">
-            {sections.map((sec) => {
+          <nav className="space-y-1 text-xs sm:text-[13px]">
+            {browseList.map((sec) => {
               const Icon = getCategoryIcon(sec.name)
               const isActive = activeCategory.toLowerCase() === sec.name.toLowerCase()
               return (
@@ -793,16 +881,14 @@ export function ProjectsPage() {
                     setShowFavoritesOnly(false)
                     setMobileSidebarOpen(false)
                   }}
-                  className={`w-full flex items-center px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-colors cursor-pointer ${
                     isActive
-                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-sm"
-                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
+                      ? "bg-[#18181b] text-white shadow-xs"
+                      : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 font-normal"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#FA5D00]" : "opacity-60"}`} />
-                    <span>{sec.name}</span>
-                  </div>
+                  <Icon className={`w-4 h-4 flex-none ${isActive ? "text-white" : "text-zinc-400"}`} strokeWidth={1.8} />
+                  <span>{sec.name}</span>
                 </button>
               )
             })}
@@ -1122,7 +1208,8 @@ export function ProjectsPage() {
                     return (
                       <div
                         key={p.id}
-                        className="group relative rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] overflow-hidden shadow-sm hover:shadow-xl hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between"
+                        onClick={() => setSelectedProject(p)}
+                        className="group relative rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] overflow-hidden shadow-sm hover:shadow-xl hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between cursor-pointer"
                       >
                         {/* Visual Card Canvas Mockup */}
                         <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-950 border-b border-zinc-100 dark:border-zinc-800/80">
@@ -1143,7 +1230,7 @@ export function ProjectsPage() {
 
                           {/* Favorite Button Overlay */}
                           <button
-                            onClick={(e) => toggleFavorite(p.id, e)}
+                            onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id, e); }}
                             title={isFav ? "Remove from favourites" : "Add to favourites"}
                             className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md text-white hover:text-rose-500 hover:scale-110 active:scale-95 transition-all flex items-center justify-center cursor-pointer border border-white/20"
                           >
@@ -1155,6 +1242,7 @@ export function ProjectsPage() {
                             href={p.url}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
                             className="absolute bottom-3 right-3 z-10 w-9 h-9 rounded-full bg-[#FA5D00] text-black hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg cursor-pointer"
                             title={`Open ${p.title} ↗`}
                           >
@@ -1203,6 +1291,7 @@ export function ProjectsPage() {
                               href={p.url}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               className="hover:text-[#FA5D00] flex items-center gap-1 transition-colors flex-none"
                             >
                               <span>Visit</span>
