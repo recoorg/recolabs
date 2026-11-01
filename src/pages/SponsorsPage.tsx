@@ -125,7 +125,7 @@ export function SponsorsPage() {
   usePageMeta({
     title: "Sponsors | Reco Labs",
     description: "Support the next generation of builders. Transparent community sponsorship and founder visibility.",
-    image: "/twitter-sponsors.png",
+    image: "/twitter-image.png",
   })
 
   const [sponsors] = React.useState<SponsorItem[]>(INITIAL_SPONSORS)

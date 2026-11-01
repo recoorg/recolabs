@@ -12,7 +12,7 @@ export function HomePage() {
   usePageMeta({
     title: "Reco Labs",
     description: "The Skill Exchange for curious Mind. A global collective of young hackers, builders, and makers shipping high-impact software, hardware rigs, and tutorials.",
-    image: "/twitter-home.png",
+    image: "/twitter-image.png",
   })
 
   return (

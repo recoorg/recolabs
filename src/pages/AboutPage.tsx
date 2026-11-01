@@ -9,7 +9,7 @@ export function AboutPage() {
   usePageMeta({
     title: "About | Reco Labs",
     description: "From high school experiment to global guild. Founded by Aditya Raj & Tanish to empower curious young minds.",
-    image: "/twitter-about.png",
+    image: "/twitter-image.png",
   })
 
   return (

@@ -18,6 +18,17 @@
       "destination": "/api/network/[...route]"
     },
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=root"
+    },
+    {
       "source": "/builder/:username",
       "has": [
         {
@@ -45,7 +56,18 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=projects"
+    },
+    {
+      "source": "/projects/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
         }
       ],
       "destination": "/api/network/seo-preview?page=projects"
@@ -56,21 +78,21 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
         }
       ],
       "destination": "/api/network/seo-preview?page=network"
     },
     {
-      "source": "/about",
+      "source": "/network/(.*)",
       "has": [
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
         }
       ],
-      "destination": "/api/network/seo-preview?page=about"
+      "destination": "/api/network/seo-preview?page=network"
     },
     {
       "source": "/jobs",
@@ -78,10 +100,43 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
         }
       ],
       "destination": "/api/network/seo-preview?page=jobs"
+    },
+    {
+      "source": "/jobs/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=jobs"
+    },
+    {
+      "source": "/about",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=about"
+    },
+    {
+      "source": "/about/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=about"
     },
     {
       "source": "/hackathons",
@@ -89,7 +144,18 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=hackathons"
+    },
+    {
+      "source": "/hackathons/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
         }
       ],
       "destination": "/api/network/seo-preview?page=hackathons"
@@ -100,7 +166,18 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot).*"
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
+        }
+      ],
+      "destination": "/api/network/seo-preview?page=sponsors"
+    },
+    {
+      "source": "/sponsors/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
         }
       ],
       "destination": "/api/network/seo-preview?page=sponsors"

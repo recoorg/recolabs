@@ -34,7 +34,7 @@ export function BuilderProfilePage() {
   usePageMeta({
     title: profile ? `${profile.name || profile.username} (@${profile.username}) | Reco Labs` : (username ? `@${username.replace(/^@/, '')} | Reco Labs` : "Builder Profile | Reco Labs"),
     description: profile?.bio || "Builder and founder showcasing projects on Reco Labs.",
-    image: profile?.avatar_url || "/twitter-network.png",
+    image: profile?.avatar_url || "/twitter-image.png",
     type: "profile",
   })
   const [startups, setStartups] = React.useState<StartupItem[]>([])

@@ -67,6 +67,9 @@ export function usePageMeta(options: PageMetaOptions = {}) {
     setOrCreateMeta('meta[property="og:description"]', "property", "og:description", description)
     setOrCreateMeta('meta[property="og:image"]', "property", "og:image", image)
     setOrCreateMeta('meta[property="og:image:secure_url"]', "property", "og:image:secure_url", image)
+    setOrCreateMeta('meta[property="og:image:type"]', "property", "og:image:type", "image/png")
+    setOrCreateMeta('meta[property="og:image:width"]', "property", "og:image:width", "1200")
+    setOrCreateMeta('meta[property="og:image:height"]', "property", "og:image:height", "900")
     setOrCreateMeta('meta[property="og:url"]', "property", "og:url", currentUrl)
     setOrCreateMeta('meta[property="og:type"]', "property", "og:type", pageType)
 

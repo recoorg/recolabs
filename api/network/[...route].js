@@ -1108,7 +1108,7 @@ async function handleNetworkRequest(req, res) {
       username = username.replace(/^@/, "").trim();
       let title = "Reco Labs";
       let desc = "The Skill Exchange for curious Mind. A global collective of young hackers, builders, and makers shipping high-impact software, hardware rigs, and tutorials.";
-      let image = "https://recolabs.in/twitter-network.png";
+      let image = "https://recolabs.in/twitter-image.png";
       let url = `https://recolabs.in/builder/${username}`;
       if (username) {
         try {
@@ -1141,6 +1141,9 @@ async function handleNetworkRequest(req, res) {
   <meta property="og:description" content="${escapeHtml(desc)}">
   <meta property="og:image" content="${escapeHtml(image)}">
   <meta property="og:image:secure_url" content="${escapeHtml(image)}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="900">
   <meta property="og:url" content="${escapeHtml(url)}">
 
   <!-- Twitter / X Card -->
@@ -1185,7 +1188,7 @@ async function handleNetworkRequest(req, res) {
       } else if (page === "about") {
         title = "About | Reco Labs";
         desc = "From high school experiment to global guild. Founded by Aditya Raj & Tanish to empower curious young minds.";
-        image = "https://recolabs.in/twitter-about.png";
+        image = "https://recolabs.in/twitter-image.png";
         url = "https://recolabs.in/about";
       } else if (page === "jobs") {
         title = "Jobs | Reco Labs";
@@ -1195,12 +1198,12 @@ async function handleNetworkRequest(req, res) {
       } else if (page === "hackathons" || page === "hackathon") {
         title = "Hackathons | Reco Labs";
         desc = "Curated hackathons for high school hackers and collegiate builders. Ship projects, win grants, meet peers.";
-        image = "https://recolabs.in/twitter-hackathons.png";
+        image = "https://recolabs.in/twitter-image.png";
         url = "https://recolabs.in/hackathons";
       } else if (page === "sponsors" || page === "sponsor") {
         title = "Sponsors | Reco Labs";
         desc = "Support the next generation of builders. Transparent community sponsorship and founder visibility.";
-        image = "https://recolabs.in/twitter-sponsors.png";
+        image = "https://recolabs.in/twitter-image.png";
         url = "https://recolabs.in/sponsors";
       }
       const html = `<!DOCTYPE html>
@@ -1218,6 +1221,9 @@ async function handleNetworkRequest(req, res) {
   <meta property="og:description" content="${escapeHtml(desc)}">
   <meta property="og:image" content="${escapeHtml(image)}">
   <meta property="og:image:secure_url" content="${escapeHtml(image)}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="900">
   <meta property="og:url" content="${escapeHtml(url)}">
 
   <!-- Twitter / X Card -->

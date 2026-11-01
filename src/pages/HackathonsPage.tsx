@@ -12,7 +12,7 @@ export function HackathonsPage() {
   usePageMeta({
     title: "Hackathons | Reco Labs",
     description: "Curated hackathons for high school hackers and collegiate builders. Ship projects, win grants, meet peers.",
-    image: "/twitter-hackathons.png",
+    image: "/twitter-image.png",
   })
 
   const [endpointMode, setEndpointMode] = React.useState<EndpointMode>("upcoming")

@@ -25,3 +25,5 @@ dist-ssr
 
 .vercel
 .env*
+
+resources_extracted.json
