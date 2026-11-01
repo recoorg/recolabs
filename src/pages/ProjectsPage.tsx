@@ -828,7 +828,7 @@ export function ProjectsPage() {
   const renderSidebarContent = () => (
     <div className="flex flex-col justify-between h-full select-none text-zinc-300">
       <div>
-        {/* Top Header: Orb Icon + designeer.xyz */}
+        {/* Top Header: Orb Icon + Reco Labs */}
         <div className="flex items-center justify-between pb-3">
           <button
             type="button"
@@ -841,7 +841,7 @@ export function ProjectsPage() {
           >
             <OrbIcon className="w-7 h-7" />
             <h2 className="font-mono text-[15px] font-normal tracking-tight text-zinc-100 group-hover:text-white transition-colors">
-              designeer.xyz
+              Reco Labs
             </h2>
           </button>
           {/* Mobile close button */}
@@ -1173,10 +1173,10 @@ export function ProjectsPage() {
           {/* Scrollable Bottom Content Area */}
           <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-32 sliderbar">
             
-            {/* Central Hero Headline (Matching designeer.xyz) */}
+            {/* Central Hero Headline */}
             <div className="pt-10 pb-8 text-center max-w-3xl mx-auto">
               <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-tight">
-                Designeer is a curated catalogue for designers and developers<span className="text-[#FA5D00]">.</span>
+                Reco Labs is a curated catalogue for designers and developers<span className="text-[#FA5D00]">.</span>
               </h1>
               <p className="mt-4 font-sans text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 Design Inspiration, UI resources, tools and portfolios, each reviewed by hand. Below, the latest visual work picked from across the web.
