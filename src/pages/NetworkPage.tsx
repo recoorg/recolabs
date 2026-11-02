@@ -28,6 +28,8 @@ import {
   Terminal,
   Filter,
   Camera,
+  Briefcase,
+  Layers,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
@@ -459,6 +461,13 @@ export function NetworkPage() {
                     <div className="px-3.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 truncate">
                       Signed in as <strong className="text-zinc-800 dark:text-zinc-200">@{currentUser.username}</strong>
                     </div>
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center gap-2 px-3.5 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[#357dff] transition-colors font-semibold"
+                    >
+                      <Briefcase className="w-3.5 h-3.5 text-[#357dff]" />
+                      <span>Console / Dashboard</span>
+                    </Link>
                     <Link
                       to={`/builder/${currentUser.username}`}
                       className="flex items-center gap-2 px-3.5 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[#FA5D00] transition-colors"

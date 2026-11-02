@@ -47,6 +47,7 @@ export function Navbar() {
     { label: "PROJECTS", path: "/projects" },
     { label: "HACKATHONS", path: "/hackathons" },
     { label: "NETWORK", path: "/network" },
+    { label: "DASHBOARD", path: "/dashboard" },
   ]
 
   return (
@@ -105,20 +106,27 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Right: Discord Button / Spacer & Mobile Hamburger */}
-        <div className="flex items-center justify-end flex-1 pointer-events-auto">
-          {isHomePage && (
-            <div className="hidden sm:flex items-center gap-3">
+        {/* Right: Dashboard Button & Mobile Hamburger */}
+        <div className="flex items-center justify-end flex-1 pointer-events-auto gap-2.5">
+          <div className="hidden sm:flex items-center gap-2.5">
+            <Link
+              to="/dashboard"
+              className="px-4 py-1.5 rounded-full border border-black/80 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-[#357dff] text-zinc-900 dark:text-zinc-100 font-sans text-xs font-semibold tracking-wide transition-all shadow-sm active:scale-95 flex items-center gap-1.5"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#357dff]" />
+              <span>Console</span>
+            </Link>
+            {isHomePage && (
               <a
                 href="https://discord.com/invite/7dk4w37BhP"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-2 rounded-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-sans text-xs sm:text-sm font-semibold tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center"
+                className="px-4 py-1.5 rounded-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-sans text-xs font-semibold tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center"
               >
                 Discord
               </a>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Right Mobile: 3-line Hamburger Button */}
           <div className="flex sm:hidden items-center gap-2">

@@ -1,22 +1,42 @@
 "use client"
 
 import * as React from "react"
+import { Link } from "react-router-dom"
 import { usePageMeta } from "@/hooks/usePageMeta"
-import { CheckCircle2, MessageSquare, Briefcase, Search, MapPin, ExternalLink, RefreshCw, Key, X } from "lucide-react"
+import { CheckCircle2, Briefcase, Search, MapPin, ExternalLink, RefreshCw, Key, X, Plus, ArrowUpRight, Building2, Sparkles, Filter } from "lucide-react"
 import { api, type GoogleJobItem } from "@/services/api"
+import { networkApi, type BuilderJob } from "@/services/networkApi"
+
+interface UnifiedJob {
+  id: string
+  title: string
+  company_name: string
+  company_logo?: string
+  location: string
+  is_remote: boolean
+  job_type: string
+  salary?: string
+  skills?: string[]
+  description: string
+  apply_url: string
+  source: "builder" | "google"
+  author_name?: string
+  author_username?: string
+  created_at?: string
+}
 
 export function JobsPage() {
   usePageMeta({
-    title: "Jobs | Reco Labs",
-    description: "Work with high-velocity startups and developer tool founders. Internships, gigs, and full-time engineering roles.",
+    title: "Jobs & Opportunities | Reco Labs",
+    description: "Work with high-velocity startups and developer tool founders. Verified internships, contracts, and engineering roles.",
     image: "/twitter-jobs.png",
   })
 
-  const [jobs, setJobs] = React.useState<GoogleJobItem[]>([])
+  const [builderJobs, setBuilderJobs] = React.useState<BuilderJob[]>([])
+  const [googleJobs, setGoogleJobs] = React.useState<GoogleJobItem[]>([])
   const [loading, setLoading] = React.useState(true)
   const [searchQuery, setSearchQuery] = React.useState("")
-  const [categoryFilter, setCategoryFilter] = React.useState("ALL")
-  const [remoteOnly, setRemoteOnly] = React.useState(false)
+  const [filterType, setFilterType] = React.useState<"ALL" | "DIRECT" | "REMOTE" | "FULL_TIME" | "INTERNSHIP" | "CONTRACT">("ALL")
   const [showKeyModal, setShowKeyModal] = React.useState(false)
   const [serpApiKey, setSerpApiKey] = React.useState("")
 
@@ -29,13 +49,17 @@ export function JobsPage() {
   }, [])
 
   // Core fetch function
-  const fetchJobs = React.useCallback(async (query: string) => {
+  const fetchAllJobs = React.useCallback(async (query: string) => {
     setLoading(true)
     try {
-      const data = await api.getGoogleJobs(query)
-      setJobs(data)
+      const [bJobs, gJobs] = await Promise.all([
+        networkApi.getJobs().catch(() => []),
+        api.getGoogleJobs(query).catch(() => []),
+      ])
+      setBuilderJobs(bJobs)
+      setGoogleJobs(gJobs)
     } catch (err) {
-      console.error("Failed to search jobs:", err)
+      console.error("Failed to fetch jobs:", err)
     } finally {
       setLoading(false)
     }
@@ -43,24 +67,24 @@ export function JobsPage() {
 
   // Initial load
   React.useEffect(() => {
-    fetchJobs("")
-  }, [fetchJobs])
+    fetchAllJobs("")
+  }, [fetchAllJobs])
 
-  // Debounced search when user types in the search bar
+  // Debounced search
   React.useEffect(() => {
     if (!searchQuery.trim()) {
-      fetchJobs("")
+      fetchAllJobs("")
       return
     }
     const timer = setTimeout(() => {
-      fetchJobs(searchQuery)
+      fetchAllJobs(searchQuery)
     }, 450)
     return () => clearTimeout(timer)
-  }, [searchQuery, fetchJobs])
+  }, [searchQuery, fetchAllJobs])
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    fetchJobs(searchQuery)
+    fetchAllJobs(searchQuery)
   }
 
   const handleSaveKey = (e: React.FormEvent) => {
@@ -72,127 +96,225 @@ export function JobsPage() {
         localStorage.removeItem("reco_serpapi_key")
       }
       setShowKeyModal(false)
-      fetchJobs(searchQuery)
+      fetchAllJobs(searchQuery)
     }
   }
 
-  // Filter jobs based on category and remote toggle
-  const filteredJobs = React.useMemo(() => {
-    return jobs.filter((job) => {
-      if (categoryFilter !== "ALL") {
-        if (job.category?.toLowerCase() !== categoryFilter.toLowerCase()) return false
-      }
+  // Normalize all jobs into unified array
+  const unifiedJobs = React.useMemo<UnifiedJob[]>(() => {
+    // 1. Direct Builder Postings from Supabase
+    const normalizedBuilders: UnifiedJob[] = builderJobs.map((b) => ({
+      id: `builder-${b.id}`,
+      title: b.title,
+      company_name: b.company_name,
+      company_logo: b.company_logo || undefined,
+      location: b.location || "Remote",
+      is_remote: b.is_remote,
+      job_type: b.job_type,
+      salary: b.salary_range || undefined,
+      skills: b.skills || [],
+      description: b.description,
+      apply_url: b.apply_url,
+      source: "builder",
+      author_name: b.author_name,
+      author_username: b.author_username || undefined,
+      created_at: b.created_at,
+    }))
 
-      if (remoteOnly) {
-        const isRemote =
-          job.location.toLowerCase().includes("remote") ||
-          job.detected_extensions?.work_from_home === true ||
-          job.extensions?.some((ext) => ext.toLowerCase().includes("remote") || ext.toLowerCase().includes("work from home"))
-        if (!isRemote) return false
+    // 2. Google / Curated Jobs
+    const normalizedGoogle: UnifiedJob[] = googleJobs.map((g) => {
+      const isRemote =
+        g.location.toLowerCase().includes("remote") ||
+        g.detected_extensions?.work_from_home === true ||
+        g.extensions?.some((ext) => ext.toLowerCase().includes("remote") || ext.toLowerCase().includes("work from home")) ||
+        false
+
+      return {
+        id: `google-${g.job_id || Math.random().toString()}`,
+        title: g.title,
+        company_name: g.company_name,
+        company_logo: g.thumbnail,
+        location: g.location,
+        is_remote: isRemote,
+        job_type: g.detected_extensions?.schedule_type || "Full-time",
+        salary: g.detected_extensions?.salary,
+        skills: g.extensions?.slice(0, 4) || [],
+        description: g.description || "Engineering role with competitive compensation.",
+        apply_url: ((g as any).apply_options && (g as any).apply_options[0]?.link) || (g as any).share_link || "https://google.com/search?q=" + encodeURIComponent(g.title + " " + g.company_name),
+        source: "google",
       }
+    })
+
+    // Priority: Direct Builder Postings first
+    return [...normalizedBuilders, ...normalizedGoogle]
+  }, [builderJobs, googleJobs])
+
+  // Filter unified jobs
+  const filteredJobs = React.useMemo(() => {
+    return unifiedJobs.filter((job) => {
+      const q = searchQuery.toLowerCase().trim()
+      const matchesSearch =
+        !q ||
+        job.title.toLowerCase().includes(q) ||
+        job.company_name.toLowerCase().includes(q) ||
+        job.location.toLowerCase().includes(q) ||
+        (job.skills && job.skills.some((s) => s.toLowerCase().includes(q)))
+
+      if (!matchesSearch) return false
+
+      if (filterType === "DIRECT") return job.source === "builder"
+      if (filterType === "REMOTE") return job.is_remote
+      if (filterType === "FULL_TIME") return job.job_type.toLowerCase().includes("full")
+      if (filterType === "INTERNSHIP") return job.job_type.toLowerCase().includes("intern")
+      if (filterType === "CONTRACT") return job.job_type.toLowerCase().includes("contract") || job.job_type.toLowerCase().includes("part")
 
       return true
     })
-  }, [jobs, categoryFilter, remoteOnly])
+  }, [unifiedJobs, searchQuery, filterType])
 
   return (
-    <div className="relative w-full pt-32 sm:pt-36 pb-24 px-6 sm:px-8 bg-transparent overflow-hidden">
-      {/* Seamless ambient blurred glow */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/3 -left-40 w-[600px] h-[600px] bg-orange-500/[0.02] dark:bg-orange-500/[0.03] rounded-full blur-3xl pointer-events-none" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-6xl">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-[#0a0a0a] dark:text-[#f4f4f5] pt-28 sm:pt-36 pb-24 px-4 sm:px-8">
+      <div className="max-w-6xl mx-auto">
         
-        {/* Header */}
-        <div className="text-center max-w-3xl mx-auto pb-12 border-b editorial-hairline">
-          <span className="font-mono text-xs uppercase tracking-widest text-[#FA5D00] font-semibold">
-            ENGINEERING ROLES & GUILD BOUNTIES
-          </span>
-          <h1 className="mt-4 font-serif text-5xl sm:text-7xl lg:text-8xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight">
-            Developer Opportunities<span className="text-[#FA5D00]">.</span>
+        {/* Tracwell Centered Hero with Two CTAs */}
+        <div className="text-center max-w-3xl mx-auto pb-10 border-b border-[#e5e5e5] dark:border-zinc-800">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#f4f4f5] dark:bg-zinc-900 border border-[#e5e5e5] dark:border-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-4">
+            <span className="w-2 h-2 rounded-full bg-[#357dff]" />
+            <span>DIRECT BUILDER ROLES & CURATED JOBS</span>
+          </div>
+
+          <h1 className="font-sans text-4xl sm:text-6xl font-semibold tracking-[-0.03em] leading-[1.08] text-[#0a0a0a] dark:text-white">
+            Developer Opportunities.
           </h1>
-          <p className="mt-4 font-sans text-base sm:text-lg text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed">
-            Live technical job search powered by SerpApi Google Jobs and developer feeds. Filtered to eliminate spam and low-quality unpaid internships.
+
+          <p className="font-sans text-base sm:text-lg font-medium leading-relaxed text-[#0a0a0a]/80 dark:text-zinc-300 mt-4">
+            High-velocity software roles, hardware gigs, and paid internships posted directly by founders or indexed across developer tool companies.
           </p>
 
-          <div className="mt-8 flex flex-wrap justify-center items-center gap-3 font-mono text-xs">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>LIVE JOBS FEED</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-              <span>ZERO UNPAID SPAM · VERIFIED OPENINGS</span>
-            </span>
+          {/* Action CTAs: Primary Pill + Secondary Pill */}
+          <div className="mt-8 flex flex-wrap justify-center items-center gap-3">
+            <Link
+              to="/dashboard?tab=post-job"
+              className="h-12 px-7 rounded-full bg-[#357dff] hover:bg-[#2563eb] text-white font-sans text-sm font-semibold tracking-normal transition-all shadow-sm active:scale-95 inline-flex items-center gap-2"
+            >
+              <Briefcase className="w-4 h-4" />
+              <span>Post an Opening</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+
+            <Link
+              to="/dashboard?tab=my-jobs"
+              className="h-12 px-7 rounded-full bg-[#f4f4f5] dark:bg-zinc-800 hover:bg-[#eaeaea] dark:hover:bg-zinc-700 text-[#18181b] dark:text-white font-sans text-sm font-semibold tracking-normal transition-all active:scale-95 inline-flex items-center gap-2"
+            >
+              <span>Manage Postings</span>
+            </Link>
           </div>
         </div>
 
-        {/* Search & Filter Bar */}
-        <div className="mt-12 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
+        {/* Directory Controls: Search & Category Pills */}
+        <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#e5e5e5] dark:border-zinc-800">
           
-          {/* Active Search Form */}
+          {/* Active Search Input */}
           <form onSubmit={handleSearchSubmit} className="relative w-full md:w-96">
             <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search keyword (e.g. React, Python, Embedded)..."
-              className="w-full pl-10 pr-24 py-2.5 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-900 font-mono text-xs text-zinc-900 dark:text-zinc-100 outline-none focus:border-[#FA5D00] transition-colors"
+              placeholder="Search title, tech stack (e.g. React, Rust, AI)..."
+              className="w-full h-11 pl-10 pr-20 rounded-full border border-[#e5e5e5] dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-[#0a0a0a] dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#357dff] transition-colors"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-16 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-black dark:hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-black dark:hover:text-white"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
-            <button
-              type="submit"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 rounded-full bg-black text-white dark:bg-white dark:text-black font-mono text-[11px] font-bold uppercase hover:opacity-85 transition-opacity"
-            >
-              Search
-            </button>
           </form>
 
-          {/* Category Filter Pills & Remote Toggle */}
+          {/* Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
-            {(["ALL", "SOFTWARE", "HARDWARE", "SYSTEMS", "TUTORIALS", "FELLOWSHIP"] as const).map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setCategoryFilter(cat)}
-                className={`px-3.5 py-1.5 rounded-full border text-[11px] font-mono font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                  categoryFilter === cat
-                    ? "bg-[#FA5D00] text-black border-black font-bold shadow-sm"
-                    : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => setFilterType("ALL")}
+              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                filterType === "ALL"
+                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+              }`}
+            >
+              All Roles
+            </button>
 
             <button
               type="button"
-              onClick={() => setRemoteOnly(!remoteOnly)}
-              className={`px-3.5 py-1.5 rounded-full border text-[11px] font-mono font-semibold uppercase tracking-wider transition-all cursor-pointer ml-1 ${
-                remoteOnly
-                  ? "bg-black text-white dark:bg-white dark:text-black border-black dark:border-white shadow-sm"
-                  : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-black bg-transparent"
+              onClick={() => setFilterType("DIRECT")}
+              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                filterType === "DIRECT"
+                  ? "bg-[#357dff] text-white shadow-sm"
+                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
               }`}
             >
-              Remote Only
+              ✨ Direct Guild ({builderJobs.length})
             </button>
 
-            {/* Optional SerpApi Key Settings Trigger */}
+            <button
+              type="button"
+              onClick={() => setFilterType("REMOTE")}
+              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                filterType === "REMOTE"
+                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+              }`}
+            >
+              Remote
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterType("FULL_TIME")}
+              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                filterType === "FULL_TIME"
+                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+              }`}
+            >
+              Full-time
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterType("INTERNSHIP")}
+              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                filterType === "INTERNSHIP"
+                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+              }`}
+            >
+              Internships
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterType("CONTRACT")}
+              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                filterType === "CONTRACT"
+                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+              }`}
+            >
+              Contract
+            </button>
+
+            {/* Optional SerpApi Key Configuration Trigger */}
             <button
               type="button"
               onClick={() => setShowKeyModal(true)}
               title="Configure SerpApi Key"
-              className="p-2 rounded-full border editorial-hairline text-zinc-500 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
+              className="w-9 h-9 rounded-full border border-[#e5e5e5] dark:border-zinc-800 text-zinc-500 hover:text-[#357dff] hover:border-[#357dff] transition-colors flex items-center justify-center cursor-pointer"
             >
               <Key className="w-3.5 h-3.5" />
             </button>
@@ -200,211 +322,191 @@ export function JobsPage() {
         </div>
 
         {/* Counter Info */}
-        <div className="mt-4 flex items-center justify-between font-mono text-xs text-zinc-500">
-          <div className="flex items-center gap-2">
-            {loading ? (
-              <span className="flex items-center gap-1.5 text-[#FA5D00]">
-                <RefreshCw className="w-3 h-3 animate-spin" />
-                <span>Searching live endpoints...</span>
-              </span>
-            ) : (
-              <span>Showing {filteredJobs.length} live technical opportunities</span>
-            )}
-          </div>
-          <span>SerpApi & Reco Guild Index</span>
+        <div className="mt-4 flex items-center justify-between text-xs text-zinc-500">
+          <span>
+            {loading ? "Searching openings..." : `Showing ${filteredJobs.length} opportunities (${builderJobs.length} direct)`}
+          </span>
+          <Link to="/dashboard?tab=post-job" className="text-[#357dff] hover:underline font-semibold">
+            + Post your engineering opening
+          </Link>
         </div>
 
-        {/* Roles List */}
-        <div className="mt-8 space-y-6">
+        {/* Roles List (Tracwell 18px Card Rows) */}
+        <div className="mt-6 space-y-4">
           {loading ? (
             <div className="py-24 text-center flex flex-col items-center justify-center">
-              <RefreshCw className="w-6 h-6 text-[#FA5D00] animate-spin mb-3" />
-              <p className="font-mono text-xs text-zinc-500">
-                Searching Google Jobs and developer feeds for &ldquo;{searchQuery || "developer"}&rdquo;...
-              </p>
+              <RefreshCw className="w-6 h-6 text-[#357dff] animate-spin mb-3" />
+              <p className="text-xs text-zinc-500">Loading verified engineering openings...</p>
             </div>
           ) : filteredJobs.length === 0 ? (
-            <div className="py-20 text-center border rounded-3xl editorial-hairline bg-zinc-50/50 dark:bg-zinc-900/30">
-              <p className="font-serif text-2xl text-zinc-800 dark:text-zinc-200">No openings match your search query.</p>
-              <p className="font-mono text-xs text-zinc-500 mt-2">
-                Try searching for broader keywords like &ldquo;software&rdquo;, &ldquo;frontend&rdquo;, or &ldquo;engineer&rdquo;.
+            <div className="py-20 text-center rounded-[18px] border border-[#e5e5e5] dark:border-zinc-800 bg-[#fafafa] dark:bg-zinc-900/30">
+              <p className="text-xl font-semibold text-zinc-800 dark:text-zinc-200">No jobs match this filter.</p>
+              <p className="text-xs text-zinc-500 mt-2">
+                Try switching to &ldquo;All Roles&rdquo; or clearing your search term.
               </p>
             </div>
           ) : (
             filteredJobs.map((job) => (
               <div
-                key={job.job_id}
-                className="group p-8 rounded-3xl border editorial-hairline bg-white dark:bg-zinc-900/40 hover:border-[#FA5D00] transition-all shadow-sm hover:shadow-md flex flex-col lg:flex-row lg:items-start justify-between gap-6"
+                key={job.id}
+                className={`rounded-[18px] border p-6 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-md ${
+                  job.source === "builder"
+                    ? "bg-white dark:bg-[#0c0c0e] border-blue-200 dark:border-blue-900/60 hover:border-[#357dff]"
+                    : "bg-white dark:bg-[#0c0c0e] border-[#e5e5e5] dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
+                }`}
               >
-                <div className="flex-1">
-                  
-                  {/* Top Badges */}
-                  <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-zinc-400 pb-3 border-b editorial-hairline">
-                    <span className="text-[#FA5D00] font-bold uppercase">{job.category || "ENGINEERING"}</span>
-                    <span className="text-zinc-300 dark:text-zinc-700">·</span>
-                    <span className="uppercase text-zinc-700 dark:text-zinc-300 font-semibold">{job.company_name}</span>
-                    <span className="text-zinc-300 dark:text-zinc-700">·</span>
-                    <span className="text-zinc-500">{job.via || "Direct"}</span>
-                    {job.detected_extensions?.salary && (
-                      <>
-                        <span className="text-zinc-300 dark:text-zinc-700">·</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">{job.detected_extensions.salary}</span>
-                      </>
-                    )}
-                  </div>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    {/* Company Logo / Placeholder */}
+                    <div className="w-12 h-12 rounded-xl bg-[#fafafa] dark:bg-zinc-800 border border-[#e5e5e5] dark:border-zinc-700 flex items-center justify-center overflow-hidden flex-none">
+                      {job.company_logo ? (
+                        <img
+                          src={job.company_logo}
+                          alt={job.company_name}
+                          className="w-full h-full object-contain p-1"
+                          onError={(e) => (e.currentTarget.style.display = "none")}
+                        />
+                      ) : (
+                        <Building2 className="w-6 h-6 text-[#357dff]" />
+                      )}
+                    </div>
 
-                  {/* Title & Organization */}
-                  <div className="mt-4 flex items-start gap-4">
-                    {job.thumbnail ? (
-                      <img
-                        src={job.thumbnail}
-                        alt=""
-                        className="w-12 h-12 rounded-2xl object-contain bg-zinc-50 dark:bg-zinc-800 p-2 flex-none border editorial-hairline"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = "none"
-                        }}
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border editorial-hairline flex items-center justify-center text-zinc-900 dark:text-zinc-100 font-mono text-base font-bold flex-none">
-                        <Briefcase className="w-5 h-5 text-[#FA5D00]" />
-                      </div>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h2 className="text-base font-semibold text-[#0a0a0a] dark:text-white truncate">
+                          {job.title}
+                        </h2>
 
-                    <div>
-                      <h3 className="font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal group-hover:text-[#FA5D00] transition-colors">
-                        {job.title}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-3 font-mono text-xs text-zinc-500 mt-1">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>{job.location}</span>
-                        </span>
-                        {job.detected_extensions?.schedule_type && (
-                          <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-bold uppercase">
-                            {job.detected_extensions.schedule_type}
+                        {job.source === "builder" ? (
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#357dff] text-white">
+                            DIRECT GUILD POST
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#f4f4f5] dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                            VERIFIED
                           </span>
                         )}
-                        {job.detected_extensions?.posted_at && (
-                          <span>Posted {job.detected_extensions.posted_at}</span>
+
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#fafafa] dark:bg-zinc-800/80 border border-[#e5e5e5] dark:border-zinc-700 text-zinc-600 dark:text-zinc-300">
+                          {job.job_type}
+                        </span>
+                      </div>
+
+                      <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500 flex-wrap">
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                          {job.company_name}
+                        </span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-zinc-400" />
+                          {job.location}
+                        </span>
+                        {job.salary && (
+                          <>
+                            <span>·</span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                              {job.salary}
+                            </span>
+                          </>
+                        )}
+                        {job.author_name && (
+                          <>
+                            <span>·</span>
+                            <span>Posted by {job.author_name} {job.author_username && `(@${job.author_username})`}</span>
+                          </>
                         )}
                       </div>
+
+                      <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                        {job.description}
+                      </p>
+
+                      {job.skills && job.skills.length > 0 && (
+                        <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                          {job.skills.map((s, idx) => (
+                            <span
+                              key={idx}
+                              className="text-[10px] px-2 py-0.5 rounded-md bg-[#f4f4f5] dark:bg-zinc-800/80 border border-[#e5e5e5] dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-mono"
+                            >
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Description */}
-                  <p className="mt-4 font-sans text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal max-w-3xl">
-                    {job.description}
-                  </p>
-
-                  {/* Highlights Checklist */}
-                  {job.highlights && job.highlights.length > 0 && (
-                    <div className="mt-5 space-y-1.5 pt-4 border-t editorial-hairline">
-                      <span className="font-mono text-[10px] uppercase text-zinc-400 tracking-wider">KEY FOCUS & REQUIREMENTS:</span>
-                      <ul className="space-y-1 font-sans text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
-                        {job.highlights.slice(0, 4).map((h, i) => (
-                          <li key={i} className="flex items-start gap-2">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[#FA5D00] flex-none mt-1" />
-                            <span>{h}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Tag extensions */}
-                  {job.extensions && job.extensions.length > 0 && (
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {job.extensions.map((ext, i) => (
-                        <span
-                          key={i}
-                          className="px-2.5 py-1 rounded-full bg-zinc-50 dark:bg-zinc-800/80 border editorial-hairline font-mono text-[11px] text-zinc-600 dark:text-zinc-300"
-                        >
-                          {ext}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Apply Button */}
-                <div className="lg:w-48 flex-none flex flex-col justify-between gap-4 pt-4 lg:pt-0 border-t lg:border-t-0 editorial-hairline">
-                  <a
-                    href={job.apply_link || "https://discord.com/invite/7dk4w37BhP"}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full inline-flex items-center justify-between px-6 py-3 rounded-full bg-black text-white hover:bg-[#FA5D00] dark:bg-white dark:text-black dark:hover:bg-[#FA5D00] dark:hover:text-white font-mono text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm"
-                  >
-                    <span>Apply Now</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-
-                  <a
-                    href="https://discord.com/invite/7dk4w37BhP"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center justify-center gap-1.5 font-mono text-[11px] text-zinc-500 hover:text-[#5865F2] transition-colors"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 text-[#5865F2]" />
-                    <span>Discuss in Guild</span>
-                  </a>
+                  <div className="flex items-center gap-3 flex-none self-end lg:self-center">
+                    <a
+                      href={job.apply_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-11 px-6 rounded-full bg-[#357dff] hover:bg-[#2563eb] text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+                    >
+                      <span>Apply Now</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Modal for SerpApi Key configuration */}
-        {showKeyModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="relative w-full max-w-md p-6 rounded-3xl bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-700 shadow-2xl">
-              <div className="flex items-center justify-between pb-3 border-b editorial-hairline">
-                <span className="font-mono text-xs font-bold text-[#FA5D00]">SERPAPI CONFIGURATION</span>
+      </div>
+
+      {/* Optional SerpApi Key Modal */}
+      {showKeyModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-[18px] bg-white dark:bg-[#0c0c0e] border border-[#e5e5e5] dark:border-zinc-800 p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-[#e5e5e5] dark:border-zinc-800">
+              <h3 className="text-sm font-semibold text-[#0a0a0a] dark:text-white">
+                Custom SerpApi Key
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowKeyModal(false)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveKey} className="mt-4 space-y-4">
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                Provide a SerpApi key to directly search Google Jobs with your own quotas. Leave blank to use public/curated endpoints.
+              </p>
+
+              <div>
+                <input
+                  type="password"
+                  placeholder="Paste your SerpApi key here..."
+                  value={serpApiKey}
+                  onChange={(e) => setSerpApiKey(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl border border-[#e5e5e5] dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-[#0a0a0a] dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#357dff]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowKeyModal(false)}
-                  className="font-mono text-xs text-zinc-400 hover:text-black dark:hover:text-white"
+                  className="h-10 px-5 rounded-full border border-[#e5e5e5] dark:border-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-300"
                 >
-                  [CLOSE]
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="h-10 px-6 rounded-full bg-[#357dff] hover:bg-[#2563eb] text-white text-xs font-semibold transition-all shadow-sm"
+                >
+                  Save Key
                 </button>
               </div>
-
-              <p className="mt-3 font-sans text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
-                Paste your SerpApi API Key from <a href="https://serpapi.com/manage-api-key" target="_blank" rel="noreferrer" className="text-[#FA5D00] underline">serpapi.com</a> to enable direct Google Jobs queries.
-              </p>
-
-              <form onSubmit={handleSaveKey} className="mt-4 space-y-3 font-mono text-xs">
-                <div>
-                  <label className="block text-zinc-400 mb-1">SERPAPI API KEY</label>
-                  <input
-                    type="password"
-                    value={serpApiKey}
-                    onChange={(e) => setSerpApiKey(e.target.value)}
-                    placeholder="e.g. 7f98a2..."
-                    className="w-full px-4 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white outline-none focus:border-[#FA5D00]"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowKeyModal(false)}
-                    className="px-4 py-2 rounded-full border editorial-hairline text-zinc-600 dark:text-zinc-400"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-full bg-[#FA5D00] text-black font-bold uppercase tracking-wider"
-                  >
-                    Save & Search
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )}
+        </div>
+      )}
 
-      </div>
     </div>
   )
 }

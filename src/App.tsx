@@ -16,6 +16,7 @@ import { NetworkPage } from "@/pages/NetworkPage"
 import { BuilderProfilePage } from "@/pages/BuilderProfilePage"
 import { PrivacyPage } from "@/pages/PrivacyPage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
+import { DashboardPage } from "@/pages/DashboardPage"
 import { networkApi } from "@/services/networkApi"
 
 function GlobalOAuthListener() {
@@ -70,6 +71,7 @@ function AppContent() {
             <Route path="/sponsors" element={<SponsorsPage />} />
             <Route path="/sponsor" element={<SponsorsPage />} />
             <Route path="/network" element={<NetworkPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/builder/:username" element={<BuilderProfilePage />} />
             <Route path="/builders/:username" element={<BuilderProfilePage />} />
             <Route path="/privacy" element={<PrivacyPage />} />

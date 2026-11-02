@@ -176,6 +176,55 @@ export async function initDb() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
       CREATE INDEX IF NOT EXISTS idx_project_comments_project ON project_comments(project_id);
+
+      CREATE TABLE IF NOT EXISTS builder_jobs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        author_name TEXT NOT NULL,
+        author_username TEXT,
+        title TEXT NOT NULL,
+        company_name TEXT NOT NULL,
+        company_logo TEXT,
+        location TEXT DEFAULT 'Remote',
+        is_remote BOOLEAN DEFAULT true,
+        job_type TEXT DEFAULT 'Full-time',
+        salary_range TEXT,
+        skills TEXT[] DEFAULT '{}',
+        description TEXT NOT NULL,
+        apply_url TEXT NOT NULL,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_builder_jobs_active ON builder_jobs(is_active);
+      CREATE INDEX IF NOT EXISTS idx_builder_jobs_user ON builder_jobs(user_id);
+      CREATE INDEX IF NOT EXISTS idx_builder_jobs_created ON builder_jobs(created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS builder_hackathons (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        author_name TEXT NOT NULL,
+        author_username TEXT,
+        name TEXT NOT NULL,
+        tagline TEXT,
+        description TEXT,
+        banner_url TEXT,
+        website TEXT NOT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        location TEXT DEFAULT 'Virtual',
+        virtual BOOLEAN DEFAULT true,
+        apac BOOLEAN DEFAULT false,
+        prize_pool TEXT,
+        eligibility TEXT DEFAULT 'Open to all builders',
+        tags TEXT[] DEFAULT ARRAY['Hackathon', 'Builders']::TEXT[],
+        is_approved BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_builder_hackathons_approved ON builder_hackathons(is_approved);
+      CREATE INDEX IF NOT EXISTS idx_builder_hackathons_user ON builder_hackathons(user_id);
+      CREATE INDEX IF NOT EXISTS idx_builder_hackathons_start ON builder_hackathons(start_date DESC);
     `)
   } finally {
     client.release()
@@ -1111,6 +1160,225 @@ export async function deleteProjectComment(id: number, userId?: number, isAdmin?
   const client = await pool.connect();
   try {
     let queryStr = "DELETE FROM project_comments WHERE id = $1";
+    const params: any[] = [id];
+    if (!isAdmin && userId) {
+      queryStr += " AND user_id = $2";
+      params.push(userId);
+    }
+    queryStr += " RETURNING id";
+    const res = await client.query(queryStr, params);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
+
+// ==========================================
+// BUILDER JOBS
+// ==========================================
+
+export async function listBuilderJobs(options: { onlyActive?: boolean; limit?: number } = {}) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "SELECT * FROM builder_jobs";
+    const params: any[] = [];
+    if (options.onlyActive !== false) {
+      queryStr += " WHERE is_active = true";
+    }
+    queryStr += " ORDER BY created_at DESC";
+    if (options.limit) {
+      params.push(options.limit);
+      queryStr += " LIMIT $" + params.length;
+    }
+    const res = await client.query(queryStr, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function listUserJobs(userId: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "SELECT * FROM builder_jobs WHERE user_id = $1 ORDER BY created_at DESC",
+      [userId]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createBuilderJob(data: {
+  userId?: number | null;
+  authorName: string;
+  authorUsername?: string;
+  title: string;
+  companyName: string;
+  companyLogo?: string;
+  location?: string;
+  isRemote?: boolean;
+  jobType?: string;
+  salaryRange?: string;
+  skills?: string[];
+  description: string;
+  applyUrl: string;
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO builder_jobs
+       (user_id, author_name, author_username, title, company_name, company_logo, location, is_remote, job_type, salary_range, skills, description, apply_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       RETURNING *`,
+      [
+        data.userId || null,
+        data.authorName.trim(),
+        data.authorUsername?.trim() || null,
+        data.title.trim(),
+        data.companyName.trim(),
+        data.companyLogo?.trim() || null,
+        data.location?.trim() || "Remote",
+        data.isRemote !== false,
+        data.jobType?.trim() || "Full-time",
+        data.salaryRange?.trim() || null,
+        data.skills || [],
+        data.description.trim(),
+        data.applyUrl.trim(),
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateBuilderJobStatus(id: number, userId: number, isActive: boolean, isAdmin?: boolean) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "UPDATE builder_jobs SET is_active = $1, updated_at = NOW() WHERE id = $2";
+    const params: any[] = [isActive, id];
+    if (!isAdmin) {
+      queryStr += " AND user_id = $3";
+      params.push(userId);
+    }
+    queryStr += " RETURNING *";
+    const res = await client.query(queryStr, params);
+    return res.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteBuilderJob(id: number, userId?: number, isAdmin?: boolean) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "DELETE FROM builder_jobs WHERE id = $1";
+    const params: any[] = [id];
+    if (!isAdmin && userId) {
+      queryStr += " AND user_id = $2";
+      params.push(userId);
+    }
+    queryStr += " RETURNING id";
+    const res = await client.query(queryStr, params);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
+
+// ==========================================
+// BUILDER HACKATHONS
+// ==========================================
+
+export async function listBuilderHackathons(options: { onlyApproved?: boolean; limit?: number } = {}) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "SELECT * FROM builder_hackathons";
+    const params: any[] = [];
+    if (options.onlyApproved !== false) {
+      queryStr += " WHERE is_approved = true";
+    }
+    queryStr += " ORDER BY start_date DESC";
+    if (options.limit) {
+      params.push(options.limit);
+      queryStr += " LIMIT $" + params.length;
+    }
+    const res = await client.query(queryStr, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function listUserHackathons(userId: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "SELECT * FROM builder_hackathons WHERE user_id = $1 ORDER BY created_at DESC",
+      [userId]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createBuilderHackathon(data: {
+  userId?: number | null;
+  authorName: string;
+  authorUsername?: string;
+  name: string;
+  tagline?: string;
+  description?: string;
+  bannerUrl?: string;
+  website: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  virtual?: boolean;
+  apac?: boolean;
+  prizePool?: string;
+  eligibility?: string;
+  tags?: string[];
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO builder_hackathons
+       (user_id, author_name, author_username, name, tagline, description, banner_url, website, start_date, end_date, location, virtual, apac, prize_pool, eligibility, tags, is_approved)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, true)
+       RETURNING *`,
+      [
+        data.userId || null,
+        data.authorName.trim(),
+        data.authorUsername?.trim() || null,
+        data.name.trim(),
+        data.tagline?.trim() || null,
+        data.description?.trim() || null,
+        data.bannerUrl?.trim() || null,
+        data.website.trim(),
+        data.startDate,
+        data.endDate,
+        data.location?.trim() || (data.virtual ? "Virtual" : "In-Person"),
+        data.virtual !== false,
+        data.apac === true,
+        data.prizePool?.trim() || null,
+        data.eligibility?.trim() || "Open to all builders",
+        data.tags || ["Hackathon", "Builders"],
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteBuilderHackathon(id: number, userId?: number, isAdmin?: boolean) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "DELETE FROM builder_hackathons WHERE id = $1";
     const params: any[] = [id];
     if (!isAdmin && userId) {
       queryStr += " AND user_id = $2";

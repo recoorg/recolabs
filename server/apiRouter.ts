@@ -43,6 +43,15 @@ import {
   listProjectComments,
   createProjectComment,
   deleteProjectComment,
+  listBuilderJobs,
+  listUserJobs,
+  createBuilderJob,
+  updateBuilderJobStatus,
+  deleteBuilderJob,
+  listBuilderHackathons,
+  listUserHackathons,
+  createBuilderHackathon,
+  deleteBuilderHackathon,
   saveProjectAsset,
   getProjectAsset,
 } from "./db.js"
@@ -250,7 +259,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         try {
           const user = await getUserByUsername(username)
           if (user) {
-            const displayName = user.name || user.username || username
+            const displayName = ((user as any).name || user.username) || user.username || username
             title = `${displayName} (@${user.username}) | Reco Labs`
             desc = user.bio || `${displayName} is building software, hardware rigs, and shipping on Reco Labs.`
             if (user.avatar_url && (user.avatar_url.startsWith("http") || user.avatar_url.startsWith("/"))) {
@@ -437,7 +446,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         userId = auth.id
         const user = await getUserById(auth.id)
         if (user) {
-          founderName = founderName || user.name
+          founderName = founderName || ((user as any).name || user.username)
           founderUsername = founderUsername || user.username
           founderEmail = founderEmail || user.email
           founderPhone = founderPhone || user.phone
@@ -1140,6 +1149,216 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         res.end(JSON.stringify({ success: false, error: "SMTP delivery failed: " + (smtpErr?.message || String(smtpErr)) }));
         return;
       }
+    }
+
+        // ==========================================
+    // BUILDER JOBS ROUTES
+    // ==========================================
+
+    // LIST JOBS: GET /api/network/jobs
+    if (req.method === "GET" && (pathname === "/api/network/jobs" || pathname === "/api/jobs")) {
+      const urlObj = new URL(req.url, "http://localhost");
+      const onlyActive = urlObj.searchParams.get("all") !== "true";
+      const limit = urlObj.searchParams.get("limit") ? Number(urlObj.searchParams.get("limit")) : undefined;
+      const jobs = await listBuilderJobs({ onlyActive, limit });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, jobs }));
+      return;
+    }
+
+    // LIST MY JOBS: GET /api/network/my-jobs
+    if (req.method === "GET" && (pathname === "/api/network/my-jobs" || pathname === "/api/my-jobs")) {
+      const user = getAuthUser();
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to view your posted jobs." }));
+        return;
+      }
+      const jobs = await listUserJobs(user.id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, jobs }));
+      return;
+    }
+
+    // CREATE JOB: POST /api/network/jobs
+    if (req.method === "POST" && (pathname === "/api/network/jobs" || pathname === "/api/jobs")) {
+      const user = getAuthUser();
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to post a job." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.title || !body.company_name || !body.apply_url || !body.description) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Title, company name, application link, and description are required." }));
+        return;
+      }
+
+      const job = await createBuilderJob({
+        userId: user.id,
+        authorName: body.author_name || ((user as any).name || user.username) || "Founder",
+        authorUsername: user.username,
+        title: body.title,
+        companyName: body.company_name,
+        companyLogo: body.company_logo,
+        location: body.location || "Remote",
+        isRemote: body.is_remote !== false,
+        jobType: body.job_type || "Full-time",
+        salaryRange: body.salary_range,
+        skills: Array.isArray(body.skills) ? body.skills : (body.skills ? body.skills.split(",").map((s: string) => s.trim()) : []),
+        description: body.description,
+        applyUrl: body.apply_url,
+      });
+
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, job }));
+      return;
+    }
+
+    // UPDATE JOB STATUS: POST /api/network/jobs/status or PATCH /api/network/jobs/:id/status
+    if (
+      (req.method === "POST" && (pathname === "/api/network/jobs/status" || pathname === "/api/jobs/status")) ||
+      (req.method === "PATCH" && (pathname.includes("/jobs/") && pathname.endsWith("/status")))
+    ) {
+      const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
+      if (!user && !isAdmin) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required." }));
+        return;
+      }
+      const body = await parseBody();
+      const id = Number(body.id || pathname.split("/")[4] || pathname.split("/")[3]);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid job ID is required." }));
+        return;
+      }
+      const updated = await updateBuilderJobStatus(id, user?.id || 0, body.is_active !== false, isAdmin);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, job: updated }));
+      return;
+    }
+
+    // DELETE JOB: POST /api/network/jobs/delete or DELETE /api/network/jobs/:id
+    if (
+      (req.method === "POST" && (pathname === "/api/network/jobs/delete" || pathname === "/api/jobs/delete")) ||
+      (req.method === "DELETE" && (pathname.startsWith("/api/network/jobs/") || pathname.startsWith("/api/jobs/")))
+    ) {
+      const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
+      if (!user && !isAdmin) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to delete a job." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid job ID is required." }));
+        return;
+      }
+      const deleted = await deleteBuilderJob(id, user?.id, isAdmin);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: deleted }));
+      return;
+    }
+
+    // ==========================================
+    // BUILDER HACKATHONS ROUTES
+    // ==========================================
+
+    // LIST HACKATHONS: GET /api/network/builder-hackathons
+    if (req.method === "GET" && (pathname === "/api/network/builder-hackathons" || pathname === "/api/builder-hackathons")) {
+      const urlObj = new URL(req.url, "http://localhost");
+      const onlyApproved = urlObj.searchParams.get("all") !== "true";
+      const limit = urlObj.searchParams.get("limit") ? Number(urlObj.searchParams.get("limit")) : undefined;
+      const hackathons = await listBuilderHackathons({ onlyApproved, limit });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, hackathons }));
+      return;
+    }
+
+    // LIST MY HACKATHONS: GET /api/network/my-hackathons
+    if (req.method === "GET" && (pathname === "/api/network/my-hackathons" || pathname === "/api/my-hackathons")) {
+      const user = getAuthUser();
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to view your hackathons." }));
+        return;
+      }
+      const hackathons = await listUserHackathons(user.id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, hackathons }));
+      return;
+    }
+
+    // CREATE HACKATHON: POST /api/network/builder-hackathons
+    if (req.method === "POST" && (pathname === "/api/network/builder-hackathons" || pathname === "/api/builder-hackathons")) {
+      const user = getAuthUser();
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to list a hackathon." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.name || !body.website || !body.start_date || !body.end_date) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Name, website URL, start date, and end date are required." }));
+        return;
+      }
+
+      const hackathon = await createBuilderHackathon({
+        userId: user.id,
+        authorName: body.author_name || ((user as any).name || user.username) || "Organizer",
+        authorUsername: user.username,
+        name: body.name,
+        tagline: body.tagline,
+        description: body.description,
+        bannerUrl: body.banner_url,
+        website: body.website,
+        startDate: body.start_date,
+        endDate: body.end_date,
+        location: body.location,
+        virtual: body.virtual !== false,
+        apac: body.apac === true,
+        prizePool: body.prize_pool,
+        eligibility: body.eligibility,
+        tags: Array.isArray(body.tags) ? body.tags : (body.tags ? body.tags.split(",").map((t: string) => t.trim()) : ["Hackathon", "Builders"]),
+      });
+
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, hackathon }));
+      return;
+    }
+
+    // DELETE HACKATHON: POST /api/network/builder-hackathons/delete or DELETE /api/network/builder-hackathons/:id
+    if (
+      (req.method === "POST" && (pathname === "/api/network/builder-hackathons/delete" || pathname === "/api/builder-hackathons/delete")) ||
+      (req.method === "DELETE" && (pathname.startsWith("/api/network/builder-hackathons/") || pathname.startsWith("/api/builder-hackathons/")))
+    ) {
+      const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
+      if (!user && !isAdmin) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to delete a hackathon." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid hackathon ID is required." }));
+        return;
+      }
+      const deleted = await deleteBuilderHackathon(id, user?.id, isAdmin);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: deleted }));
+      return;
     }
 
     res.statusCode = 404

@@ -165,6 +165,55 @@ async function initDb() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
       CREATE INDEX IF NOT EXISTS idx_project_comments_project ON project_comments(project_id);
+
+      CREATE TABLE IF NOT EXISTS builder_jobs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        author_name TEXT NOT NULL,
+        author_username TEXT,
+        title TEXT NOT NULL,
+        company_name TEXT NOT NULL,
+        company_logo TEXT,
+        location TEXT DEFAULT 'Remote',
+        is_remote BOOLEAN DEFAULT true,
+        job_type TEXT DEFAULT 'Full-time',
+        salary_range TEXT,
+        skills TEXT[] DEFAULT '{}',
+        description TEXT NOT NULL,
+        apply_url TEXT NOT NULL,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_builder_jobs_active ON builder_jobs(is_active);
+      CREATE INDEX IF NOT EXISTS idx_builder_jobs_user ON builder_jobs(user_id);
+      CREATE INDEX IF NOT EXISTS idx_builder_jobs_created ON builder_jobs(created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS builder_hackathons (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        author_name TEXT NOT NULL,
+        author_username TEXT,
+        name TEXT NOT NULL,
+        tagline TEXT,
+        description TEXT,
+        banner_url TEXT,
+        website TEXT NOT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        location TEXT DEFAULT 'Virtual',
+        virtual BOOLEAN DEFAULT true,
+        apac BOOLEAN DEFAULT false,
+        prize_pool TEXT,
+        eligibility TEXT DEFAULT 'Open to all builders',
+        tags TEXT[] DEFAULT ARRAY['Hackathon', 'Builders']::TEXT[],
+        is_approved BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_builder_hackathons_approved ON builder_hackathons(is_approved);
+      CREATE INDEX IF NOT EXISTS idx_builder_hackathons_user ON builder_hackathons(user_id);
+      CREATE INDEX IF NOT EXISTS idx_builder_hackathons_start ON builder_hackathons(start_date DESC);
     `);
   } finally {
     client.release();
@@ -1004,6 +1053,177 @@ async function deleteProjectComment(id, userId, isAdmin) {
     client.release();
   }
 }
+async function listBuilderJobs(options = {}) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "SELECT * FROM builder_jobs";
+    const params = [];
+    if (options.onlyActive !== false) {
+      queryStr += " WHERE is_active = true";
+    }
+    queryStr += " ORDER BY created_at DESC";
+    if (options.limit) {
+      params.push(options.limit);
+      queryStr += " LIMIT $" + params.length;
+    }
+    const res = await client.query(queryStr, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function listUserJobs(userId) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "SELECT * FROM builder_jobs WHERE user_id = $1 ORDER BY created_at DESC",
+      [userId]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function createBuilderJob(data) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO builder_jobs
+       (user_id, author_name, author_username, title, company_name, company_logo, location, is_remote, job_type, salary_range, skills, description, apply_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       RETURNING *`,
+      [
+        data.userId || null,
+        data.authorName.trim(),
+        data.authorUsername?.trim() || null,
+        data.title.trim(),
+        data.companyName.trim(),
+        data.companyLogo?.trim() || null,
+        data.location?.trim() || "Remote",
+        data.isRemote !== false,
+        data.jobType?.trim() || "Full-time",
+        data.salaryRange?.trim() || null,
+        data.skills || [],
+        data.description.trim(),
+        data.applyUrl.trim()
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function updateBuilderJobStatus(id, userId, isActive, isAdmin) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "UPDATE builder_jobs SET is_active = $1, updated_at = NOW() WHERE id = $2";
+    const params = [isActive, id];
+    if (!isAdmin) {
+      queryStr += " AND user_id = $3";
+      params.push(userId);
+    }
+    queryStr += " RETURNING *";
+    const res = await client.query(queryStr, params);
+    return res.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+async function deleteBuilderJob(id, userId, isAdmin) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "DELETE FROM builder_jobs WHERE id = $1";
+    const params = [id];
+    if (!isAdmin && userId) {
+      queryStr += " AND user_id = $2";
+      params.push(userId);
+    }
+    queryStr += " RETURNING id";
+    const res = await client.query(queryStr, params);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
+async function listBuilderHackathons(options = {}) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "SELECT * FROM builder_hackathons";
+    const params = [];
+    if (options.onlyApproved !== false) {
+      queryStr += " WHERE is_approved = true";
+    }
+    queryStr += " ORDER BY start_date DESC";
+    if (options.limit) {
+      params.push(options.limit);
+      queryStr += " LIMIT $" + params.length;
+    }
+    const res = await client.query(queryStr, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function listUserHackathons(userId) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "SELECT * FROM builder_hackathons WHERE user_id = $1 ORDER BY created_at DESC",
+      [userId]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function createBuilderHackathon(data) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO builder_hackathons
+       (user_id, author_name, author_username, name, tagline, description, banner_url, website, start_date, end_date, location, virtual, apac, prize_pool, eligibility, tags, is_approved)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, true)
+       RETURNING *`,
+      [
+        data.userId || null,
+        data.authorName.trim(),
+        data.authorUsername?.trim() || null,
+        data.name.trim(),
+        data.tagline?.trim() || null,
+        data.description?.trim() || null,
+        data.bannerUrl?.trim() || null,
+        data.website.trim(),
+        data.startDate,
+        data.endDate,
+        data.location?.trim() || (data.virtual ? "Virtual" : "In-Person"),
+        data.virtual !== false,
+        data.apac === true,
+        data.prizePool?.trim() || null,
+        data.eligibility?.trim() || "Open to all builders",
+        data.tags || ["Hackathon", "Builders"]
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function deleteBuilderHackathon(id, userId, isAdmin) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "DELETE FROM builder_hackathons WHERE id = $1";
+    const params = [id];
+    if (!isAdmin && userId) {
+      queryStr += " AND user_id = $2";
+      params.push(userId);
+    }
+    queryStr += " RETURNING id";
+    const res = await client.query(queryStr, params);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
 
 // server/apiRouter.ts
 function escapeHtml(str) {
@@ -1180,7 +1400,7 @@ async function handleNetworkRequest(req, res) {
         try {
           const user = await getUserByUsername(username);
           if (user) {
-            const displayName = user.name || user.username || username;
+            const displayName = user.name || user.username || user.username || username;
             title = `${displayName} (@${user.username}) | Reco Labs`;
             desc = user.bio || `${displayName} is building software, hardware rigs, and shipping on Reco Labs.`;
             if (user.avatar_url && (user.avatar_url.startsWith("http") || user.avatar_url.startsWith("/"))) {
@@ -1352,7 +1572,7 @@ async function handleNetworkRequest(req, res) {
         userId = auth.id;
         const user = await getUserById(auth.id);
         if (user) {
-          founderName = founderName || user.name;
+          founderName = founderName || (user.name || user.username);
           founderUsername = founderUsername || user.username;
           founderEmail = founderEmail || user.email;
           founderPhone = founderPhone || user.phone;
@@ -1929,6 +2149,177 @@ async function handleNetworkRequest(req, res) {
         res.end(JSON.stringify({ success: false, error: "SMTP delivery failed: " + (smtpErr?.message || String(smtpErr)) }));
         return;
       }
+    }
+    if (req.method === "GET" && (pathname === "/api/network/jobs" || pathname === "/api/jobs")) {
+      const urlObj = new URL(req.url, "http://localhost");
+      const onlyActive = urlObj.searchParams.get("all") !== "true";
+      const limit = urlObj.searchParams.get("limit") ? Number(urlObj.searchParams.get("limit")) : void 0;
+      const jobs = await listBuilderJobs({ onlyActive, limit });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, jobs }));
+      return;
+    }
+    if (req.method === "GET" && (pathname === "/api/network/my-jobs" || pathname === "/api/my-jobs")) {
+      const user = getAuthUser();
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to view your posted jobs." }));
+        return;
+      }
+      const jobs = await listUserJobs(user.id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, jobs }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/jobs" || pathname === "/api/jobs")) {
+      const user = getAuthUser();
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to post a job." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.title || !body.company_name || !body.apply_url || !body.description) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Title, company name, application link, and description are required." }));
+        return;
+      }
+      const job = await createBuilderJob({
+        userId: user.id,
+        authorName: body.author_name || (user.name || user.username) || "Founder",
+        authorUsername: user.username,
+        title: body.title,
+        companyName: body.company_name,
+        companyLogo: body.company_logo,
+        location: body.location || "Remote",
+        isRemote: body.is_remote !== false,
+        jobType: body.job_type || "Full-time",
+        salaryRange: body.salary_range,
+        skills: Array.isArray(body.skills) ? body.skills : body.skills ? body.skills.split(",").map((s) => s.trim()) : [],
+        description: body.description,
+        applyUrl: body.apply_url
+      });
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, job }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/jobs/status" || pathname === "/api/jobs/status") || req.method === "PATCH" && (pathname.includes("/jobs/") && pathname.endsWith("/status"))) {
+      const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
+      if (!user && !isAdmin) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required." }));
+        return;
+      }
+      const body = await parseBody();
+      const id = Number(body.id || pathname.split("/")[4] || pathname.split("/")[3]);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid job ID is required." }));
+        return;
+      }
+      const updated = await updateBuilderJobStatus(id, user?.id || 0, body.is_active !== false, isAdmin);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, job: updated }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/jobs/delete" || pathname === "/api/jobs/delete") || req.method === "DELETE" && (pathname.startsWith("/api/network/jobs/") || pathname.startsWith("/api/jobs/"))) {
+      const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
+      if (!user && !isAdmin) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to delete a job." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid job ID is required." }));
+        return;
+      }
+      const deleted = await deleteBuilderJob(id, user?.id, isAdmin);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: deleted }));
+      return;
+    }
+    if (req.method === "GET" && (pathname === "/api/network/builder-hackathons" || pathname === "/api/builder-hackathons")) {
+      const urlObj = new URL(req.url, "http://localhost");
+      const onlyApproved = urlObj.searchParams.get("all") !== "true";
+      const limit = urlObj.searchParams.get("limit") ? Number(urlObj.searchParams.get("limit")) : void 0;
+      const hackathons = await listBuilderHackathons({ onlyApproved, limit });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, hackathons }));
+      return;
+    }
+    if (req.method === "GET" && (pathname === "/api/network/my-hackathons" || pathname === "/api/my-hackathons")) {
+      const user = getAuthUser();
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to view your hackathons." }));
+        return;
+      }
+      const hackathons = await listUserHackathons(user.id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, hackathons }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/builder-hackathons" || pathname === "/api/builder-hackathons")) {
+      const user = getAuthUser();
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to list a hackathon." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.name || !body.website || !body.start_date || !body.end_date) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Name, website URL, start date, and end date are required." }));
+        return;
+      }
+      const hackathon = await createBuilderHackathon({
+        userId: user.id,
+        authorName: body.author_name || (user.name || user.username) || "Organizer",
+        authorUsername: user.username,
+        name: body.name,
+        tagline: body.tagline,
+        description: body.description,
+        bannerUrl: body.banner_url,
+        website: body.website,
+        startDate: body.start_date,
+        endDate: body.end_date,
+        location: body.location,
+        virtual: body.virtual !== false,
+        apac: body.apac === true,
+        prizePool: body.prize_pool,
+        eligibility: body.eligibility,
+        tags: Array.isArray(body.tags) ? body.tags : body.tags ? body.tags.split(",").map((t) => t.trim()) : ["Hackathon", "Builders"]
+      });
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, hackathon }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/builder-hackathons/delete" || pathname === "/api/builder-hackathons/delete") || req.method === "DELETE" && (pathname.startsWith("/api/network/builder-hackathons/") || pathname.startsWith("/api/builder-hackathons/"))) {
+      const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
+      if (!user && !isAdmin) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to delete a hackathon." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid hackathon ID is required." }));
+        return;
+      }
+      const deleted = await deleteBuilderHackathon(id, user?.id, isAdmin);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: deleted }));
+      return;
     }
     res.statusCode = 404;
     res.end(JSON.stringify({ error: `API endpoint not found: ${req.method} ${pathname}` }));

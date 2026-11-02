@@ -13,6 +13,47 @@ export interface UserProfile {
   created_at?: string
 }
 
+export interface BuilderJob {
+  id: number
+  user_id?: number | null
+  author_name: string
+  author_username?: string | null
+  title: string
+  company_name: string
+  company_logo?: string | null
+  location: string
+  is_remote: boolean
+  job_type: string
+  salary_range?: string | null
+  skills: string[]
+  description: string
+  apply_url: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface BuilderHackathon {
+  id: number
+  user_id?: number | null
+  author_name: string
+  author_username?: string | null
+  name: string
+  tagline?: string | null
+  description?: string | null
+  banner_url?: string | null
+  website: string
+  start_date: string
+  end_date: string
+  location?: string | null
+  virtual: boolean
+  apac: boolean
+  prize_pool?: string | null
+  eligibility?: string | null
+  tags: string[]
+  is_approved: boolean
+  created_at: string
+}
+
 export interface StartupItem {
   id: number
   user_id?: number | null
@@ -393,6 +434,192 @@ export const networkApi = {
       )
     } catch (err: any) {
       return { success: false, error: err.message || "Failed to post feedback" }
+    }
+  },
+
+  // --- Builder Jobs ---
+  async getJobs(limit?: number): Promise<BuilderJob[]> {
+    try {
+      const res = await safeJsonFetch<{ success: boolean; jobs: BuilderJob[] }>(
+        limit ? `/api/network/jobs?limit=${limit}` : "/api/network/jobs"
+      )
+      return res.jobs || []
+    } catch {
+      return []
+    }
+  },
+
+  async getMyJobs(): Promise<BuilderJob[]> {
+    try {
+      const token = this.getToken()
+      if (!token) return []
+      const res = await safeJsonFetch<{ success: boolean; jobs: BuilderJob[] }>(
+        "/api/network/my-jobs",
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      )
+      return res.jobs || []
+    } catch {
+      return []
+    }
+  },
+
+  async createJob(data: {
+    title: string
+    company_name: string
+    company_logo?: string
+    location?: string
+    is_remote?: boolean
+    job_type?: string
+    salary_range?: string
+    skills?: string[] | string
+    description: string
+    apply_url: string
+  }): Promise<{ success: boolean; job?: BuilderJob; error?: string }> {
+    try {
+      const token = this.getToken()
+      if (!token) return { success: false, error: "Authentication required to post a job." }
+      const res = await safeJsonFetch<{ success: boolean; job: BuilderJob }>(
+        "/api/network/jobs",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(data),
+        }
+      )
+      return { success: true, job: res.job }
+    } catch (err: any) {
+      return { success: false, error: err.message || "Failed to post job." }
+    }
+  },
+
+  async toggleJobStatus(id: number, is_active: boolean): Promise<boolean> {
+    try {
+      const token = this.getToken()
+      if (!token) return false
+      const res = await safeJsonFetch<{ success: boolean }>(
+        "/api/network/jobs/status",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ id, is_active }),
+        }
+      )
+      return !!res.success
+    } catch {
+      return false
+    }
+  },
+
+  async deleteJob(id: number): Promise<boolean> {
+    try {
+      const token = this.getToken()
+      if (!token) return false
+      const res = await safeJsonFetch<{ success: boolean }>(
+        "/api/network/jobs/delete",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ id }),
+        }
+      )
+      return !!res.success
+    } catch {
+      return false
+    }
+  },
+
+  // --- Builder Hackathons ---
+  async getBuilderHackathons(limit?: number): Promise<BuilderHackathon[]> {
+    try {
+      const res = await safeJsonFetch<{ success: boolean; hackathons: BuilderHackathon[] }>(
+        limit ? `/api/network/builder-hackathons?limit=${limit}` : "/api/network/builder-hackathons"
+      )
+      return res.hackathons || []
+    } catch {
+      return []
+    }
+  },
+
+  async getMyHackathons(): Promise<BuilderHackathon[]> {
+    try {
+      const token = this.getToken()
+      if (!token) return []
+      const res = await safeJsonFetch<{ success: boolean; hackathons: BuilderHackathon[] }>(
+        "/api/network/my-hackathons",
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      )
+      return res.hackathons || []
+    } catch {
+      return []
+    }
+  },
+
+  async createBuilderHackathon(data: {
+    name: string
+    tagline?: string
+    description?: string
+    banner_url?: string
+    website: string
+    start_date: string
+    end_date: string
+    location?: string
+    virtual?: boolean
+    apac?: boolean
+    prize_pool?: string
+    eligibility?: string
+    tags?: string[] | string
+  }): Promise<{ success: boolean; hackathon?: BuilderHackathon; error?: string }> {
+    try {
+      const token = this.getToken()
+      if (!token) return { success: false, error: "Authentication required to post a hackathon." }
+      const res = await safeJsonFetch<{ success: boolean; hackathon: BuilderHackathon }>(
+        "/api/network/builder-hackathons",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(data),
+        }
+      )
+      return { success: true, hackathon: res.hackathon }
+    } catch (err: any) {
+      return { success: false, error: err.message || "Failed to post hackathon." }
+    }
+  },
+
+  async deleteBuilderHackathon(id: number): Promise<boolean> {
+    try {
+      const token = this.getToken()
+      if (!token) return false
+      const res = await safeJsonFetch<{ success: boolean }>(
+        "/api/network/builder-hackathons/delete",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ id }),
+        }
+      )
+      return !!res.success
+    } catch {
+      return false
     }
   },
 
