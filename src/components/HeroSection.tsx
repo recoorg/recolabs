@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useNavigate } from "react-router-dom"
-import { CrowdCanvas } from "@/components/CrowdCanvas"
+import DoodleCrewFooter from "@/components/ui/doodle-crew-footer"
 import confetti from "canvas-confetti"
 import { api } from "@/services/api"
 
@@ -11,6 +11,20 @@ export function HeroSection() {
   const [email, setEmail] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [joined, setJoined] = React.useState(false)
+  const [isDark, setIsDark] = React.useState(false)
+
+  React.useEffect(() => {
+    const checkDark = () => {
+      setIsDark(document.documentElement.classList.contains("dark"))
+    }
+    checkDark()
+    const observer = new MutationObserver(() => checkDark())
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    })
+    return () => observer.disconnect()
+  }, [])
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,11 +93,23 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Hero Bottom: Dense Comic Crowd of Peeps */}
-      <div className="relative w-full h-[340px] sm:h-[420px] md:h-[480px] lg:h-[520px] mt-2 overflow-hidden">
-        <CrowdCanvas className="absolute inset-0 w-full h-full pointer-events-none" />
+      {/* Hero Bottom: Giant animated RECOLABS wordmark stage on screen */}
+      <div className="relative w-full min-h-[300px] sm:min-h-[360px] md:min-h-[420px] mt-4 overflow-hidden flex items-end justify-center">
+        <DoodleCrewFooter
+          onlyWordmarkStage={true}
+          wordmark="RECOLABS"
+          brand="reco labs"
+          palette={{
+            background: "transparent",
+            ink: isDark ? "#ffffff" : "#09090b",
+            accent: "#FA5D00",
+          }}
+          interactive={true}
+          doodles={["flame", "star", "bolt", "sandwich", "heart", "plane"]}
+          doodleCount={12}
+        />
         {/* Soft bottom edge blend */}
-        <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-white dark:from-[#09090b] to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-white dark:from-[#09090b] to-transparent pointer-events-none" />
       </div>
     </section>
   )

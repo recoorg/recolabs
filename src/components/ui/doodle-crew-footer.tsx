@@ -260,6 +260,8 @@ export interface DoodleCrewFooterProps {
   /** Minimum height, a definite length. The footer grows past it if its content needs to. */
   height?: string
   className?: string
+  /** Render only the giant animated RECOLABS wordmark stage without top links or bottom copyright */
+  onlyWordmarkStage?: boolean
 }
 
 const PRESETS = {
@@ -594,8 +596,9 @@ export default function DoodleCrewFooter({
   serifFamily = DEFAULT_SERIF,
   tracking = -0.02,
   interactive = true,
-  height = "760px",
+  height,
   className,
+  onlyWordmarkStage = false,
 }: DoodleCrewFooterProps) {
   const uid = React.useId().replace(/[^a-zA-Z0-9_-]/g, "")
   const word = wordmark.toUpperCase()
@@ -956,7 +959,7 @@ export default function DoodleCrewFooter({
     "--dcf-accent": colors.accent,
     "--dcf-serif": serifFamily,
     "--dcf-display": fontFamily,
-    minHeight: height,
+    minHeight: height || (onlyWordmarkStage ? "auto" : "760px"),
   } as React.CSSProperties
 
   const pct = (v: number, base: number, span: number) => (((v - base) / span) * 100).toFixed(3) + "%"
@@ -997,10 +1000,12 @@ export default function DoodleCrewFooter({
     </g>
   )
 
+  const RootTag = onlyWordmarkStage ? "div" : "footer"
+
   return (
-    <footer
-      ref={rootRef}
-      className={"dcf" + (className ? " " + className : "")}
+    <RootTag
+      ref={rootRef as any}
+      className={"dcf" + (onlyWordmarkStage ? " dcf-wordmark-only" : "") + (className ? " " + className : "")}
       data-play={play || reduced ? "1" : "0"}
       data-interactive={interactive ? "1" : "0"}
       style={vars}
@@ -1010,6 +1015,7 @@ export default function DoodleCrewFooter({
     >
       <style>{CSS}</style>
 
+      {!onlyWordmarkStage && (
       <div className="dcf-top dcf-rise" style={{ "--d": "0ms" } as React.CSSProperties}>
         <div className="dcf-brand">
           <span className="dcf-logo" aria-hidden="true">
@@ -1044,6 +1050,7 @@ export default function DoodleCrewFooter({
           </nav>
         )}
       </div>
+      )}
 
       <div className="dcf-world" ref={worldRef}>
         <div className="dcf-stage">
@@ -1176,6 +1183,7 @@ export default function DoodleCrewFooter({
           </div>
         )}
 
+        {!onlyWordmarkStage && (
         <div className="dcf-cta">
           <p className="dcf-tagline">
             {words.map((w, k) => (
@@ -1208,8 +1216,10 @@ export default function DoodleCrewFooter({
             </div>
           )}
         </div>
+        )}
       </div>
 
+      {!onlyWordmarkStage && (
       <div className="dcf-bar dcf-rise" style={{ "--d": "120ms", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: "6px" } as React.CSSProperties}>
         <p className="dcf-copy" style={{ textAlign: "center", width: "100%", margin: 0 }}>{copyright}</p>
         {legal && legal.length > 0 && (
@@ -1227,12 +1237,15 @@ export default function DoodleCrewFooter({
           </div>
         )}
       </div>
-    </footer>
+      )}
+    </RootTag>
   )
 }
 
 const CSS =
   ".dcf{position:relative;isolation:isolate;overflow:hidden;overflow:clip;width:100%;box-sizing:border-box;display:flex;flex-direction:column;background:var(--dcf-bg);color:var(--dcf-ink);font-family:'Geist Mono',monospace,ui-monospace,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;--dcf-soft:color-mix(in oklab,var(--dcf-ink) 62%,var(--dcf-bg));--dcf-line:color-mix(in oklab,var(--dcf-ink) 14%,var(--dcf-bg));--dcf-pad:clamp(16px,4vw,56px)}" +
+  ".dcf-wordmark-only{min-height:unset;padding-top:0;padding-bottom:0;background:transparent;justify-content:center}" +
+  ".dcf-wordmark-only .dcf-world{padding-top:0;padding-bottom:0;justify-content:center}" +
   ":where(.dcf) *,:where(.dcf) *::before,:where(.dcf) *::after{box-sizing:border-box}" +
   ":where(.dcf) a{color:inherit;text-decoration:none}" +
   ":where(.dcf) button{appearance:none;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer}" +

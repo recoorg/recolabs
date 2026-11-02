@@ -166,6 +166,29 @@ async function initDb() {
       );
       CREATE INDEX IF NOT EXISTS idx_project_comments_project ON project_comments(project_id);
 
+      CREATE TABLE IF NOT EXISTS startup_comments (
+        id SERIAL PRIMARY KEY,
+        startup_id INTEGER NOT NULL,
+        user_id INTEGER,
+        author_name TEXT NOT NULL,
+        author_username TEXT,
+        author_avatar TEXT,
+        content TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_startup_comments_startup ON startup_comments(startup_id);
+
+      CREATE TABLE IF NOT EXISTS startup_ratings (
+        id SERIAL PRIMARY KEY,
+        startup_id INTEGER NOT NULL,
+        user_id INTEGER,
+        idea_score NUMERIC(3, 1) DEFAULT 5.0,
+        execution_score NUMERIC(3, 1) DEFAULT 5.0,
+        design_score NUMERIC(3, 1) DEFAULT 5.0,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_startup_ratings_startup ON startup_ratings(startup_id);
+
       CREATE TABLE IF NOT EXISTS builder_jobs (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -1049,6 +1072,92 @@ async function deleteProjectComment(id, userId, isAdmin) {
     queryStr += " RETURNING id";
     const res = await client.query(queryStr, params);
     return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
+async function listStartupComments(startupId) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT * FROM startup_comments 
+       WHERE startup_id = $1 
+       ORDER BY created_at ASC`,
+      [startupId]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function createStartupComment(data) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO startup_comments 
+       (startup_id, user_id, author_name, author_username, author_avatar, content)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [
+        data.startupId,
+        data.userId || null,
+        data.authorName.trim(),
+        data.authorUsername?.trim() || null,
+        data.authorAvatar?.trim() || null,
+        data.content.trim()
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function getStartupRatingsSummary(startupId) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT 
+        COUNT(*)::int as total_ratings,
+        COALESCE(AVG(idea_score), 5.0)::numeric(3, 1) as avg_idea,
+        COALESCE(AVG(execution_score), 5.0)::numeric(3, 1) as avg_execution,
+        COALESCE(AVG(design_score), 5.0)::numeric(3, 1) as avg_design
+       FROM startup_ratings 
+       WHERE startup_id = $1`,
+      [startupId]
+    );
+    const row = res.rows[0] || {};
+    const total = Number(row.total_ratings) || 0;
+    const avgIdea = Number(row.avg_idea) || 5;
+    const avgExecution = Number(row.avg_execution) || 5;
+    const avgDesign = Number(row.avg_design) || 5;
+    const overall = total > 0 ? Number(((avgIdea + avgExecution + avgDesign) / 3).toFixed(1)) : 5;
+    return {
+      totalRatings: total,
+      overall,
+      idea: avgIdea,
+      execution: avgExecution,
+      design: avgDesign
+    };
+  } finally {
+    client.release();
+  }
+}
+async function createStartupRating(data) {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `INSERT INTO startup_ratings 
+       (startup_id, user_id, idea_score, execution_score, design_score)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        data.startupId,
+        data.userId || null,
+        data.ideaScore,
+        data.executionScore,
+        data.designScore
+      ]
+    );
+    return await getStartupRatingsSummary(data.startupId);
   } finally {
     client.release();
   }
@@ -2031,6 +2140,101 @@ async function handleNetworkRequest(req, res) {
       const deleted = await deleteProjectComment(id, user ? user.id : void 0, isAdmin);
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, deleted }));
+      return;
+    }
+    if (req.method === "GET" && (pathname.startsWith("/api/network/startups/") && pathname.endsWith("/comments") || pathname === "/api/network/startup-comments")) {
+      let startupId = Number(searchParams.get("startupId") || searchParams.get("startup_id"));
+      if (!startupId) {
+        const match = pathname.match(/\/startups\/(\d+)\/comments/);
+        if (match) startupId = Number(match[1]);
+      }
+      if (!startupId || isNaN(startupId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startupId is required" }));
+        return;
+      }
+      const comments = await listStartupComments(startupId);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, comments }));
+      return;
+    }
+    if (req.method === "POST" && (pathname.startsWith("/api/network/startups/") && pathname.endsWith("/comments") || pathname === "/api/network/startup-comments")) {
+      let startupId = Number(searchParams.get("startupId") || searchParams.get("startup_id"));
+      if (!startupId) {
+        const match = pathname.match(/\/startups\/(\d+)\/comments/);
+        if (match) startupId = Number(match[1]);
+      }
+      const body = await parseBody();
+      if (!startupId) startupId = Number(body.startupId || body.startup_id);
+      if (!startupId || isNaN(startupId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startupId is required" }));
+        return;
+      }
+      const content = String(body.content || "").trim();
+      if (!content) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Comment content is required" }));
+        return;
+      }
+      const user = getAuthUser();
+      const authorName = user?.name || String(body.authorName || body.author_name || "Community Builder").trim();
+      const authorUsername = user?.username || String(body.authorUsername || body.author_username || "").trim();
+      const authorAvatar = user?.avatar_url || body.authorAvatar || body.author_avatar || null;
+      const created = await createStartupComment({
+        startupId,
+        userId: user ? user.id : void 0,
+        authorName,
+        authorUsername,
+        authorAvatar,
+        content
+      });
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, comment: created }));
+      return;
+    }
+    if (req.method === "GET" && (pathname.startsWith("/api/network/startups/") && pathname.endsWith("/ratings") || pathname === "/api/network/startup-ratings")) {
+      let startupId = Number(searchParams.get("startupId") || searchParams.get("startup_id"));
+      if (!startupId) {
+        const match = pathname.match(/\/startups\/(\d+)\/ratings/);
+        if (match) startupId = Number(match[1]);
+      }
+      if (!startupId || isNaN(startupId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startupId is required" }));
+        return;
+      }
+      const ratings = await getStartupRatingsSummary(startupId);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, ratings }));
+      return;
+    }
+    if (req.method === "POST" && (pathname.startsWith("/api/network/startups/") && pathname.endsWith("/ratings") || pathname === "/api/network/startup-ratings")) {
+      let startupId = Number(searchParams.get("startupId") || searchParams.get("startup_id"));
+      if (!startupId) {
+        const match = pathname.match(/\/startups\/(\d+)\/ratings/);
+        if (match) startupId = Number(match[1]);
+      }
+      const body = await parseBody();
+      if (!startupId) startupId = Number(body.startupId || body.startup_id);
+      if (!startupId || isNaN(startupId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startupId is required" }));
+        return;
+      }
+      const ideaScore = Math.max(1, Math.min(5, Number(body.ideaScore || body.idea || 5)));
+      const executionScore = Math.max(1, Math.min(5, Number(body.executionScore || body.execution || 5)));
+      const designScore = Math.max(1, Math.min(5, Number(body.designScore || body.design || 5)));
+      const user = getAuthUser();
+      const updatedSummary = await createStartupRating({
+        startupId,
+        userId: user ? user.id : void 0,
+        ideaScore,
+        executionScore,
+        designScore
+      });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, ratings: updatedSummary }));
       return;
     }
     if (req.method === "POST" && (pathname === "/api/network/admin/send-email" || pathname === "/api/admin/send-email")) {

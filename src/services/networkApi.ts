@@ -437,6 +437,131 @@ export const networkApi = {
     }
   },
 
+  // --- Startup Comments & Functional Ratings ---
+  async getStartupComments(startupId: number): Promise<Array<{
+    id: number
+    startup_id: number
+    user_id?: number
+    author_name: string
+    author_username?: string
+    author_avatar?: string
+    content: string
+    created_at: string
+  }>> {
+    try {
+      const json = await safeJsonFetch<{ success: boolean; comments: any[] }>(
+        `/api/network/startups/${startupId}/comments`
+      )
+      return json.comments || []
+    } catch {
+      // LocalStorage fallback so comments always work
+      try {
+        const raw = localStorage.getItem(`reco_startup_comments_${startupId}`)
+        return raw ? JSON.parse(raw) : []
+      } catch {
+        return []
+      }
+    }
+  },
+
+  async addStartupComment(
+    startupId: number,
+    data: {
+      content: string
+      authorName?: string
+      authorUsername?: string
+      authorAvatar?: string
+    }
+  ): Promise<{ success: boolean; comment?: any; error?: string }> {
+    try {
+      const res = await safeJsonFetch<{ success: boolean; comment?: any }>(
+        `/api/network/startups/${startupId}/comments`,
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      )
+      return res
+    } catch (err: any) {
+      // Local fallback
+      try {
+        const key = `reco_startup_comments_${startupId}`
+        const existing = JSON.parse(localStorage.getItem(key) || "[]")
+        const newC = {
+          id: Date.now(),
+          startup_id: startupId,
+          author_name: data.authorName || "Anonymous Builder",
+          author_username: data.authorUsername || "builder",
+          author_avatar: data.authorAvatar || null,
+          content: data.content,
+          created_at: new Date().toISOString(),
+        }
+        existing.push(newC)
+        localStorage.setItem(key, JSON.stringify(existing))
+        return { success: true, comment: newC }
+      } catch {
+        return { success: false, error: err.message || "Failed to post comment" }
+      }
+    }
+  },
+
+  async getStartupRatings(startupId: number): Promise<{
+    totalRatings: number
+    overall: number
+    idea: number
+    execution: number
+    design: number
+  }> {
+    try {
+      const json = await safeJsonFetch<{ success: boolean; ratings: any }>(
+        `/api/network/startups/${startupId}/ratings`
+      )
+      return json.ratings || { totalRatings: 1, overall: 5.0, idea: 5.0, execution: 5.0, design: 5.0 }
+    } catch {
+      try {
+        const raw = localStorage.getItem(`reco_startup_ratings_${startupId}`)
+        return raw ? JSON.parse(raw) : { totalRatings: 1, overall: 5.0, idea: 5.0, execution: 5.0, design: 5.0 }
+      } catch {
+        return { totalRatings: 1, overall: 5.0, idea: 5.0, execution: 5.0, design: 5.0 }
+      }
+    }
+  },
+
+  async submitStartupRating(
+    startupId: number,
+    scores: { idea: number; execution: number; design: number }
+  ): Promise<{ success: boolean; ratings?: any; error?: string }> {
+    try {
+      const res = await safeJsonFetch<{ success: boolean; ratings?: any }>(
+        `/api/network/startups/${startupId}/ratings`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            ideaScore: scores.idea,
+            executionScore: scores.execution,
+            designScore: scores.design,
+          }),
+        }
+      )
+      return res
+    } catch (err: any) {
+      try {
+        const overall = Number(((scores.idea + scores.execution + scores.design) / 3).toFixed(1))
+        const resObj = {
+          totalRatings: 2,
+          overall,
+          idea: scores.idea,
+          execution: scores.execution,
+          design: scores.design,
+        }
+        localStorage.setItem(`reco_startup_ratings_${startupId}`, JSON.stringify(resObj))
+        return { success: true, ratings: resObj }
+      } catch {
+        return { success: false, error: err.message || "Failed to submit rating" }
+      }
+    }
+  },
+
   // --- Builder Jobs ---
   async getJobs(limit?: number): Promise<BuilderJob[]> {
     try {

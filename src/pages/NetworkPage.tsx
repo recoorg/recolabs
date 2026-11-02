@@ -30,6 +30,14 @@ import {
   Camera,
   Briefcase,
   Layers,
+  Award,
+  Star,
+  Bookmark,
+  ArrowLeft,
+  Send,
+  Paperclip,
+  Smile,
+  Share2,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
@@ -60,6 +68,148 @@ export function NetworkPage() {
   const [showPostModal, setShowPostModal] = React.useState(false)
   const [showProfileModal, setShowProfileModal] = React.useState(false)
   const [screenshotStartup, setScreenshotStartup] = React.useState<StartupItem | null>(null)
+
+  // Selected Startup for Peerlist Launchpad Detail Modal
+  const [selectedStartup, setSelectedStartup] = React.useState<StartupItem | null>(null)
+  const [startupComments, setStartupComments] = React.useState<any[]>([])
+  const [loadingComments, setLoadingComments] = React.useState(false)
+  const [commentText, setCommentText] = React.useState("")
+  const [submittingComment, setSubmittingComment] = React.useState(false)
+  const [commentSuccessMsg, setCommentSuccessMsg] = React.useState("")
+  const [copiedLinkNotice, setCopiedLinkNotice] = React.useState(false)
+
+  // Functional Ratings State
+  const [startupRatings, setStartupRatings] = React.useState<{
+    totalRatings: number
+    overall: number
+    idea: number
+    execution: number
+    design: number
+  }>({
+    totalRatings: 1,
+    overall: 5.0,
+    idea: 5.0,
+    execution: 5.0,
+    design: 5.0,
+  })
+  const [showRatingInput, setShowRatingInput] = React.useState(false)
+  const [userRatingScores, setUserRatingScores] = React.useState({
+    idea: 5,
+    execution: 5,
+    design: 5,
+  })
+  const [submittingRating, setSubmittingRating] = React.useState(false)
+  const [ratingSubmittedNotice, setRatingSubmittedNotice] = React.useState(false)
+  const [favorites, setFavorites] = React.useState<number[]>(() => {
+    if (typeof window === "undefined") return []
+    try {
+      return JSON.parse(localStorage.getItem("reco_startup_favorites") || "[]")
+    } catch {
+      return []
+    }
+  })
+
+  const selectStartupWithUrl = React.useCallback((item: StartupItem | null) => {
+    setSelectedStartup(item)
+    setShowRatingInput(false)
+    if (item?.id) {
+      navigate({ search: `?s=${item.id}` }, { replace: true })
+    } else {
+      navigate({ search: "" }, { replace: true })
+    }
+  }, [navigate])
+
+  // Deep-link check on startup load or URL change
+  React.useEffect(() => {
+    const sParam = searchParams.get("s") || searchParams.get("startup")
+    if (!sParam || startups.length === 0) return
+    const match = startups.find((s) => String(s.id) === String(sParam))
+    if (match && (!selectedStartup || String(selectedStartup.id) !== String(match.id))) {
+      setSelectedStartup(match)
+    }
+  }, [searchParams, startups])
+
+  // Load comments & ratings when selectedStartup changes
+  React.useEffect(() => {
+    if (!selectedStartup?.id) {
+      setStartupComments([])
+      setCommentSuccessMsg("")
+      return
+    }
+    setLoadingComments(true)
+    Promise.all([
+      networkApi.getStartupComments(selectedStartup.id),
+      networkApi.getStartupRatings(selectedStartup.id),
+    ]).then(([comments, ratings]) => {
+      setStartupComments(comments || [])
+      setStartupRatings(ratings || { totalRatings: 1, overall: 5.0, idea: 5.0, execution: 5.0, design: 5.0 })
+      setLoadingComments(false)
+    })
+  }, [selectedStartup?.id])
+
+  // Navigation indices for Prev / Next arrows
+  const currentStartupIndex = React.useMemo(() => {
+    if (!selectedStartup) return -1
+    return startups.findIndex((s) => String(s.id) === String(selectedStartup.id))
+  }, [selectedStartup, startups])
+
+  const prevStartup = currentStartupIndex > 0 ? startups[currentStartupIndex - 1] : null
+  const nextStartup = currentStartupIndex >= 0 && currentStartupIndex < startups.length - 1 ? startups[currentStartupIndex + 1] : null
+
+  const handlePostStartupComment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedStartup?.id || !commentText.trim() || submittingComment) return
+    setSubmittingComment(true)
+    const authorName = currentUser?.name || "Curious Builder"
+    const authorUsername = currentUser?.username || undefined
+    const authorAvatar = currentUser?.avatar_url || undefined
+
+    const res = await networkApi.addStartupComment(selectedStartup.id, {
+      content: commentText.trim(),
+      authorName,
+      authorUsername,
+      authorAvatar,
+    })
+    if (res.success && res.comment) {
+      setStartupComments((prev) => [...prev, res.comment])
+      setCommentText("")
+      setCommentSuccessMsg("Feedback posted!")
+      setTimeout(() => setCommentSuccessMsg(""), 3000)
+    }
+    setSubmittingComment(false)
+  }
+
+  const handleSubmitRating = async () => {
+    if (!selectedStartup?.id || submittingRating) return
+    setSubmittingRating(true)
+    const res = await networkApi.submitStartupRating(selectedStartup.id, userRatingScores)
+    if (res.success && res.ratings) {
+      setStartupRatings(res.ratings)
+      setRatingSubmittedNotice(true)
+      setShowRatingInput(false)
+      confetti({ particleCount: 60, spread: 65, origin: { y: 0.6 } })
+      setTimeout(() => setRatingSubmittedNotice(false), 3000)
+    }
+    setSubmittingRating(false)
+  }
+
+  const toggleFavoriteStartup = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setFavorites((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      localStorage.setItem("reco_startup_favorites", JSON.stringify(next))
+      return next
+    })
+  }
+
+  const handleCopyStartupShareLink = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!selectedStartup) return
+    const url = `https://recolabs.in/network?s=${selectedStartup.id}`
+    navigator.clipboard.writeText(url)
+    setCopiedLinkNotice(true)
+    setTimeout(() => setCopiedLinkNotice(false), 2500)
+  }
 
   // Auth Form State (Social links removed per request)
   const [authForm, setAuthForm] = React.useState({
@@ -580,7 +730,8 @@ export function NetworkPage() {
                 return (
                   <div
                     key={item.id}
-                    className="group relative p-6 sm:p-7 rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between shadow-sm hover:shadow-md"
+                    onClick={() => selectStartupWithUrl(item)}
+                    className="group relative p-6 sm:p-7 rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between shadow-sm hover:shadow-md cursor-pointer"
                   >
                     <div>
                       {/* Top Bar: Category, Stage, Screenshot Snap & External Link */}
@@ -606,7 +757,7 @@ export function NetworkPage() {
                         {/* Top Right Actions: Screenshot Card Snap & Link */}
                         <div className="flex items-center gap-1.5">
                           <button
-                            onClick={() => setScreenshotStartup(item)}
+                            onClick={(e) => { e.stopPropagation(); setScreenshotStartup(item); }}
                             title="Generate Shareable Screenshot Card"
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-mono text-[10px] font-bold hover:border-[#FA5D00] hover:text-[#FA5D00] active:scale-95 transition-all cursor-pointer shadow-2xs"
                           >
@@ -619,6 +770,7 @@ export function NetworkPage() {
                             target="_blank"
                             rel="noreferrer"
                             title="Open Startup Website"
+                            onClick={(e) => e.stopPropagation()}
                             className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-400 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
@@ -1155,6 +1307,464 @@ export function NetworkPage() {
           </div>
         </div>
       )}
+
+
+
+      {/* ======================================================== */}
+      {/* 5. STARTUP DETAIL MODAL (Matching Peerlist Launchpad)    */}
+      {/* ======================================================== */}
+      {selectedStartup && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in overflow-y-auto"
+          onClick={() => selectStartupWithUrl(null)}
+        >
+          {/* Floating Previous Startup Arrow (Desktop) */}
+          {prevStartup && (
+            <div 
+              onClick={(e) => {
+                e.stopPropagation()
+                selectStartupWithUrl(prevStartup)
+              }}
+              className="hidden xl:flex flex-col items-center gap-1.5 fixed left-6 top-1/2 -translate-y-1/2 z-50 cursor-pointer group select-none"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-[#18181b]/90 border border-zinc-700/80 p-2 flex items-center justify-center shadow-2xl backdrop-blur-md group-hover:scale-105 group-hover:border-[#FA5D00] transition-all text-white font-serif text-lg font-bold">
+                {prevStartup.name[0].toUpperCase()}
+              </div>
+              <div className="px-2.5 py-1 rounded-full bg-black/80 border border-zinc-700 text-white font-mono text-[11px] font-medium flex items-center gap-1 group-hover:text-[#FA5D00] transition-colors shadow-md">
+                <ArrowLeft className="w-3 h-3" />
+                <span>Prev</span>
+              </div>
+            </div>
+          )}
+
+          {/* Floating Next Startup Arrow (Desktop) */}
+          {nextStartup && (
+            <div 
+              onClick={(e) => {
+                e.stopPropagation()
+                selectStartupWithUrl(nextStartup)
+              }}
+              className="hidden xl:flex flex-col items-center gap-1.5 fixed right-6 top-1/2 -translate-y-1/2 z-50 cursor-pointer group select-none"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-[#18181b]/90 border border-zinc-700/80 p-2 flex items-center justify-center shadow-2xl backdrop-blur-md group-hover:scale-105 group-hover:border-[#FA5D00] transition-all text-white font-serif text-lg font-bold">
+                {nextStartup.name[0].toUpperCase()}
+              </div>
+              <div className="px-2.5 py-1 rounded-full bg-black/80 border border-zinc-700 text-white font-mono text-[11px] font-medium flex items-center gap-1 group-hover:text-[#FA5D00] transition-colors shadow-md">
+                <span>Next</span>
+                <ArrowRight className="w-3 h-3" />
+              </div>
+            </div>
+          )}
+
+          {/* Main Modal Card */}
+          <div 
+            className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111113] shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Right Controls Bar */}
+            <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5">
+              <button
+                onClick={(e) => toggleFavoriteStartup(selectedStartup.id, e)}
+                title={favorites.includes(selectedStartup.id) ? "Remove bookmark" : "Bookmark startup"}
+                className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-750 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] dark:hover:text-[#FA5D00] transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+              >
+                <Bookmark className={`w-4 h-4 ${favorites.includes(selectedStartup.id) ? "fill-[#FA5D00] text-[#FA5D00]" : ""}`} />
+              </button>
+
+              <button
+                onClick={() => selectStartupWithUrl(null)}
+                className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-750 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md text-zinc-600 dark:text-zinc-300 hover:text-black dark:hover:text-white transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable Content Body */}
+            <div className="p-6 sm:p-8 md:p-10 overflow-y-auto space-y-6">
+              
+              {/* Header: Icon, Startup Name, Problem Solved & Action Buttons */}
+              <div className="flex flex-col items-center text-center space-y-3 pt-2">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-white font-serif text-3xl sm:text-4xl font-bold shadow-lg">
+                  {selectedStartup.name[0].toUpperCase()}
+                </div>
+
+                <div>
+                  <h2 className="font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight">
+                    {selectedStartup.name}
+                  </h2>
+                  <p className="mt-1 font-sans text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
+                    {selectedStartup.problem_solving}
+                  </p>
+                </div>
+
+                {/* Founder Attribution */}
+                <div className="flex items-center justify-center gap-2 font-mono text-xs text-zinc-500">
+                  <Link
+                    to={`/builder/${selectedStartup.founder_username || selectedStartup.founder_name.toLowerCase().replace(/[^a-z0-9_-]/g, "")}`}
+                    className="inline-flex items-center gap-1.5 hover:text-[#FA5D00] transition-colors"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center">
+                      {(selectedStartup.founder_name || "B")[0].toUpperCase()}
+                    </span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-[#FA5D00]">
+                      {selectedStartup.founder_name}
+                    </span>
+                  </Link>
+                </div>
+
+                {/* Action Buttons: Visit & Share Link (NO UPVOTE) */}
+                <div className="pt-2 flex items-center justify-center gap-3">
+                  <a
+                    href={selectedStartup.url.startsWith("http") ? selectedStartup.url : `https://${selectedStartup.url}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 shadow-sm transition-all"
+                  >
+                    <span>Visit</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+
+                  <button
+                    onClick={handleCopyStartupShareLink}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full border-2 border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 shadow-sm transition-all cursor-pointer"
+                  >
+                    {copiedLinkNotice ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-emerald-500">Link Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="w-3.5 h-3.5 text-zinc-500" />
+                        <span>Share Link</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Main 2-Column Split: Details & Feedback (Left) vs Launchpad Card (Right) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                
+                {/* LEFT COLUMN: Problem Overview, Tags, Feedback & Comments */}
+                <div className="lg:col-span-7 space-y-6">
+                  
+                  {/* Problem Solving Wireframe Banner */}
+                  <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 relative overflow-hidden">
+                    <div className="flex items-center gap-2 mb-2 font-mono text-[10px] text-[#FA5D00] font-bold uppercase tracking-wider">
+                      <Rocket className="w-3 h-3" />
+                      <span>THE MISSION</span>
+                    </div>
+                    <p className="font-sans text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed font-normal">
+                      {selectedStartup.problem_solving}
+                    </p>
+                  </div>
+
+                  {/* Badges Strip */}
+                  <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                    <span className="px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-950/60 text-[#FA5D00] font-bold uppercase border border-orange-200 dark:border-orange-900/50">
+                      {selectedStartup.category}
+                    </span>
+                    <span className="px-3 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 font-semibold uppercase">
+                      Stage: {selectedStartup.stage}
+                    </span>
+                  </div>
+
+                  {/* Founder Contact Row */}
+                  <div className="flex flex-wrap items-center gap-2 font-mono text-xs pt-1">
+                    {selectedStartup.founder_phone && (
+                      <a
+                        href={`tel:${selectedStartup.founder_phone}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] transition-colors"
+                      >
+                        <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>{selectedStartup.founder_phone}</span>
+                      </a>
+                    )}
+                    {selectedStartup.founder_website && (
+                      <a
+                        href={selectedStartup.founder_website.startsWith("http") ? selectedStartup.founder_website : `https://${selectedStartup.founder_website}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] transition-colors"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Website</span>
+                      </a>
+                    )}
+                    {selectedStartup.founder_email && (
+                      <a
+                        href={`mailto:${selectedStartup.founder_email}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] transition-colors"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Email</span>
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Community Feedback Input Box */}
+                  <form onSubmit={handlePostStartupComment} className="mt-4">
+                    <div className="flex items-center gap-2 p-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/90 shadow-2xs focus-within:ring-2 focus-within:ring-[#FA5D00]/50 transition-all">
+                      <div className="w-7 h-7 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold flex items-center justify-center flex-none ml-1">
+                        {(currentUser?.name || "B")[0].toUpperCase()}
+                      </div>
+                      <input
+                        type="text"
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder="Share your feedback or advice for this builder..."
+                        className="flex-grow bg-transparent font-sans text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none px-2"
+                      />
+                      <button
+                        type="submit"
+                        disabled={submittingComment || !commentText.trim()}
+                        className="w-8 h-8 rounded-full bg-[#FA5D00] text-black hover:opacity-90 active:scale-95 flex items-center justify-center transition-all cursor-pointer flex-none disabled:opacity-40"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {commentSuccessMsg && (
+                      <p className="mt-1.5 text-center font-mono text-xs text-emerald-600 dark:text-emerald-400 animate-in fade-in">
+                        {commentSuccessMsg}
+                      </p>
+                    )}
+                  </form>
+
+                  {/* Comments Tab (NO UPVOTES TAB) */}
+                  <div className="border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-6 font-mono text-xs font-bold tracking-wider pt-2">
+                    <div className="pb-2 text-[#FA5D00] border-b-2 border-[#FA5D00] uppercase">
+                      Comments · {startupComments.length}
+                    </div>
+                  </div>
+
+                  {/* Comments Feed */}
+                  <div className="space-y-3 pt-2">
+                    {loadingComments ? (
+                      <div className="py-6 text-center text-xs font-mono text-zinc-400 flex items-center justify-center gap-2">
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#FA5D00]" />
+                        <span>Loading feedback...</span>
+                      </div>
+                    ) : startupComments.length === 0 ? (
+                      <div className="py-8 text-center text-xs font-mono text-zinc-400 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 p-4">
+                        No feedback yet. Be the first peer to leave a review!
+                      </div>
+                    ) : (
+                      startupComments.map((c) => (
+                        <div key={c.id} className="p-4 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-1">
+                          <div className="flex items-center justify-between text-xs font-mono">
+                            <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                              {c.author_name}
+                            </span>
+                            <span className="text-zinc-400 text-[10px]">
+                              {new Date(c.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="font-sans text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                            {c.content}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN: Reco Labs Launchpad Card + 5.0 Functional Rating */}
+                <div className="lg:col-span-5 space-y-4">
+                  <div className="p-5 sm:p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 shadow-xs space-y-5">
+                    
+                    {/* Laurel Wreath Badge Header */}
+                    <div className="text-center pt-1">
+                      <span className="font-mono text-[10px] uppercase font-bold tracking-widest text-zinc-400 block mb-0.5">
+                        WEEK 45 · 2026
+                      </span>
+                      <div className="flex items-center justify-center gap-1.5 text-zinc-900 dark:text-zinc-100">
+                        <Award className="w-4 h-4 text-[#FA5D00]" />
+                        <h3 className="font-serif text-lg font-normal tracking-tight">
+                          Reco Labs <span className="font-sans font-light text-zinc-500 italic text-sm">Launchpad</span>
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Stats 2 Columns: Comments & Views (NO UPVOTES) */}
+                    <div className="grid grid-cols-2 gap-2 text-center py-2 border-y border-zinc-200 dark:border-zinc-800">
+                      <div>
+                        <div className="font-serif text-xl text-zinc-950 dark:text-zinc-50 font-normal">
+                          {startupComments.length}
+                        </div>
+                        <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
+                          Comments
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="font-serif text-xl text-zinc-950 dark:text-zinc-50 font-normal">
+                          {((selectedStartup.id * 13 + 47) % 300) + 120}
+                        </div>
+                        <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
+                          Views
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Supporting Peers Strip */}
+                    <div className="text-center space-y-1.5">
+                      <div className="flex items-center justify-center -space-x-1.5">
+                        {["#3b82f6", "#10b981", "#f59e0b", "#ec4899"].map((color, idx) => (
+                          <div
+                            key={idx}
+                            style={{ backgroundColor: color }}
+                            className="w-6 h-6 rounded-full border-2 border-white dark:border-zinc-900 flex items-center justify-center text-[10px] font-bold text-white shadow-xs"
+                          >
+                            {["A", "T", "R", "D"][idx]}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="font-mono text-[11px] text-zinc-500">
+                        4 Peers supporting this startup!
+                      </p>
+                    </div>
+
+                    {/* Functional Rating Scorecard */}
+                    <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-3">
+                      <div className="grid grid-cols-12 gap-3 items-center">
+                        {/* Overall Score */}
+                        <div className="col-span-5 text-center">
+                          <div className="font-serif text-3xl font-normal text-zinc-950 dark:text-zinc-50 leading-none">
+                            {startupRatings.overall.toFixed(1)}
+                          </div>
+                          <div className="flex items-center justify-center gap-0.5 text-[#FA5D00] mt-1.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star key={s} className="w-3 h-3 fill-[#FA5D00]" />
+                            ))}
+                          </div>
+                          <span className="font-mono text-[10px] text-zinc-400 block mt-1">
+                            {startupRatings.totalRatings} rating{startupRatings.totalRatings === 1 ? '' : 's'}
+                          </span>
+                        </div>
+
+                        {/* Breakdown Bars (Idea, Execution, Design) */}
+                        <div className="col-span-7 space-y-2 font-mono text-[11px]">
+                          <div>
+                            <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
+                              <span>Idea</span>
+                              <span className="font-bold">{startupRatings.idea.toFixed(1)}</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                              <div
+                                style={{ width: `${(startupRatings.idea / 5) * 100}%` }}
+                                className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
+                              <span>Execution</span>
+                              <span className="font-bold">{startupRatings.execution.toFixed(1)}</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                              <div
+                                style={{ width: `${(startupRatings.execution / 5) * 100}%` }}
+                                className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
+                              <span>Design</span>
+                              <span className="font-bold">{startupRatings.design.toFixed(1)}</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                              <div
+                                style={{ width: `${(startupRatings.design / 5) * 100}%` }}
+                                className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Interactive Rating Form Dropdown */}
+                      {showRatingInput ? (
+                        <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-3 font-mono text-xs animate-in fade-in">
+                          <div className="flex items-center justify-between">
+                            <span>Rate Idea:</span>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((val) => (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  onClick={() => setUserRatingScores((prev) => ({ ...prev, idea: val }))}
+                                  className={`w-6 h-6 rounded-md font-bold text-xs flex items-center justify-center ${userRatingScores.idea >= val ? 'bg-[#FA5D00] text-black' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500'}`}
+                                >
+                                  {val}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span>Rate Execution:</span>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((val) => (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  onClick={() => setUserRatingScores((prev) => ({ ...prev, execution: val }))}
+                                  className={`w-6 h-6 rounded-md font-bold text-xs flex items-center justify-center ${userRatingScores.execution >= val ? 'bg-[#FA5D00] text-black' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500'}`}
+                                >
+                                  {val}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span>Rate Design:</span>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((val) => (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  onClick={() => setUserRatingScores((prev) => ({ ...prev, design: val }))}
+                                  className={`w-6 h-6 rounded-md font-bold text-xs flex items-center justify-center ${userRatingScores.design >= val ? 'bg-[#FA5D00] text-black' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500'}`}
+                                >
+                                  {val}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handleSubmitRating}
+                            disabled={submittingRating}
+                            className="w-full py-2 rounded-full bg-[#FA5D00] text-black font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
+                          >
+                            {submittingRating ? "Submitting..." : "Submit Ratings"}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowRatingInput(true)}
+                          className="w-full py-2.5 rounded-full bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 font-mono text-xs font-bold hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-colors cursor-pointer shadow-sm text-center"
+                        >
+                          {ratingSubmittedNotice ? "★ Rating Submitted!" : "Rate Startup"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* MODAL 4: SHAREABLE SCREENSHOT SNAPSHOT CARD */}
       {screenshotStartup && (

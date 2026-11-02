@@ -6,17 +6,18 @@ import gsap from "gsap"
 export interface CrowdCanvasProps {
   className?: string
   src?: string
+  id?: string
 }
 
 export function CrowdCanvas({
   className = "w-full h-full",
   src = "https://cdn.21st.dev/assets/localized/abdb8990a7bef8c2f5af3e45f0a3c969c4b0603fba8be92e81347de4ea4e1ed7.png",
+  id = "crowd-canvas",
 }: CrowdCanvasProps) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
 
   React.useEffect(() => {
-    const canvas = canvasRef.current || (document.getElementById("crowd-canvas") as HTMLCanvasElement)
-    const heroSec = document.getElementById("hero-sec")
+    const canvas = canvasRef.current || (document.getElementById(id) as HTMLCanvasElement)
     if (!canvas) return
     const ctx = canvas.getContext("2d")
     if (!ctx) return
@@ -202,11 +203,12 @@ export function CrowdCanvas({
     window.addEventListener("resize", resize)
 
     let io: IntersectionObserver | null = null
-    if (heroSec && window.IntersectionObserver) {
+    const target = canvas.parentElement || canvas
+    if (target && window.IntersectionObserver) {
       io = new IntersectionObserver((entries) => {
         isHeroVisible = entries[0].isIntersecting
       })
-      io.observe(heroSec)
+      io.observe(target)
     }
 
     return () => {
@@ -217,11 +219,11 @@ export function CrowdCanvas({
       })
       if (io) io.disconnect()
     }
-  }, [src])
+  }, [src, id])
 
   return (
     <canvas
-      id="crowd-canvas"
+      id={id}
       ref={canvasRef}
       className={className}
       aria-hidden="true"

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Link } from "react-router-dom"
 import { usePageMeta } from "@/hooks/usePageMeta"
-import { CheckCircle2, Briefcase, Search, MapPin, ExternalLink, RefreshCw, Key, X, Plus, ArrowUpRight, Building2, Sparkles, Filter } from "lucide-react"
+import { CheckCircle2, Briefcase, Search, MapPin, ExternalLink, RefreshCw, X, Plus, ArrowUpRight, Building2, Sparkles, Filter } from "lucide-react"
 import { api, type GoogleJobItem } from "@/services/api"
 import { networkApi, type BuilderJob } from "@/services/networkApi"
 
@@ -37,16 +37,6 @@ export function JobsPage() {
   const [loading, setLoading] = React.useState(true)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [filterType, setFilterType] = React.useState<"ALL" | "DIRECT" | "REMOTE" | "FULL_TIME" | "INTERNSHIP" | "CONTRACT">("ALL")
-  const [showKeyModal, setShowKeyModal] = React.useState(false)
-  const [serpApiKey, setSerpApiKey] = React.useState("")
-
-  // Check saved SerpApi key on mount
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("reco_serpapi_key") || ""
-      setSerpApiKey(saved)
-    }
-  }, [])
 
   // Core fetch function
   const fetchAllJobs = React.useCallback(async (query: string) => {
@@ -85,19 +75,6 @@ export function JobsPage() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     fetchAllJobs(searchQuery)
-  }
-
-  const handleSaveKey = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (typeof window !== "undefined") {
-      if (serpApiKey.trim()) {
-        localStorage.setItem("reco_serpapi_key", serpApiKey.trim())
-      } else {
-        localStorage.removeItem("reco_serpapi_key")
-      }
-      setShowKeyModal(false)
-      fetchAllJobs(searchQuery)
-    }
   }
 
   // Normalize all jobs into unified array
@@ -307,24 +284,11 @@ export function JobsPage() {
             >
               Contract
             </button>
-
-            {/* Optional SerpApi Key Settings Trigger */}
-            <button
-              type="button"
-              onClick={() => setShowKeyModal(true)}
-              title="Configure SerpApi Key"
-              className="w-9 h-9 rounded-full border editorial-hairline text-zinc-500 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors flex items-center justify-center cursor-pointer"
-            >
-              <Key className="w-3.5 h-3.5" />
-            </button>
           </div>
         </div>
 
-        {/* Counter Info */}
-        <div className="mt-4 flex items-center justify-between font-mono text-xs text-zinc-500">
-          <span>
-            {loading ? "Searching live endpoints..." : `Showing ${filteredJobs.length} opportunities (${builderJobs.length} direct)`}
-          </span>
+        {/* Action Row */}
+        <div className="mt-4 flex items-center justify-end font-mono text-xs">
           <Link to="/dashboard?tab=post-job" className="text-[#FA5D00] hover:underline font-bold">
             + Post your opening
           </Link>
@@ -452,58 +416,6 @@ export function JobsPage() {
         </div>
 
       </div>
-
-      {/* Optional SerpApi Key Modal */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#111113] p-6 shadow-2xl font-mono">
-            <div className="flex items-center justify-between pb-4 border-b editorial-hairline">
-              <h3 className="font-serif text-2xl text-zinc-950 dark:text-white">
-                Custom SerpApi Key
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowKeyModal(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveKey} className="mt-4 space-y-4 text-xs">
-              <p className="font-sans text-zinc-500 leading-relaxed">
-                Provide a SerpApi key to directly search Google Jobs with your own quotas. Leave blank to use public/curated endpoints.
-              </p>
-
-              <div>
-                <input
-                  type="password"
-                  placeholder="Paste your SerpApi key here..."
-                  value={serpApiKey}
-                  onChange={(e) => setSerpApiKey(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#FA5D00]"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowKeyModal(false)}
-                  className="px-5 py-2 rounded-full border editorial-hairline font-bold text-zinc-600 dark:text-zinc-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 rounded-full bg-[#FA5D00] text-black font-bold uppercase transition-all shadow-sm"
-                >
-                  Save Key
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
     </div>
   )

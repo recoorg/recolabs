@@ -177,6 +177,29 @@ export async function initDb() {
       );
       CREATE INDEX IF NOT EXISTS idx_project_comments_project ON project_comments(project_id);
 
+      CREATE TABLE IF NOT EXISTS startup_comments (
+        id SERIAL PRIMARY KEY,
+        startup_id INTEGER NOT NULL,
+        user_id INTEGER,
+        author_name TEXT NOT NULL,
+        author_username TEXT,
+        author_avatar TEXT,
+        content TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_startup_comments_startup ON startup_comments(startup_id);
+
+      CREATE TABLE IF NOT EXISTS startup_ratings (
+        id SERIAL PRIMARY KEY,
+        startup_id INTEGER NOT NULL,
+        user_id INTEGER,
+        idea_score NUMERIC(3, 1) DEFAULT 5.0,
+        execution_score NUMERIC(3, 1) DEFAULT 5.0,
+        design_score NUMERIC(3, 1) DEFAULT 5.0,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_startup_ratings_startup ON startup_ratings(startup_id);
+
       CREATE TABLE IF NOT EXISTS builder_jobs (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -1168,6 +1191,109 @@ export async function deleteProjectComment(id: number, userId?: number, isAdmin?
     queryStr += " RETURNING id";
     const res = await client.query(queryStr, params);
     return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
+
+export async function listStartupComments(startupId: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT * FROM startup_comments 
+       WHERE startup_id = $1 
+       ORDER BY created_at ASC`,
+      [startupId]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createStartupComment(data: {
+  startupId: number;
+  userId?: number;
+  authorName: string;
+  authorUsername?: string;
+  authorAvatar?: string;
+  content: string;
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO startup_comments 
+       (startup_id, user_id, author_name, author_username, author_avatar, content)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [
+        data.startupId,
+        data.userId || null,
+        data.authorName.trim(),
+        data.authorUsername?.trim() || null,
+        data.authorAvatar?.trim() || null,
+        data.content.trim(),
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function getStartupRatingsSummary(startupId: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT 
+        COUNT(*)::int as total_ratings,
+        COALESCE(AVG(idea_score), 5.0)::numeric(3, 1) as avg_idea,
+        COALESCE(AVG(execution_score), 5.0)::numeric(3, 1) as avg_execution,
+        COALESCE(AVG(design_score), 5.0)::numeric(3, 1) as avg_design
+       FROM startup_ratings 
+       WHERE startup_id = $1`,
+      [startupId]
+    );
+    const row = res.rows[0] || {};
+    const total = Number(row.total_ratings) || 0;
+    const avgIdea = Number(row.avg_idea) || 5.0;
+    const avgExecution = Number(row.avg_execution) || 5.0;
+    const avgDesign = Number(row.avg_design) || 5.0;
+    const overall = total > 0 ? Number(((avgIdea + avgExecution + avgDesign) / 3).toFixed(1)) : 5.0;
+    return {
+      totalRatings: total,
+      overall,
+      idea: avgIdea,
+      execution: avgExecution,
+      design: avgDesign,
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export async function createStartupRating(data: {
+  startupId: number;
+  userId?: number;
+  ideaScore: number;
+  executionScore: number;
+  designScore: number;
+}) {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `INSERT INTO startup_ratings 
+       (startup_id, user_id, idea_score, execution_score, design_score)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        data.startupId,
+        data.userId || null,
+        data.ideaScore,
+        data.executionScore,
+        data.designScore,
+      ]
+    );
+    return await getStartupRatingsSummary(data.startupId);
   } finally {
     client.release();
   }

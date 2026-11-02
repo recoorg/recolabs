@@ -43,6 +43,10 @@ import {
   listProjectComments,
   createProjectComment,
   deleteProjectComment,
+  listStartupComments,
+  createStartupComment,
+  getStartupRatingsSummary,
+  createStartupRating,
   listBuilderJobs,
   listUserJobs,
   createBuilderJob,
@@ -1021,6 +1025,131 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const deleted = await deleteProjectComment(id, user ? user.id : undefined, isAdmin);
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, deleted }));
+      return;
+    }
+
+    // 17D. STARTUP COMMENTS LIST: GET /api/network/startups/:id/comments or /api/network/startup-comments?startupId=:id
+    if (
+      req.method === "GET" &&
+      ((pathname.startsWith("/api/network/startups/") && pathname.endsWith("/comments")) ||
+       pathname === "/api/network/startup-comments")
+    ) {
+      let startupId = Number(searchParams.get("startupId") || searchParams.get("startup_id"));
+      if (!startupId) {
+        const match = pathname.match(/\/startups\/(\d+)\/comments/);
+        if (match) startupId = Number(match[1]);
+      }
+      if (!startupId || isNaN(startupId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startupId is required" }));
+        return;
+      }
+      const comments = await listStartupComments(startupId);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, comments }));
+      return;
+    }
+
+    // 17E. ADD STARTUP COMMENT: POST /api/network/startups/:id/comments or /api/network/startup-comments
+    if (
+      req.method === "POST" &&
+      ((pathname.startsWith("/api/network/startups/") && pathname.endsWith("/comments")) ||
+       pathname === "/api/network/startup-comments")
+    ) {
+      let startupId = Number(searchParams.get("startupId") || searchParams.get("startup_id"));
+      if (!startupId) {
+        const match = pathname.match(/\/startups\/(\d+)\/comments/);
+        if (match) startupId = Number(match[1]);
+      }
+      const body = await parseBody();
+      if (!startupId) startupId = Number(body.startupId || body.startup_id);
+      if (!startupId || isNaN(startupId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startupId is required" }));
+        return;
+      }
+      const content = String(body.content || "").trim();
+      if (!content) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Comment content is required" }));
+        return;
+      }
+
+      const user: any = getAuthUser();
+      const authorName = user?.name || String(body.authorName || body.author_name || "Community Builder").trim();
+      const authorUsername = user?.username || String(body.authorUsername || body.author_username || "").trim();
+      const authorAvatar = user?.avatar_url || body.authorAvatar || body.author_avatar || null;
+
+      const created = await createStartupComment({
+        startupId,
+        userId: user ? user.id : undefined,
+        authorName,
+        authorUsername,
+        authorAvatar,
+        content,
+      });
+
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, comment: created }));
+      return;
+    }
+
+    // 17F. GET STARTUP RATINGS SUMMARY: GET /api/network/startups/:id/ratings or /api/network/startup-ratings?startupId=:id
+    if (
+      req.method === "GET" &&
+      ((pathname.startsWith("/api/network/startups/") && pathname.endsWith("/ratings")) ||
+       pathname === "/api/network/startup-ratings")
+    ) {
+      let startupId = Number(searchParams.get("startupId") || searchParams.get("startup_id"));
+      if (!startupId) {
+        const match = pathname.match(/\/startups\/(\d+)\/ratings/);
+        if (match) startupId = Number(match[1]);
+      }
+      if (!startupId || isNaN(startupId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startupId is required" }));
+        return;
+      }
+      const ratings = await getStartupRatingsSummary(startupId);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, ratings }));
+      return;
+    }
+
+    // 17G. SUBMIT STARTUP FUNCTIONAL RATING: POST /api/network/startups/:id/ratings or /api/network/startup-ratings
+    if (
+      req.method === "POST" &&
+      ((pathname.startsWith("/api/network/startups/") && pathname.endsWith("/ratings")) ||
+       pathname === "/api/network/startup-ratings")
+    ) {
+      let startupId = Number(searchParams.get("startupId") || searchParams.get("startup_id"));
+      if (!startupId) {
+        const match = pathname.match(/\/startups\/(\d+)\/ratings/);
+        if (match) startupId = Number(match[1]);
+      }
+      const body = await parseBody();
+      if (!startupId) startupId = Number(body.startupId || body.startup_id);
+      if (!startupId || isNaN(startupId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startupId is required" }));
+        return;
+      }
+
+      const ideaScore = Math.max(1, Math.min(5, Number(body.ideaScore || body.idea || 5)));
+      const executionScore = Math.max(1, Math.min(5, Number(body.executionScore || body.execution || 5)));
+      const designScore = Math.max(1, Math.min(5, Number(body.designScore || body.design || 5)));
+
+      const user = getAuthUser();
+      const updatedSummary = await createStartupRating({
+        startupId,
+        userId: user ? user.id : undefined,
+        ideaScore,
+        executionScore,
+        designScore,
+      });
+
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, ratings: updatedSummary }));
       return;
     }
 
