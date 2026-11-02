@@ -93,14 +93,15 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Hero Bottom: Giant animated RECOLABS wordmark stage on screen */}
-      <div className="relative w-full min-h-[300px] sm:min-h-[360px] md:min-h-[420px] mt-4 overflow-hidden flex items-end justify-center">
+      {/* Hero Bottom: Giant animated RECOLABS wordmark stage on screen with all characters completely in front */}
+      <div className="relative w-full min-h-[360px] sm:min-h-[420px] md:min-h-[480px] mt-4 overflow-visible flex items-end justify-center">
         <DoodleCrewFooter
           onlyWordmarkStage={true}
           wordmark="RECOLABS"
           brand="reco labs"
           palette={{
             background: "transparent",
+            paper: isDark ? "#09090b" : "#ffffff",
             ink: isDark ? "#ffffff" : "#09090b",
             accent: "#FA5D00",
           }}

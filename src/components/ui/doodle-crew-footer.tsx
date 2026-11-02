@@ -66,7 +66,7 @@ export type Seat = "front" | "top" | "behind"
 export const seatPoint = (seat: Seat, letterX: number, letterW: number, cap: number, offset: number, scale: number): { x: number; y: number } => {
   const x = letterX + letterW * (0.5 + (Number.isFinite(offset) ? offset : 0))
   if (seat === "top") return { x, y: -cap }
-  if (seat === "behind") return { x, y: -cap + 30 * scale }
+  if (seat === "behind") return { x, y: 0 }
   return { x, y: 0 }
 }
 
@@ -248,7 +248,7 @@ export interface DoodleCrewFooterProps {
   doodleCount?: number
   /** `auto` follows the page's --color-background / --color-foreground tokens. */
   preset?: DoodleCrewPreset
-  palette?: { background?: string; ink?: string; accent?: string }
+  palette?: { background?: string; ink?: string; accent?: string; paper?: string }
   /** Display face for the wordmark. Heavy grotesks stamp best. */
   fontFamily?: string
   /** Face for the tagline and blurb. */
@@ -264,7 +264,7 @@ export interface DoodleCrewFooterProps {
   onlyWordmarkStage?: boolean
 }
 
-const PRESETS = {
+const PRESETS: Record<string, { background: string; ink: string; accent: string; paper?: string }> = {
   auto: { background: "var(--color-background, #ffffff)", ink: "var(--color-foreground, #0d0d0d)", accent: "#ff6b2c" },
   paper: { background: "#ffffff", ink: "#0d0d0d", accent: "#ff6b2c" },
   night: { background: "#0e0e10", ink: "#f4f1ea", accent: "#ff8a3d" },
@@ -277,7 +277,7 @@ const DEFAULT_CREW: CrewMember[] = [
   { kind: "bird", letter: 1, seat: "top", offset: 0.02, name: "Pip", says: "Tweet us! Seriously." },
   { kind: "mushroom", letter: 2, seat: "front", offset: 0.12, scale: 0.95, name: "Morel", says: "I'm a fun guy." },
   { kind: "kid", letter: 4, seat: "top", offset: -0.05, name: "Juno", says: "Up here! Best seat in the house." },
-  { kind: "ghost", letter: 6, seat: "behind", offset: 0, name: "Boo", says: "Boo! …sorry. Hi." },
+  { kind: "ghost", letter: 6, seat: "front", offset: 0.12, name: "Boo", says: "Boo! …sorry. Hi." },
   { kind: "cat", letter: 7, seat: "front", offset: 0.42, flip: true, name: "Patch", says: "Arr. Nice cursor." },
 ]
 
@@ -437,7 +437,7 @@ const ART: { [k: string]: Art } = {
   ghost: {
     k: 1.3,
     box: { l: -26, r: 26, t: -70, b: 0 },
-    seat: "behind",
+    seat: "front",
     eyes: [
       { x: -8, y: -44, r: 6.5, pupil: 3.2, max: 3 },
       { x: 9, y: -44, r: 6.5, pupil: 3.2, max: 3 },
@@ -953,7 +953,9 @@ export default function DoodleCrewFooter({
   }
 
   const hatch = "url(#" + uid + "-hatch)"
+  const paper = (colors as any).paper || (colors.background && colors.background !== "transparent" ? colors.background : "#ffffff")
   const vars = {
+    "--dcf-paper": paper,
     "--dcf-bg": colors.background,
     "--dcf-ink": colors.ink,
     "--dcf-accent": colors.accent,
@@ -1093,7 +1095,7 @@ export default function DoodleCrewFooter({
                   <ellipse key={k} className="dcf-pebble dcf-fade" cx={pb.x} cy={pb.y} rx={pb.r * 1.5} ry={pb.r} style={{ "--d": tl.ground + 600 + "ms" } as React.CSSProperties} />
                 ))}
               </g>
-              {placed.filter((p) => p.seat === "behind").map((p) => renderCrew(p, "body"))}
+              
             </g>
 
             {chars.map((c, i) =>
@@ -1115,8 +1117,8 @@ export default function DoodleCrewFooter({
             )}
 
             <g ref={(el) => void (crewLayerRefs.current[1] = el)}>
-              {placed.filter((p) => p.seat === "behind").map((p) => renderCrew(p, "front"))}
-              {placed.filter((p) => p.seat !== "behind").map((p) => renderCrew(p, "body"))}
+              {placed.map((p) => renderCrew(p, "body"))}
+              {placed.map((p) => renderCrew(p, "front"))}
             </g>
 
             {interactive &&
@@ -1244,8 +1246,8 @@ export default function DoodleCrewFooter({
 
 const CSS =
   ".dcf{position:relative;isolation:isolate;overflow:hidden;overflow:clip;width:100%;box-sizing:border-box;display:flex;flex-direction:column;background:var(--dcf-bg);color:var(--dcf-ink);font-family:'Geist Mono',monospace,ui-monospace,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;--dcf-soft:color-mix(in oklab,var(--dcf-ink) 62%,var(--dcf-bg));--dcf-line:color-mix(in oklab,var(--dcf-ink) 14%,var(--dcf-bg));--dcf-pad:clamp(16px,4vw,56px)}" +
-  ".dcf-wordmark-only{min-height:unset;padding-top:0;padding-bottom:0;background:transparent;justify-content:center}" +
-  ".dcf-wordmark-only .dcf-world{padding-top:0;padding-bottom:0;justify-content:center}" +
+  ".dcf-wordmark-only{min-height:unset;padding-top:0;padding-bottom:0;background:transparent;justify-content:center;overflow:visible}" +
+  ".dcf-wordmark-only .dcf-world{padding-top:0;padding-bottom:0;justify-content:center;overflow:visible}" +
   ":where(.dcf) *,:where(.dcf) *::before,:where(.dcf) *::after{box-sizing:border-box}" +
   ":where(.dcf) a{color:inherit;text-decoration:none}" +
   ":where(.dcf) button{appearance:none;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer}" +
@@ -1274,14 +1276,14 @@ const CSS =
   ".dcf-stage{position:relative;z-index:1}" +
   ".dcf-svg{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}" +
   ".dcf-svg text{fill:var(--dcf-ink)}" +
-  ".dcf-art{fill:var(--dcf-bg);stroke:var(--dcf-ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}" +
+  ".dcf-art{fill:var(--dcf-paper,var(--dcf-bg));stroke:var(--dcf-ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}" +
   ".dcf-art .n{fill:none}.dcf-art .k{fill:var(--dcf-ink)}.dcf-art .a{fill:var(--dcf-accent)}.dcf-art .o{fill:#ff9f1c}.dcf-art .r{fill:#ff4d4d}" +
   ".dcf-art .thin{stroke-width:1.5}.dcf-art .thick{stroke-width:3.4}" +
   ".dcf-art .dcf-glint{fill:var(--dcf-bg);stroke:none}" +
   ".dcf-art .dcf-shadow{fill:var(--dcf-ink);stroke:none;opacity:.14}" +
   ".dcf-ground path{fill:none;stroke:var(--dcf-ink);stroke-width:2.4;stroke-linecap:round}" +
   ".dcf-ground .dcf-tufts{stroke-width:1.8}" +
-  ".dcf-pebble{fill:var(--dcf-bg);stroke:var(--dcf-ink);stroke-width:1.6}" +
+  ".dcf-pebble{fill:var(--dcf-paper,var(--dcf-bg));stroke:var(--dcf-ink);stroke-width:1.6}" +
   ".dcf-dust{fill:none;stroke:var(--dcf-ink);stroke-width:3;stroke-linecap:round;opacity:0}" +
   ".dcf-hit{fill:transparent;stroke:none;cursor:pointer;outline:none}" +
   ".dcf-hit:focus-visible{stroke:var(--dcf-ink);stroke-width:2.5;stroke-dasharray:6 6}" +
@@ -1342,7 +1344,7 @@ const CSS =
   ".dcf[data-play='1'] .dcf-fade{animation:dcf-fade .6s ease-out var(--d) both}" +
   ".dcf[data-play='1'] .dcf-arrive-front{animation:dcf-rise-up .75s cubic-bezier(.3,1.5,.5,1) var(--d) both}" +
   ".dcf[data-play='1'] .dcf-arrive-top{animation:dcf-plop .8s cubic-bezier(.3,.9,.4,1) var(--d) both}" +
-  ".dcf[data-play='1'] .dcf-arrive-behind{animation:dcf-peek .9s cubic-bezier(.3,1.4,.5,1) var(--d) both}" +
+  ".dcf[data-play='1'] .dcf-arrive-behind{animation:dcf-rise-up .75s cubic-bezier(.3,1.5,.5,1) var(--d) both}" +
   ".dcf[data-play='1'] .dcf-word{animation:dcf-word .6s cubic-bezier(.2,.8,.3,1) var(--d) both}" +
   ".dcf[data-play='1'] .dcf-pop{animation:dcf-popin .55s cubic-bezier(.3,1.6,.5,1) var(--d) both}" +
   ".dcf[data-play='1'] .dcf-rise{animation:dcf-fadeup .7s cubic-bezier(.2,.8,.3,1) var(--d) both}" +
