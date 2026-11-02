@@ -152,7 +152,6 @@ export function HackathonsPage() {
       source: "hackclub",
     }))
 
-    // Put Builder-Hosted hackathons prominently at the top, followed by Hack Club events
     return [...normalizedBuilders, ...normalizedHackClub]
   }, [builderEvents, hackClubUpcoming, hackClubAll, endpointMode])
 
@@ -199,64 +198,64 @@ export function HackathonsPage() {
   const paginatedEvents = filteredEvents.slice(0, visibleCount)
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-[#0a0a0a] dark:text-[#f4f4f5] pt-28 sm:pt-36 pb-24 px-4 sm:px-8">
+    <div className="min-h-screen bg-white dark:bg-[#09090b] text-zinc-950 dark:text-zinc-50 pt-28 sm:pt-36 pb-24 px-4 sm:px-8">
       <div className="max-w-6xl mx-auto">
         
-        {/* Tracwell Centered Hero with Two CTAs */}
-        <div className="text-center max-w-3xl mx-auto pb-10 border-b border-[#e5e5e5] dark:border-zinc-800">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#f4f4f5] dark:bg-zinc-900 border border-[#e5e5e5] dark:border-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-4">
-            <span className="w-2 h-2 rounded-full bg-[#357dff]" />
+        {/* Editorial Header */}
+        <div className="text-center max-w-3xl mx-auto pb-10 border-b editorial-hairline">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono text-[11px] font-bold uppercase tracking-wider text-[#FA5D00] shadow-sm mb-4">
+            <span className="w-2 h-2 rounded-full bg-[#FA5D00] animate-pulse" />
             <span>GLOBAL SPRINT CALENDAR · RECO LABS & HACK CLUB</span>
           </div>
 
-          <h1 className="font-sans text-4xl sm:text-6xl font-semibold tracking-[-0.03em] leading-[1.08] text-[#0a0a0a] dark:text-white">
-            Hackathons Worldwide.
+          <h1 className="font-serif text-5xl sm:text-7xl lg:text-8xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-none">
+            Hackathons Worldwide<span className="text-[#FA5D00]">.</span>
           </h1>
 
-          <p className="font-sans text-base sm:text-lg font-medium leading-relaxed text-[#0a0a0a]/80 dark:text-zinc-300 mt-4">
+          <p className="font-sans text-base sm:text-lg text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed mt-4">
             A combined directory of community hackathons hosted by Reco Labs builders and student hackathons across the Hack Club aggregate.
           </p>
 
-          {/* Action CTAs: Primary Pill + Secondary Pill */}
+          {/* Action CTAs */}
           <div className="mt-8 flex flex-wrap justify-center items-center gap-3">
             <Link
               to="/dashboard?tab=post-hackathon"
-              className="h-12 px-7 rounded-full bg-[#357dff] hover:bg-[#2563eb] text-white font-sans text-sm font-semibold tracking-normal transition-all shadow-sm active:scale-95 inline-flex items-center gap-2"
+              className="px-8 py-3.5 rounded-full bg-[#FA5D00] hover:bg-[#e05300] text-black font-mono text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-95 inline-flex items-center gap-2"
             >
               <Trophy className="w-4 h-4" />
               <span>Host a Hackathon</span>
               <ArrowUpRight className="w-4 h-4" />
             </Link>
 
-            <div className="inline-flex items-center p-1 rounded-full bg-[#f4f4f5] dark:bg-zinc-800/80 border border-[#e5e5e5] dark:border-zinc-700">
+            <div className="inline-flex items-center p-1 rounded-full border-2 border-black dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setEndpointMode("upcoming")}
-                className={`h-10 px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-5 py-2 rounded-full uppercase tracking-wider transition-all cursor-pointer ${
                   endpointMode === "upcoming"
-                    ? "bg-white dark:bg-zinc-900 text-[#0a0a0a] dark:text-white shadow-sm"
+                    ? "bg-[#FA5D00] text-black shadow-sm"
                     : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
                 }`}
               >
-                Upcoming Sprints ({builderEvents.length + hackClubUpcoming.length})
+                Upcoming ({builderEvents.length + hackClubUpcoming.length})
               </button>
               <button
                 type="button"
                 onClick={() => setEndpointMode("all")}
-                className={`h-10 px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-5 py-2 rounded-full uppercase tracking-wider transition-all cursor-pointer ${
                   endpointMode === "all"
-                    ? "bg-white dark:bg-zinc-900 text-[#0a0a0a] dark:text-white shadow-sm"
+                    ? "bg-[#FA5D00] text-black shadow-sm"
                     : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
                 }`}
               >
-                All Events Archive
+                All Archive
               </button>
             </div>
           </div>
         </div>
 
-        {/* Directory Search & Filters (Tracwell Hairline Container) */}
-        <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#e5e5e5] dark:border-zinc-800">
+        {/* Directory Search & Filters */}
+        <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b editorial-hairline font-mono">
           
           {/* Search Box */}
           <div className="relative w-full md:w-80">
@@ -266,11 +265,11 @@ export function HackathonsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search hackathons, cities, countries..."
-              className="w-full h-11 pl-10 pr-4 rounded-full border border-[#e5e5e5] dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-[#0a0a0a] dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#357dff] transition-colors"
+              className="w-full h-11 pl-10 pr-4 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#FA5D00] transition-colors"
             />
           </div>
 
-          {/* Source & Attendance Filter Pills */}
+          {/* Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -278,10 +277,10 @@ export function HackathonsPage() {
                 setSourceFilter("ALL")
                 setAttendanceFilter("ALL")
               }}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 sourceFilter === "ALL" && attendanceFilter === "ALL"
-                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-[#FA5D00] text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               All Sources
@@ -290,10 +289,10 @@ export function HackathonsPage() {
             <button
               type="button"
               onClick={() => setSourceFilter(sourceFilter === "BUILDER" ? "ALL" : "BUILDER")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 sourceFilter === "BUILDER"
-                  ? "bg-[#357dff] text-white shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-[#FA5D00] text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               ✨ Builder Hosted ({builderEvents.length})
@@ -302,10 +301,10 @@ export function HackathonsPage() {
             <button
               type="button"
               onClick={() => setSourceFilter(sourceFilter === "HACKCLUB" ? "ALL" : "HACKCLUB")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 sourceFilter === "HACKCLUB"
-                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               Hack Club
@@ -314,10 +313,10 @@ export function HackathonsPage() {
             <button
               type="button"
               onClick={() => setAttendanceFilter(attendanceFilter === "VIRTUAL" ? "ALL" : "VIRTUAL")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 attendanceFilter === "VIRTUAL"
-                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               Virtual
@@ -326,10 +325,10 @@ export function HackathonsPage() {
             <button
               type="button"
               onClick={() => setAttendanceFilter(attendanceFilter === "IN_PERSON" ? "ALL" : "IN_PERSON")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 attendanceFilter === "IN_PERSON"
-                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               In-Person
@@ -338,10 +337,10 @@ export function HackathonsPage() {
             <button
               type="button"
               onClick={() => setAttendanceFilter(attendanceFilter === "APAC" ? "ALL" : "APAC")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 attendanceFilter === "APAC"
                   ? "bg-purple-600 text-white shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               APAC / India
@@ -350,29 +349,29 @@ export function HackathonsPage() {
         </div>
 
         {/* Counter Info */}
-        <div className="mt-4 flex items-center justify-between text-xs text-zinc-500">
+        <div className="mt-4 flex items-center justify-between font-mono text-xs text-zinc-500">
           <span>Showing {filteredEvents.length} hackathons ({builderEvents.length} Community Hosted)</span>
-          <Link to="/dashboard?tab=post-hackathon" className="text-[#357dff] hover:underline font-semibold">
+          <Link to="/dashboard?tab=post-hackathon" className="text-[#FA5D00] hover:underline font-bold">
             + Host your hackathon here
           </Link>
         </div>
 
-        {/* Live Grid (Tracwell 18px Cards) */}
-        <div className="mt-8">
+        {/* Live Grid */}
+        <div className="mt-8 font-mono">
           {loading ? (
             <div className="py-24 text-center flex flex-col items-center justify-center">
-              <RefreshCw className="w-6 h-6 text-[#357dff] animate-spin mb-3" />
+              <RefreshCw className="w-6 h-6 text-[#FA5D00] animate-spin mb-3" />
               <p className="text-xs text-zinc-500">
                 Aggregating Hack Club network and Reco Labs community hackathons...
               </p>
             </div>
           ) : error ? (
-            <div className="py-16 text-center rounded-[18px] border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-xs">
+            <div className="py-16 text-center rounded-3xl border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400 text-xs">
               {error}
             </div>
           ) : paginatedEvents.length === 0 ? (
-            <div className="py-20 text-center rounded-[18px] border border-[#e5e5e5] dark:border-zinc-800 bg-[#fafafa] dark:bg-zinc-900/30">
-              <p className="text-xl font-semibold text-zinc-800 dark:text-zinc-200">No hackathons match this filter.</p>
+            <div className="py-20 text-center rounded-3xl border editorial-hairline bg-zinc-50/50 dark:bg-zinc-900/30">
+              <p className="font-serif text-2xl text-zinc-800 dark:text-zinc-200">No hackathons match this filter.</p>
               <p className="text-xs text-zinc-500 mt-2">
                 Try selecting &ldquo;All Sources&rdquo; or clearing your search keywords.
               </p>
@@ -382,11 +381,11 @@ export function HackathonsPage() {
               {paginatedEvents.map((event) => (
                 <div
                   key={event.id}
-                  className="group flex flex-col justify-between rounded-[18px] border border-[#e5e5e5] dark:border-zinc-800 bg-white dark:bg-[#0c0c0e] hover:border-[#357dff] dark:hover:border-[#357dff] transition-all overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-md"
+                  className="group flex flex-col justify-between rounded-3xl border editorial-hairline bg-white dark:bg-zinc-900/40 hover:border-[#FA5D00] transition-all overflow-hidden shadow-xs hover:shadow-md"
                 >
                   {/* Banner Image */}
                   {event.banner ? (
-                    <div className="relative w-full h-40 bg-zinc-100 dark:bg-zinc-800 overflow-hidden border-b border-[#e5e5e5] dark:border-zinc-800">
+                    <div className="relative w-full h-40 bg-zinc-100 dark:bg-zinc-800 overflow-hidden border-b editorial-hairline">
                       <img
                         src={event.banner}
                         alt={event.name}
@@ -398,7 +397,7 @@ export function HackathonsPage() {
                       />
                       <div className="absolute top-3 right-3 flex items-center gap-1.5">
                         {event.source === "builder" ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-[#357dff] text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold uppercase tracking-wider shadow-sm">
                             BUILDER HOSTED
                           </span>
                         ) : (
@@ -414,12 +413,12 @@ export function HackathonsPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full h-24 bg-gradient-to-r from-blue-500/10 via-zinc-100 to-amber-500/10 dark:from-zinc-900 dark:to-zinc-800 p-4 flex items-center justify-between border-b border-[#e5e5e5] dark:border-zinc-800">
-                      <span className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold">
+                    <div className="w-full h-24 bg-gradient-to-r from-[#FA5D00]/15 via-zinc-100 to-amber-500/10 dark:from-zinc-900 dark:to-zinc-800 p-4 flex items-center justify-between border-b editorial-hairline">
+                      <span className="text-[11px] text-zinc-500 uppercase tracking-wider font-bold">
                         {event.source === "builder" ? "RECO LABS COMMUNITY" : "YOUTH HACKATHON"}
                       </span>
                       {event.source === "builder" ? (
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#357dff] text-white text-[10px] font-bold uppercase">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold uppercase">
                           BUILDER
                         </span>
                       ) : (
@@ -430,7 +429,7 @@ export function HackathonsPage() {
                     </div>
                   )}
 
-                  {/* Body Details (28px internal padding) */}
+                  {/* Body Details */}
                   <div className="p-6 flex-1 flex flex-col justify-between">
                     <div>
                       {/* Logo + Title */}
@@ -439,20 +438,20 @@ export function HackathonsPage() {
                           <img
                             src={event.logo}
                             alt=""
-                            className="w-10 h-10 rounded-xl object-contain bg-zinc-50 dark:bg-zinc-800 p-1 flex-none border border-[#e5e5e5] dark:border-zinc-700"
+                            className="w-10 h-10 rounded-xl object-contain bg-zinc-50 dark:bg-zinc-800 p-1 flex-none border editorial-hairline"
                             loading="lazy"
                             onError={(e) => {
                               (e.target as HTMLElement).style.display = "none"
                             }}
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-[#357dff] font-bold text-sm flex-none">
+                          <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/60 border border-orange-300 dark:border-orange-800 flex items-center justify-center text-[#FA5D00] font-bold text-sm flex-none">
                             {event.name?.charAt(0) || "H"}
                           </div>
                         )}
                         
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-[#0a0a0a] dark:text-white group-hover:text-[#357dff] transition-colors line-clamp-1 leading-snug">
+                          <h3 className="font-serif text-2xl text-zinc-950 dark:text-white group-hover:text-[#FA5D00] transition-colors line-clamp-1 leading-snug">
                             {event.name}
                           </h3>
                           {event.author_name && (
@@ -464,16 +463,16 @@ export function HackathonsPage() {
                       </div>
 
                       {event.tagline && (
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 mt-2 leading-relaxed">
+                        <p className="font-sans text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 mt-2 leading-relaxed">
                           {event.tagline}
                         </p>
                       )}
 
                       {/* Meta: Dates & Location */}
-                      <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-400 mt-4 pt-3 border-t border-[#e5e5e5] dark:border-zinc-800">
+                      <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-400 mt-4 pt-3 border-t editorial-hairline font-mono">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-3.5 h-3.5 text-[#357dff] flex-none" />
-                          <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                          <Calendar className="w-3.5 h-3.5 text-[#FA5D00] flex-none" />
+                          <span className="font-bold text-zinc-800 dark:text-zinc-200">
                             {formatEventDate(event.start, event.end)}
                           </span>
                         </div>
@@ -492,7 +491,7 @@ export function HackathonsPage() {
                         {event.prize_pool && (
                           <div className="flex items-center gap-2">
                             <Trophy className="w-3.5 h-3.5 text-amber-500 flex-none" />
-                            <span className="font-semibold text-amber-600 dark:text-amber-400">
+                            <span className="font-bold text-amber-600 dark:text-amber-400">
                               Prize Pool: {event.prize_pool}
                             </span>
                           </div>
@@ -501,13 +500,13 @@ export function HackathonsPage() {
                     </div>
 
                     {/* Footer: External Website / Register Trigger */}
-                    <div className="mt-6 pt-4 border-t border-[#e5e5e5] dark:border-zinc-800 flex items-center justify-between">
+                    <div className="mt-6 pt-4 border-t editorial-hairline flex items-center justify-between">
                       {event.website ? (
                         <a
                           href={event.website}
                           target="_blank"
                           rel="noreferrer"
-                          className="h-9 px-4 rounded-full bg-[#f4f4f5] dark:bg-zinc-800 hover:bg-[#357dff] hover:text-white dark:hover:bg-[#357dff] text-zinc-800 dark:text-zinc-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                          className="px-4 py-2 rounded-full bg-[#FA5D00] hover:bg-[#e05300] text-black text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <span>Register</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
@@ -518,7 +517,7 @@ export function HackathonsPage() {
 
                       <div className="flex items-center gap-1.5">
                         {event.apac && (
-                          <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-semibold">
+                          <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-bold">
                             APAC
                           </span>
                         )}
@@ -536,7 +535,7 @@ export function HackathonsPage() {
               <button
                 type="button"
                 onClick={() => setVisibleCount((prev) => prev + 30)}
-                className="h-12 px-8 rounded-full bg-[#0a0a0a] text-white dark:bg-white dark:text-black text-xs font-semibold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+                className="px-8 py-3.5 rounded-full bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
               >
                 Load More Hackathons ({filteredEvents.length - visibleCount} remaining)
               </button>

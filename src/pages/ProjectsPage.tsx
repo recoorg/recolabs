@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import confetti from "canvas-confetti"
 import {
   Search,
@@ -160,8 +160,31 @@ export function ProjectsPage() {
     fetchDatabaseProjects()
   }, [])
 
+  // URL Search Params for deep linking every project (?p=ID)
+  const [searchParams, setSearchParams] = useSearchParams()
+
   // Selected project for detail modal + recommendations below
   const [selectedProject, setSelectedProject] = React.useState<CatalogProject | null>(null)
+
+  const selectProjectWithUrl = React.useCallback((proj: CatalogProject | null) => {
+    setSelectedProject(proj)
+    if (proj?.id) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev)
+        next.set("p", String(proj.id))
+        return next
+      })
+    } else {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete("p")
+        next.delete("project")
+        next.delete("id")
+        return next
+      })
+    }
+  }, [setSearchParams])
+
 
   // Upvotes & Ratings state for projects
   const [upvotesMap, setUpvotesMap] = React.useState<Record<string, number>>({})
@@ -649,6 +672,16 @@ export function ProjectsPage() {
     ]
     return combined
   }, [projects, liveAds])
+
+  // Synchronize deep-linked project when URL (?p=ID) or allProjects changes
+  React.useEffect(() => {
+    const pParam = searchParams.get("p") || searchParams.get("project") || searchParams.get("id")
+    if (!pParam || allProjects.length === 0) return
+    const match = allProjects.find((p) => String(p.id) === String(pParam))
+    if (match && (!selectedProject || String(selectedProject.id) !== String(match.id))) {
+      setSelectedProject(match)
+    }
+  }, [searchParams, allProjects])
 
 // Recommendations computed for the currently selected project
   const recommendations = React.useMemo(() => {
@@ -1309,7 +1342,7 @@ export function ProjectsPage() {
                     return (
                       <div
                         key={p.id}
-                        onClick={() => setSelectedProject(p)}
+                        onClick={() => selectProjectWithUrl(p)}
                         className="group relative rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] overflow-hidden shadow-sm hover:shadow-xl hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between cursor-pointer"
                       >
                         {/* Visual Card Canvas Mockup */}
@@ -1441,14 +1474,14 @@ export function ProjectsPage() {
       {selectedProject && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in overflow-y-auto"
-          onClick={() => setSelectedProject(null)}
+          onClick={() => selectProjectWithUrl(null)}
         >
           {/* Floating Previous Project Navigation (Desktop) */}
           {prevProject && (
             <div 
               onClick={(e) => {
                 e.stopPropagation()
-                setSelectedProject(prevProject)
+                selectProjectWithUrl(prevProject)
               }}
               className="hidden xl:flex flex-col items-center gap-1.5 fixed left-6 top-1/2 -translate-y-1/2 z-50 cursor-pointer group select-none"
             >
@@ -1477,7 +1510,7 @@ export function ProjectsPage() {
             <div 
               onClick={(e) => {
                 e.stopPropagation()
-                setSelectedProject(nextProject)
+                selectProjectWithUrl(nextProject)
               }}
               className="hidden xl:flex flex-col items-center gap-1.5 fixed right-6 top-1/2 -translate-y-1/2 z-50 cursor-pointer group select-none"
             >
@@ -1520,7 +1553,7 @@ export function ProjectsPage() {
               {/* Share / More Button */}
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(selectedProject.url || window.location.href)
+                  navigator.clipboard.writeText(`${window.location.origin}/projects?p=${selectedProject.id}`)
                   setCopiedLinkNotice(true)
                   setTimeout(() => setCopiedLinkNotice(false), 2000)
                 }}
@@ -1532,7 +1565,7 @@ export function ProjectsPage() {
 
               {/* Close Button */}
               <button
-                onClick={() => setSelectedProject(null)}
+                onClick={() => selectProjectWithUrl(null)}
                 title="Close"
                 className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-750 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors flex items-center justify-center cursor-pointer shadow-xs"
               >
@@ -1612,6 +1645,30 @@ export function ProjectsPage() {
                     <span className="opacity-80">
                       {upvotesMap[String(selectedProject.id)] || selectedProject.stars || 1}
                     </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const shareUrl = `${window.location.origin}/projects?p=${selectedProject.id}`
+                      navigator.clipboard.writeText(shareUrl)
+                      setCopiedLinkNotice(true)
+                      setTimeout(() => setCopiedLinkNotice(false), 2200)
+                    }}
+                    className="px-4 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    title="Copy unique link to this project"
+                  >
+                    {copiedLinkNotice ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-emerald-500 font-bold">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="w-3.5 h-3.5 text-[#FA5D00]" />
+                        <span>Share Link</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

@@ -33,9 +33,13 @@ export function FooterWrapper() {
     return () => observer.disconnect()
   }, [])
 
-  // Hide global footer on desktop catalogue app (/projects) so sidebar and cards extend full height
+  // Hide global footer on desktop catalogue app (/projects) and Dashboard (/dashboard)
   // Kept after all hooks to strictly adhere to React rules of hooks
-  if (location.pathname.startsWith("/projects") || location.pathname.startsWith("/project")) {
+  if (
+    location.pathname.startsWith("/projects") ||
+    location.pathname.startsWith("/project") ||
+    location.pathname.startsWith("/dashboard")
+  ) {
     return null
   }
 

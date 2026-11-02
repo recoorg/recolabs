@@ -145,7 +145,6 @@ export function JobsPage() {
       }
     })
 
-    // Priority: Direct Builder Postings first
     return [...normalizedBuilders, ...normalizedGoogle]
   }, [builderJobs, googleJobs])
 
@@ -173,29 +172,29 @@ export function JobsPage() {
   }, [unifiedJobs, searchQuery, filterType])
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-[#0a0a0a] dark:text-[#f4f4f5] pt-28 sm:pt-36 pb-24 px-4 sm:px-8">
+    <div className="min-h-screen bg-white dark:bg-[#09090b] text-zinc-950 dark:text-zinc-50 pt-28 sm:pt-36 pb-24 px-4 sm:px-8">
       <div className="max-w-6xl mx-auto">
         
-        {/* Tracwell Centered Hero with Two CTAs */}
-        <div className="text-center max-w-3xl mx-auto pb-10 border-b border-[#e5e5e5] dark:border-zinc-800">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#f4f4f5] dark:bg-zinc-900 border border-[#e5e5e5] dark:border-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-4">
-            <span className="w-2 h-2 rounded-full bg-[#357dff]" />
+        {/* Editorial Header */}
+        <div className="text-center max-w-3xl mx-auto pb-10 border-b editorial-hairline">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono text-[11px] font-bold uppercase tracking-wider text-[#FA5D00] shadow-sm mb-4">
+            <span className="w-2 h-2 rounded-full bg-[#FA5D00] animate-pulse" />
             <span>DIRECT BUILDER ROLES & CURATED JOBS</span>
           </div>
 
-          <h1 className="font-sans text-4xl sm:text-6xl font-semibold tracking-[-0.03em] leading-[1.08] text-[#0a0a0a] dark:text-white">
-            Developer Opportunities.
+          <h1 className="font-serif text-5xl sm:text-7xl lg:text-8xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-none">
+            Developer Opportunities<span className="text-[#FA5D00]">.</span>
           </h1>
 
-          <p className="font-sans text-base sm:text-lg font-medium leading-relaxed text-[#0a0a0a]/80 dark:text-zinc-300 mt-4">
-            High-velocity software roles, hardware gigs, and paid internships posted directly by founders or indexed across developer tool companies.
+          <p className="font-sans text-base sm:text-lg text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed mt-4">
+            High-velocity software roles, hardware rigs, and paid internships posted directly by founders or indexed across developer tool companies.
           </p>
 
-          {/* Action CTAs: Primary Pill + Secondary Pill */}
+          {/* Action CTAs */}
           <div className="mt-8 flex flex-wrap justify-center items-center gap-3">
             <Link
               to="/dashboard?tab=post-job"
-              className="h-12 px-7 rounded-full bg-[#357dff] hover:bg-[#2563eb] text-white font-sans text-sm font-semibold tracking-normal transition-all shadow-sm active:scale-95 inline-flex items-center gap-2"
+              className="px-8 py-3.5 rounded-full bg-[#FA5D00] hover:bg-[#e05300] text-black font-mono text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-95 inline-flex items-center gap-2"
             >
               <Briefcase className="w-4 h-4" />
               <span>Post an Opening</span>
@@ -203,8 +202,8 @@ export function JobsPage() {
             </Link>
 
             <Link
-              to="/dashboard?tab=my-jobs"
-              className="h-12 px-7 rounded-full bg-[#f4f4f5] dark:bg-zinc-800 hover:bg-[#eaeaea] dark:hover:bg-zinc-700 text-[#18181b] dark:text-white font-sans text-sm font-semibold tracking-normal transition-all active:scale-95 inline-flex items-center gap-2"
+              to="/dashboard?tab=jobs"
+              className="px-7 py-3.5 rounded-full border-2 border-black dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 hover:border-[#FA5D00] text-zinc-800 dark:text-zinc-200 font-mono text-xs font-bold uppercase tracking-wider transition-all active:scale-95 inline-flex items-center gap-2"
             >
               <span>Manage Postings</span>
             </Link>
@@ -212,7 +211,7 @@ export function JobsPage() {
         </div>
 
         {/* Directory Controls: Search & Category Pills */}
-        <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#e5e5e5] dark:border-zinc-800">
+        <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b editorial-hairline font-mono">
           
           {/* Active Search Input */}
           <form onSubmit={handleSearchSubmit} className="relative w-full md:w-96">
@@ -221,8 +220,8 @@ export function JobsPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search title, tech stack (e.g. React, Rust, AI)..."
-              className="w-full h-11 pl-10 pr-20 rounded-full border border-[#e5e5e5] dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-[#0a0a0a] dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#357dff] transition-colors"
+              placeholder="Search keyword (e.g. React, Rust, AI)..."
+              className="w-full h-11 pl-10 pr-20 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#FA5D00] transition-colors"
             />
             {searchQuery && (
               <button
@@ -240,10 +239,10 @@ export function JobsPage() {
             <button
               type="button"
               onClick={() => setFilterType("ALL")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 filterType === "ALL"
-                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-[#FA5D00] text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               All Roles
@@ -252,10 +251,10 @@ export function JobsPage() {
             <button
               type="button"
               onClick={() => setFilterType("DIRECT")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 filterType === "DIRECT"
-                  ? "bg-[#357dff] text-white shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-[#FA5D00] text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               ✨ Direct Guild ({builderJobs.length})
@@ -264,10 +263,10 @@ export function JobsPage() {
             <button
               type="button"
               onClick={() => setFilterType("REMOTE")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 filterType === "REMOTE"
-                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               Remote
@@ -276,10 +275,10 @@ export function JobsPage() {
             <button
               type="button"
               onClick={() => setFilterType("FULL_TIME")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 filterType === "FULL_TIME"
-                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               Full-time
@@ -288,10 +287,10 @@ export function JobsPage() {
             <button
               type="button"
               onClick={() => setFilterType("INTERNSHIP")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 filterType === "INTERNSHIP"
-                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               Internships
@@ -300,21 +299,21 @@ export function JobsPage() {
             <button
               type="button"
               onClick={() => setFilterType("CONTRACT")}
-              className={`h-9 px-4 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 filterType === "CONTRACT"
-                  ? "bg-[#0a0a0a] text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border border-[#e5e5e5] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 bg-transparent"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
               }`}
             >
               Contract
             </button>
 
-            {/* Optional SerpApi Key Configuration Trigger */}
+            {/* Optional SerpApi Key Settings Trigger */}
             <button
               type="button"
               onClick={() => setShowKeyModal(true)}
               title="Configure SerpApi Key"
-              className="w-9 h-9 rounded-full border border-[#e5e5e5] dark:border-zinc-800 text-zinc-500 hover:text-[#357dff] hover:border-[#357dff] transition-colors flex items-center justify-center cursor-pointer"
+              className="w-9 h-9 rounded-full border editorial-hairline text-zinc-500 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors flex items-center justify-center cursor-pointer"
             >
               <Key className="w-3.5 h-3.5" />
             </button>
@@ -322,26 +321,26 @@ export function JobsPage() {
         </div>
 
         {/* Counter Info */}
-        <div className="mt-4 flex items-center justify-between text-xs text-zinc-500">
+        <div className="mt-4 flex items-center justify-between font-mono text-xs text-zinc-500">
           <span>
-            {loading ? "Searching openings..." : `Showing ${filteredJobs.length} opportunities (${builderJobs.length} direct)`}
+            {loading ? "Searching live endpoints..." : `Showing ${filteredJobs.length} opportunities (${builderJobs.length} direct)`}
           </span>
-          <Link to="/dashboard?tab=post-job" className="text-[#357dff] hover:underline font-semibold">
-            + Post your engineering opening
+          <Link to="/dashboard?tab=post-job" className="text-[#FA5D00] hover:underline font-bold">
+            + Post your opening
           </Link>
         </div>
 
-        {/* Roles List (Tracwell 18px Card Rows) */}
-        <div className="mt-6 space-y-4">
+        {/* Roles List */}
+        <div className="mt-6 space-y-4 font-mono">
           {loading ? (
             <div className="py-24 text-center flex flex-col items-center justify-center">
-              <RefreshCw className="w-6 h-6 text-[#357dff] animate-spin mb-3" />
-              <p className="text-xs text-zinc-500">Loading verified engineering openings...</p>
+              <RefreshCw className="w-6 h-6 text-[#FA5D00] animate-spin mb-3" />
+              <p className="text-xs text-zinc-500">Loading verified openings...</p>
             </div>
           ) : filteredJobs.length === 0 ? (
-            <div className="py-20 text-center rounded-[18px] border border-[#e5e5e5] dark:border-zinc-800 bg-[#fafafa] dark:bg-zinc-900/30">
-              <p className="text-xl font-semibold text-zinc-800 dark:text-zinc-200">No jobs match this filter.</p>
-              <p className="text-xs text-zinc-500 mt-2">
+            <div className="py-20 text-center rounded-3xl border editorial-hairline bg-zinc-50/50 dark:bg-zinc-900/30">
+              <p className="font-serif text-2xl text-zinc-800 dark:text-zinc-200">No jobs match this filter.</p>
+              <p className="text-xs text-zinc-500 mt-2 font-mono">
                 Try switching to &ldquo;All Roles&rdquo; or clearing your search term.
               </p>
             </div>
@@ -349,16 +348,15 @@ export function JobsPage() {
             filteredJobs.map((job) => (
               <div
                 key={job.id}
-                className={`rounded-[18px] border p-6 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-md ${
+                className={`rounded-3xl border p-6 transition-all shadow-xs hover:shadow-md ${
                   job.source === "builder"
-                    ? "bg-white dark:bg-[#0c0c0e] border-blue-200 dark:border-blue-900/60 hover:border-[#357dff]"
-                    : "bg-white dark:bg-[#0c0c0e] border-[#e5e5e5] dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
+                    ? "bg-white dark:bg-zinc-900/60 border-orange-300 dark:border-orange-800/80 hover:border-[#FA5D00]"
+                    : "bg-white dark:bg-zinc-900/40 editorial-hairline hover:border-black dark:hover:border-zinc-600"
                 }`}
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
                   <div className="flex items-start gap-4 flex-1 min-w-0">
-                    {/* Company Logo / Placeholder */}
-                    <div className="w-12 h-12 rounded-xl bg-[#fafafa] dark:bg-zinc-800 border border-[#e5e5e5] dark:border-zinc-700 flex items-center justify-center overflow-hidden flex-none">
+                    <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border editorial-hairline flex items-center justify-center overflow-hidden flex-none">
                       {job.company_logo ? (
                         <img
                           src={job.company_logo}
@@ -367,44 +365,44 @@ export function JobsPage() {
                           onError={(e) => (e.currentTarget.style.display = "none")}
                         />
                       ) : (
-                        <Building2 className="w-6 h-6 text-[#357dff]" />
+                        <Building2 className="w-6 h-6 text-[#FA5D00]" />
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <h2 className="text-base font-semibold text-[#0a0a0a] dark:text-white truncate">
+                        <h2 className="font-serif text-2xl text-zinc-950 dark:text-white leading-tight truncate">
                           {job.title}
                         </h2>
 
                         {job.source === "builder" ? (
-                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#357dff] text-white">
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-black">
                             DIRECT GUILD POST
                           </span>
                         ) : (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#f4f4f5] dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                             VERIFIED
                           </span>
                         )}
 
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#fafafa] dark:bg-zinc-800/80 border border-[#e5e5e5] dark:border-zinc-700 text-zinc-600 dark:text-zinc-300">
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
                           {job.job_type}
                         </span>
                       </div>
 
                       <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500 flex-wrap">
-                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        <span className="font-bold text-zinc-800 dark:text-zinc-200">
                           {job.company_name}
                         </span>
                         <span>·</span>
                         <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-zinc-400" />
+                          <MapPin className="w-3 h-3 text-[#FA5D00]" />
                           {job.location}
                         </span>
                         {job.salary && (
                           <>
                             <span>·</span>
-                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                            <span className="font-bold text-[#FA5D00]">
                               {job.salary}
                             </span>
                           </>
@@ -417,7 +415,7 @@ export function JobsPage() {
                         )}
                       </div>
 
-                      <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                      <p className="mt-3 font-sans text-xs sm:text-[13px] text-zinc-700 dark:text-zinc-300 leading-relaxed line-clamp-2">
                         {job.description}
                       </p>
 
@@ -426,7 +424,7 @@ export function JobsPage() {
                           {job.skills.map((s, idx) => (
                             <span
                               key={idx}
-                              className="text-[10px] px-2 py-0.5 rounded-md bg-[#f4f4f5] dark:bg-zinc-800/80 border border-[#e5e5e5] dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-mono"
+                              className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-50 dark:bg-zinc-900 border editorial-hairline text-zinc-600 dark:text-zinc-400"
                             >
                               {s}
                             </span>
@@ -441,7 +439,7 @@ export function JobsPage() {
                       href={job.apply_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="h-11 px-6 rounded-full bg-[#357dff] hover:bg-[#2563eb] text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+                      className="px-6 py-2.5 rounded-full bg-[#FA5D00] hover:bg-[#e05300] text-black text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
                     >
                       <span>Apply Now</span>
                       <ArrowUpRight className="w-3.5 h-3.5" />
@@ -458,9 +456,9 @@ export function JobsPage() {
       {/* Optional SerpApi Key Modal */}
       {showKeyModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-[18px] bg-white dark:bg-[#0c0c0e] border border-[#e5e5e5] dark:border-zinc-800 p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-[#e5e5e5] dark:border-zinc-800">
-              <h3 className="text-sm font-semibold text-[#0a0a0a] dark:text-white">
+          <div className="w-full max-w-md rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#111113] p-6 shadow-2xl font-mono">
+            <div className="flex items-center justify-between pb-4 border-b editorial-hairline">
+              <h3 className="font-serif text-2xl text-zinc-950 dark:text-white">
                 Custom SerpApi Key
               </h3>
               <button
@@ -472,8 +470,8 @@ export function JobsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveKey} className="mt-4 space-y-4">
-              <p className="text-xs text-zinc-500 leading-relaxed">
+            <form onSubmit={handleSaveKey} className="mt-4 space-y-4 text-xs">
+              <p className="font-sans text-zinc-500 leading-relaxed">
                 Provide a SerpApi key to directly search Google Jobs with your own quotas. Leave blank to use public/curated endpoints.
               </p>
 
@@ -483,7 +481,7 @@ export function JobsPage() {
                   placeholder="Paste your SerpApi key here..."
                   value={serpApiKey}
                   onChange={(e) => setSerpApiKey(e.target.value)}
-                  className="w-full h-11 px-4 rounded-xl border border-[#e5e5e5] dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-[#0a0a0a] dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#357dff]"
+                  className="w-full px-4 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
@@ -491,13 +489,13 @@ export function JobsPage() {
                 <button
                   type="button"
                   onClick={() => setShowKeyModal(false)}
-                  className="h-10 px-5 rounded-full border border-[#e5e5e5] dark:border-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-300"
+                  className="px-5 py-2 rounded-full border editorial-hairline font-bold text-zinc-600 dark:text-zinc-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="h-10 px-6 rounded-full bg-[#357dff] hover:bg-[#2563eb] text-white text-xs font-semibold transition-all shadow-sm"
+                  className="px-6 py-2 rounded-full bg-[#FA5D00] text-black font-bold uppercase transition-all shadow-sm"
                 >
                   Save Key
                 </button>

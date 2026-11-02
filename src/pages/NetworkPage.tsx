@@ -660,22 +660,12 @@ export function NetworkPage() {
                         <Link
                           to={`/builder/${founderUser}`}
                           className="flex items-center gap-2 font-mono text-xs text-zinc-900 dark:text-zinc-100 font-bold hover:text-[#FA5D00] transition-colors truncate"
+                          title={`View ${item.founder_name}'s profile`}
                         >
                           <span className="w-6 h-6 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center flex-none">
                             {initial}
                           </span>
-                          <span className="truncate">{item.founder_name}</span>
-                          <span className="font-normal text-[11px] text-zinc-400 flex-none">
-                            (@{founderUser})
-                          </span>
-                        </Link>
-
-                        <Link
-                          to={`/builder/${founderUser}`}
-                          className="flex-none font-mono text-[10px] font-bold text-[#FA5D00] hover:underline inline-flex items-center gap-0.5"
-                        >
-                          <span>Profile</span>
-                          <ArrowUpRight className="w-3 h-3" />
+                          <span className="truncate hover:underline underline-offset-4 decoration-[#FA5D00]">{item.founder_name}</span>
                         </Link>
                       </div>
 
