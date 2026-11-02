@@ -163,6 +163,19 @@ export async function initDb() {
         ('Develop', 'develop', 'Code', 2),
         ('Resources', 'resources', 'Box', 3)
       ON CONFLICT (slug) DO NOTHING;
+
+      CREATE TABLE IF NOT EXISTS project_comments (
+        id SERIAL PRIMARY KEY,
+        project_id INTEGER NOT NULL,
+        user_id INTEGER,
+        author_name TEXT NOT NULL,
+        author_username TEXT,
+        author_avatar TEXT,
+        content TEXT NOT NULL,
+        type TEXT DEFAULT 'feedback',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_project_comments_project ON project_comments(project_id);
     `)
   } finally {
     client.release()
@@ -1041,6 +1054,70 @@ export async function deleteProjectSection(id: number) {
   const client = await pool.connect();
   try {
     const res = await client.query("DELETE FROM project_sections WHERE id = $1 RETURNING id", [id]);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
+
+export async function listProjectComments(projectId: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT * FROM project_comments 
+       WHERE project_id = $1 
+       ORDER BY created_at ASC`,
+      [projectId]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createProjectComment(data: {
+  projectId: number;
+  userId?: number;
+  authorName: string;
+  authorUsername?: string;
+  authorAvatar?: string;
+  content: string;
+  type?: string;
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO project_comments 
+       (project_id, user_id, author_name, author_username, author_avatar, content, type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [
+        data.projectId,
+        data.userId || null,
+        data.authorName.trim(),
+        data.authorUsername?.trim() || null,
+        data.authorAvatar?.trim() || null,
+        data.content.trim(),
+        data.type || "feedback",
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteProjectComment(id: number, userId?: number, isAdmin?: boolean) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "DELETE FROM project_comments WHERE id = $1";
+    const params: any[] = [id];
+    if (!isAdmin && userId) {
+      queryStr += " AND user_id = $2";
+      params.push(userId);
+    }
+    queryStr += " RETURNING id";
+    const res = await client.query(queryStr, params);
     return res.rows.length > 0;
   } finally {
     client.release();

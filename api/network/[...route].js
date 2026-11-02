@@ -152,6 +152,19 @@ async function initDb() {
         ('Develop', 'develop', 'Code', 2),
         ('Resources', 'resources', 'Box', 3)
       ON CONFLICT (slug) DO NOTHING;
+
+      CREATE TABLE IF NOT EXISTS project_comments (
+        id SERIAL PRIMARY KEY,
+        project_id INTEGER NOT NULL,
+        user_id INTEGER,
+        author_name TEXT NOT NULL,
+        author_username TEXT,
+        author_avatar TEXT,
+        content TEXT NOT NULL,
+        type TEXT DEFAULT 'feedback',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_project_comments_project ON project_comments(project_id);
     `);
   } finally {
     client.release();
@@ -938,6 +951,59 @@ async function deleteProjectSection(id) {
     client.release();
   }
 }
+async function listProjectComments(projectId) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT * FROM project_comments 
+       WHERE project_id = $1 
+       ORDER BY created_at ASC`,
+      [projectId]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function createProjectComment(data) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO project_comments 
+       (project_id, user_id, author_name, author_username, author_avatar, content, type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [
+        data.projectId,
+        data.userId || null,
+        data.authorName.trim(),
+        data.authorUsername?.trim() || null,
+        data.authorAvatar?.trim() || null,
+        data.content.trim(),
+        data.type || "feedback"
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function deleteProjectComment(id, userId, isAdmin) {
+  const client = await pool.connect();
+  try {
+    let queryStr = "DELETE FROM project_comments WHERE id = $1";
+    const params = [id];
+    if (!isAdmin && userId) {
+      queryStr += " AND user_id = $2";
+      params.push(userId);
+    }
+    queryStr += " RETURNING id";
+    const res = await client.query(queryStr, params);
+    return res.rows.length > 0;
+  } finally {
+    client.release();
+  }
+}
 
 // server/apiRouter.ts
 function escapeHtml(str) {
@@ -1677,6 +1743,171 @@ async function handleNetworkRequest(req, res) {
       const deleted = await deleteProjectSection(id);
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, deleted }));
+      return;
+    }
+    if (req.method === "GET" && (pathname.startsWith("/api/network/projects/") && pathname.endsWith("/comments") || pathname === "/api/network/comments" || pathname === "/api/comments")) {
+      let projectId = Number(searchParams.get("projectId") || searchParams.get("project_id"));
+      if (!projectId) {
+        const match = pathname.match(/\/projects\/(\d+)\/comments/);
+        if (match) projectId = Number(match[1]);
+      }
+      if (!projectId || isNaN(projectId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid projectId is required" }));
+        return;
+      }
+      const comments = await listProjectComments(projectId);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, comments }));
+      return;
+    }
+    if (req.method === "POST" && (pathname.startsWith("/api/network/projects/") && pathname.endsWith("/comments") || pathname === "/api/network/comments" || pathname === "/api/comments")) {
+      let projectId = Number(searchParams.get("projectId") || searchParams.get("project_id"));
+      if (!projectId) {
+        const match = pathname.match(/\/projects\/(\d+)\/comments/);
+        if (match) projectId = Number(match[1]);
+      }
+      const body = await parseBody();
+      if (!projectId) projectId = Number(body.projectId || body.project_id);
+      if (!projectId || isNaN(projectId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid projectId is required" }));
+        return;
+      }
+      if (!body.content || !body.content.trim()) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Comment / feedback content is required" }));
+        return;
+      }
+      const user = getAuthUser();
+      const comment = await createProjectComment({
+        projectId,
+        userId: user ? user.id : void 0,
+        authorName: (body.authorName || body.author_name || (user ? user.username : "") || "Curious Builder").trim(),
+        authorUsername: (body.authorUsername || body.author_username || (user ? user.username : "") || "").trim() || void 0,
+        authorAvatar: (body.authorAvatar || body.author_avatar || "").trim() || void 0,
+        content: body.content.trim(),
+        type: body.type || "feedback"
+      });
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, comment }));
+      return;
+    }
+    if (req.method === "DELETE" && pathname.startsWith("/api/network/comments/") || req.method === "POST" && (pathname === "/api/network/comments/delete" || pathname === "/api/comments/delete")) {
+      const body = await parseBody();
+      const id = Number(body.id || pathname.split("/").pop());
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid comment ID is required" }));
+        return;
+      }
+      const isAdmin = checkAdminAuth(req);
+      const user = getAuthUser();
+      if (!isAdmin && !user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized" }));
+        return;
+      }
+      const deleted = await deleteProjectComment(id, user ? user.id : void 0, isAdmin);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, deleted }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/admin/send-email" || pathname === "/api/admin/send-email")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Admin credentials required to send emails." }));
+        return;
+      }
+      const body = await parseBody();
+      const { to, subject, message, html } = body;
+      if (!to || !subject || !message && !html) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Recipient email (to), subject, and message content are required." }));
+        return;
+      }
+      const recipients = Array.isArray(to) ? to : [to];
+      const resendApiKey = process.env.RESEND_API_KEY;
+      const emailHtml = html || `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0c0c0e; color: #f4f4f5; margin: 0; padding: 40px 20px; }
+    .card { max-width: 580px; margin: 0 auto; background: #121214; border: 1px solid #27272a; border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: bold; font-family: monospace; font-size: 14px; color: #fff; text-decoration: none; margin-bottom: 24px; }
+    .logo-badge { background: #FA5D00; color: #000; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; }
+    h1 { font-size: 22px; color: #ffffff; margin-top: 0; font-weight: 600; line-height: 1.3; }
+    .content { font-size: 14px; line-height: 1.7; color: #d4d4d8; white-space: pre-wrap; margin: 20px 0; }
+    .footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid #27272a; font-size: 11px; color: #71717a; text-align: center; }
+    .btn { display: inline-block; background: #FA5D00; color: #000 !important; font-weight: bold; text-decoration: none; padding: 10px 24px; border-radius: 9999px; font-size: 13px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a href="https://recolabs.in" class="logo">
+      <span class="logo-badge">R</span>
+      <span>Reco Labs</span>
+    </a>
+    <h1>${escapeHtml(subject)}</h1>
+    <div class="content">${escapeHtml(message || "")}</div>
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="https://recolabs.in" class="btn">Visit Reco Labs \u2197</a>
+    </div>
+    <div class="footer">
+      Sent by Reco Labs Guild \xB7 <a href="https://recolabs.in" style="color: #a1a1aa;">recolabs.in</a><br>
+      Dispatched via noreply@recolabs.in
+    </div>
+  </div>
+</body>
+</html>
+`;
+      if (resendApiKey) {
+        try {
+          const resendResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + resendApiKey,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              from: "Reco Labs <noreply@recolabs.in>",
+              to: recipients,
+              subject,
+              html: emailHtml,
+              text: message || ""
+            })
+          });
+          const resendData = await resendResponse.json();
+          if (resendResponse.ok) {
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true, provider: "resend", id: resendData.id, to: recipients }));
+            return;
+          } else {
+            res.statusCode = 502;
+            res.end(JSON.stringify({ success: false, provider: "resend", error: resendData }));
+            return;
+          }
+        } catch (mailErr) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ success: false, error: "Failed to dispatch via Resend: " + mailErr.message }));
+          return;
+        }
+      }
+      res.statusCode = 200;
+      res.end(
+        JSON.stringify({
+          success: false,
+          setupRequired: true,
+          message: "Ready to send. Set RESEND_API_KEY in Vercel environment variables to send live emails from noreply@recolabs.in.",
+          samplePayload: {
+            from: "Reco Labs <noreply@recolabs.in>",
+            to: recipients,
+            subject
+          }
+        })
+      );
       return;
     }
     res.statusCode = 404;

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import confetti from "canvas-confetti"
 import {
   Rocket,
@@ -45,6 +45,7 @@ export function NetworkPage() {
   })
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(null)
   const [startups, setStartups] = React.useState<StartupItem[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -160,6 +161,19 @@ export function NetworkPage() {
       window.removeEventListener("reco_auth_changed", syncSession)
     }
   }, [])
+
+  // Auto-trigger signup modal if navigated with ?signup=true or ?email=...
+  React.useEffect(() => {
+    const shouldSignup = searchParams.get("signup") === "true"
+    const prefillEmail = (searchParams.get("email") || "").trim()
+    if (shouldSignup || prefillEmail) {
+      if (prefillEmail) {
+        setAuthForm((prev) => ({ ...prev, email: prefillEmail }))
+      }
+      setAuthMode("signup")
+      setShowAuthModal(true)
+    }
+  }, [searchParams])
 
   const handleClaimUsername = (override?: string) => {
     const raw = (override || claimUsername).trim().toLowerCase().replace(/[^a-z0-9_-]/g, "")

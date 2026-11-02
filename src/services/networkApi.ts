@@ -351,4 +351,61 @@ export const networkApi = {
       }
     }
   },
-}
+
+  async getProjectComments(projectId: number): Promise<Array<{
+    id: number
+    project_id: number
+    user_id?: number
+    author_name: string
+    author_username?: string
+    author_avatar?: string
+    content: string
+    type: string
+    created_at: string
+  }>> {
+    try {
+      const json = await safeJsonFetch<{ success: boolean; comments: any[] }>(
+        `/api/network/projects/${projectId}/comments`
+      )
+      return json.comments || []
+    } catch {
+      return []
+    }
+  },
+
+  async addProjectComment(
+    projectId: number,
+    data: {
+      content: string
+      type?: string
+      authorName?: string
+      authorUsername?: string
+      authorAvatar?: string
+    }
+  ): Promise<{ success: boolean; comment?: any; error?: string }> {
+    try {
+      return await safeJsonFetch<{ success: boolean; comment?: any }>(
+        `/api/network/projects/${projectId}/comments`,
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      )
+    } catch (err: any) {
+      return { success: false, error: err.message || "Failed to post feedback" }
+    }
+  },
+
+  async deleteProjectComment(commentId: number): Promise<boolean> {
+    try {
+      const res = await safeJsonFetch<{ success: boolean; deleted: boolean }>(
+        `/api/network/comments/${commentId}`,
+        { method: "DELETE" }
+      )
+      return !!res.success
+    } catch {
+      return false
+    }
+  },
+};
+

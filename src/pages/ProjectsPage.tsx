@@ -39,6 +39,10 @@ import {
   LayoutGrid,
   Code2,
   Users,
+  MessageSquare,
+  Send,
+  Trash2,
+  Clock,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile } from "@/services/networkApi"
@@ -147,6 +151,61 @@ export function ProjectsPage() {
 
   // Selected project for detail modal + recommendations below
   const [selectedProject, setSelectedProject] = React.useState<CatalogProject | null>(null)
+
+  // Project Comments & Feedback State
+  const [projectComments, setProjectComments] = React.useState<any[]>([])
+  const [loadingComments, setLoadingComments] = React.useState(false)
+  const [commentText, setCommentText] = React.useState("")
+  const [commentType, setCommentType] = React.useState<"feedback" | "suggestion" | "fix" | "general">("feedback")
+  const [submittingComment, setSubmittingComment] = React.useState(false)
+  const [guestName, setGuestName] = React.useState("")
+  const [commentSuccessMsg, setCommentSuccessMsg] = React.useState("")
+
+  // Fetch comments whenever selectedProject changes
+  React.useEffect(() => {
+    if (!selectedProject?.id) {
+      setProjectComments([])
+      setCommentSuccessMsg("")
+      return
+    }
+    setLoadingComments(true)
+    networkApi.getProjectComments(Number(selectedProject.id)).then((data) => {
+      setProjectComments(data || [])
+      setLoadingComments(false)
+    })
+  }, [selectedProject?.id])
+
+  const handlePostComment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedProject?.id || !commentText.trim() || submittingComment) return
+    setSubmittingComment(true)
+    const authorName = (currentUser?.name || guestName.trim() || "Curious Builder").trim()
+    const authorUsername = currentUser?.username || undefined
+    const authorAvatar = currentUser?.avatar_url || undefined
+
+    const res = await networkApi.addProjectComment(Number(selectedProject.id), {
+      content: commentText.trim(),
+      type: commentType,
+      authorName,
+      authorUsername,
+      authorAvatar,
+    })
+    if (res.success && res.comment) {
+      setProjectComments((prev) => [...prev, res.comment])
+      setCommentText("")
+      setCommentSuccessMsg("Feedback posted!")
+      setTimeout(() => setCommentSuccessMsg(""), 3000)
+    }
+    setSubmittingComment(false)
+  }
+
+  const handleDeleteComment = async (commentId: number) => {
+    const ok = await networkApi.deleteProjectComment(commentId)
+    if (ok) {
+      setProjectComments((prev) => prev.filter((c) => c.id !== commentId))
+    }
+  }
+
 
   // Merge default browse sections (Finds, Inspiration, Resources, Tools, Portfolios) with any custom sections
   const browseList = React.useMemo(() => {
@@ -826,9 +885,9 @@ export function ProjectsPage() {
 
   // Sidebar Inner Content Component (Exact match to media_1793513281908_c994aba5.png)
   const renderSidebarContent = () => (
-    <div className="flex flex-col justify-between h-full select-none text-zinc-300">
+    <div className="flex flex-col justify-between h-full select-none text-zinc-800 dark:text-zinc-200">
       <div>
-        {/* Top Header: Orb Icon + Reco Labs */}
+        {/* Top Header: Rounded Reco Labs Logo + Title */}
         <div className="flex items-center justify-between pb-3">
           <button
             type="button"
@@ -837,32 +896,34 @@ export function ProjectsPage() {
               setShowFavoritesOnly(false)
               setMobileSidebarOpen(false)
             }}
-            className="flex items-center gap-3 text-left group cursor-pointer"
+            className="flex items-center gap-2.5 text-left group cursor-pointer"
           >
-            <OrbIcon className="w-7 h-7" />
-            <h2 className="font-mono text-[15px] font-normal tracking-tight text-zinc-100 group-hover:text-white transition-colors">
+            <div className="w-7 h-7 rounded-full bg-[#FA5D00] p-1 flex items-center justify-center flex-none shadow-xs ring-1 ring-zinc-300/80 dark:ring-white/10 group-hover:scale-105 transition-transform overflow-hidden">
+              <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0 dark:filter-none" />
+            </div>
+            <h2 className="font-mono text-[15px] font-bold tracking-tight text-zinc-950 dark:text-zinc-100 group-hover:text-[#FA5D00] dark:group-hover:text-white transition-colors">
               Reco Labs
             </h2>
           </button>
           {/* Mobile close button */}
           <button
             onClick={() => setMobileSidebarOpen(false)}
-            className="md:hidden p-1.5 rounded-full text-zinc-400 hover:text-white"
+            className="md:hidden p-1.5 rounded-full text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Dotted Divider Line */}
-        <div className="border-b border-dotted border-zinc-700/60 dark:border-zinc-800 my-3" />
+        <div className="border-b border-dotted border-zinc-200 dark:border-zinc-800 my-3" />
 
         {/* Curated Collection Description */}
-        <p className="font-sans text-xs sm:text-[13px] text-zinc-300 dark:text-zinc-300 leading-relaxed py-1">
+        <p className="font-sans text-xs sm:text-[13px] text-zinc-600 dark:text-zinc-400 leading-relaxed py-1">
           A curated collection of interface craft, component libraries, AI tools, and resources for builders.
         </p>
 
         {/* Dotted Divider Line */}
-        <div className="border-b border-dotted border-zinc-700/60 dark:border-zinc-800 my-3" />
+        <div className="border-b border-dotted border-zinc-200 dark:border-zinc-800 my-3" />
 
         {/* Browse Navigation (Finds, Inspiration, Resources, Tools, Portfolios) */}
         <div className="mt-3">
@@ -1334,6 +1395,359 @@ export function ProjectsPage() {
       </div>
 
       {/* ======================================================== */}
+            {/* ======================================================== */}
+      {/* 3.5 PROJECT DETAIL INSPECTOR MODAL + COMMENTS & FEEDBACK */}
+      {/* ======================================================== */}
+      {selectedProject && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in overflow-y-auto"
+          onClick={() => setSelectedProject(null)}
+        >
+          <div 
+            className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Top Bar */}
+            <div className="flex-none flex items-center justify-between px-5 sm:px-6 py-4 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40">
+              <div className="flex items-center gap-2.5">
+                <span className="px-2.5 py-1 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-mono text-[11px] font-bold">
+                  {selectedProject.category}
+                </span>
+                {selectedProject.isSponsored && (
+                  <span className="px-2 py-0.5 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-bold">
+                    SPONSORED
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={selectedProject.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-1.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold hover:opacity-90 transition-opacity flex items-center gap-1.5 shadow-xs"
+                >
+                  <span>Visit</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+
+                <button
+                  onClick={() => setSelectedProject(null)}
+                  className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 sliderbar">
+              {/* Hero Screenshot / Visual Canvas */}
+              <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                {(selectedProject.preview_image_url || (selectedProject as any).previewImageUrl) ? (
+                  <img
+                    src={(selectedProject.preview_image_url || (selectedProject as any).previewImageUrl)}
+                    alt={selectedProject.title}
+                    className="w-full h-full object-cover object-top"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-zinc-900">
+                    <span className="font-serif text-2xl text-zinc-100 font-normal">
+                      {selectedProject.title}
+                    </span>
+                    <span className="font-mono text-xs text-zinc-400 mt-2">
+                      {selectedProject.url}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Title & Metadata */}
+              <div>
+                <div className="flex items-center justify-between gap-4">
+                  <h2 className="font-serif text-2xl sm:text-3xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight">
+                    {selectedProject.title}
+                  </h2>
+                  <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-500">
+                    {selectedProject.url && (
+                      <img
+                        src={`https://www.google.com/s2/favicons?domain=${(() => {
+                          try { return new URL(selectedProject.url.startsWith("http") ? selectedProject.url : `https://${selectedProject.url}`).hostname }
+                          catch { return "recolabs.in" }
+                        })()}&sz=32`}
+                        alt=""
+                        className="w-4 h-4 rounded-xs object-contain"
+                        onError={(e) => { e.currentTarget.style.display = "none" }}
+                      />
+                    )}
+                    <span>by <strong className="text-zinc-900 dark:text-zinc-100 font-semibold">@{selectedProject.authorHandle}</strong></span>
+                  </div>
+                </div>
+
+                <p className="mt-2.5 font-sans text-sm sm:text-base text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  {selectedProject.description}
+                </p>
+
+                {/* Tag Pills */}
+                {selectedProject.tags && selectedProject.tags.length > 0 && (
+                  <div className="mt-3.5 flex flex-wrap gap-1.5">
+                    {selectedProject.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono text-[11px]"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800" />
+
+              {/* ===================================================== */}
+              {/* USER FEEDBACK & SUGGESTED CHANGES SECTION            */}
+              {/* ===================================================== */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-[#FA5D00]" />
+                    <h3 className="font-serif text-lg text-zinc-950 dark:text-zinc-100 font-normal">
+                      Feedback & Suggested Changes
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 font-mono text-xs text-zinc-600 dark:text-zinc-400 font-bold">
+                      {projectComments.length}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="font-sans text-xs text-zinc-500 dark:text-zinc-400">
+                  Suggest UI tweaks, feature requests, or point out bugs directly to the maker of {selectedProject.title}.
+                </p>
+
+                {/* Post Feedback Form */}
+                <form onSubmit={handlePostComment} className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 space-y-3">
+                  {/* Category Type Pills */}
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { type: "feedback", label: "💬 Feedback" },
+                      { type: "suggestion", label: "💡 Suggestion" },
+                      { type: "fix", label: "🐛 Bug / Fix" },
+                      { type: "general", label: "✨ General" },
+                    ].map((btn) => (
+                      <button
+                        key={btn.type}
+                        type="button"
+                        onClick={() => setCommentType(btn.type as any)}
+                        className={`px-2.5 py-1 rounded-lg font-mono text-xs font-medium transition-all cursor-pointer ${
+                          commentType === btn.type
+                            ? "bg-[#FA5D00] text-black font-bold shadow-xs"
+                            : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-400"
+                        }`}
+                      >
+                        {btn.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Guest Name input if not logged in */}
+                  {!currentUser && (
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
+                      <input
+                        type="text"
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                        placeholder="Your name or handle (e.g. @alex)"
+                        className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 font-mono text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00] max-w-xs"
+                      />
+                      <span className="font-mono text-[11px] text-zinc-400">
+                        or{" "}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAuthMode("login")
+                            setShowAuthModal(true)
+                          }}
+                          className="text-[#FA5D00] underline font-bold cursor-pointer"
+                        >
+                          sign in
+                        </button>{" "}
+                        to use your profile
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Comment Textarea */}
+                  <div className="relative">
+                    <textarea
+                      rows={3}
+                      required
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder={`What would you improve about ${selectedProject.title}? (e.g. "Try darker contrast on headers", "Mobile nav button is slightly clipping", etc.)`}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 font-sans text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#FA5D00]"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    {commentSuccessMsg ? (
+                      <span className="font-mono text-xs text-emerald-500 font-bold animate-in fade-in">
+                        ✓ {commentSuccessMsg}
+                      </span>
+                    ) : (
+                      <span className="font-mono text-[11px] text-zinc-400">
+                        Constructive, honest feedback helps builders ship better craft.
+                      </span>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={submittingComment || !commentText.trim()}
+                      className="px-4 py-1.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-mono text-xs font-bold hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-colors disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>{submittingComment ? "Posting..." : "Post"}</span>
+                      <Send className="w-3 h-3" />
+                    </button>
+                  </div>
+                </form>
+
+                {/* Comments List */}
+                <div className="space-y-3 pt-2">
+                  {loadingComments ? (
+                    <div className="text-center py-6 font-mono text-xs text-zinc-400">
+                      Loading feedback...
+                    </div>
+                  ) : projectComments.length === 0 ? (
+                    <div className="p-6 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 text-center font-mono text-xs text-zinc-500">
+                      No feedback or change suggestions yet. Be the first builder to suggest an improvement!
+                    </div>
+                  ) : (
+                    projectComments.map((comment) => {
+                      const isAuthor = currentUser?.id && comment.user_id === currentUser.id
+                      const badgeBg =
+                        comment.type === "suggestion"
+                          ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                          : comment.type === "fix"
+                          ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                          : comment.type === "general"
+                          ? "bg-purple-500/10 text-purple-500 border-purple-500/20"
+                          : "bg-blue-500/10 text-blue-500 border-blue-500/20"
+
+                      return (
+                        <div
+                          key={comment.id}
+                          className="p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 space-y-2"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              {comment.author_avatar ? (
+                                <img
+                                  src={comment.author_avatar}
+                                  alt=""
+                                  className="w-6 h-6 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-bold flex items-center justify-center">
+                                  {(comment.author_name || "B")[0].toUpperCase()}
+                                </div>
+                              )}
+                              <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                                {comment.author_name}
+                              </span>
+                              {comment.author_username && (
+                                <span className="font-mono text-[11px] text-zinc-400">
+                                  @{comment.author_username}
+                                </span>
+                              )}
+                              <span className={`px-2 py-0.2 rounded-full font-mono text-[10px] uppercase font-bold border ${badgeBg}`}>
+                                {comment.type || "feedback"}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-[10px] text-zinc-400">
+                                {new Date(comment.created_at).toLocaleDateString()}
+                              </span>
+                              {isAuthor && (
+                                <button
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                  title="Delete your comment"
+                                  className="p-1 text-zinc-400 hover:text-rose-500 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <p className="font-sans text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed pl-8">
+                            {comment.content}
+                          </p>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800" />
+
+              {/* ===================================================== */}
+              {/* RECOMMENDED FOR YOU (Proximity Scored Projects)       */}
+              {/* ===================================================== */}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-serif text-lg text-zinc-950 dark:text-zinc-100 font-normal">
+                    Similar in {selectedProject.category} & Recommended For You
+                  </h3>
+                  <span className="font-mono text-xs text-zinc-400">
+                    Hand-picked suggestions
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {recommendations.map((rec) => (
+                    <div
+                      key={rec.id}
+                      onClick={() => setSelectedProject(rec)}
+                      className="p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:border-[#FA5D00] bg-zinc-50 dark:bg-zinc-900/40 transition-all cursor-pointer flex gap-3 group"
+                    >
+                      <div className="w-20 h-16 rounded-xl overflow-hidden bg-zinc-950 flex-none border border-zinc-200 dark:border-zinc-800">
+                        {(rec.preview_image_url || (rec as any).previewImageUrl) ? (
+                          <img
+                            src={(rec.preview_image_url || (rec as any).previewImageUrl)}
+                            alt={rec.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center font-serif text-xs text-zinc-400">
+                            {rec.title[0]}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 flex flex-col justify-between">
+                        <div>
+                          <h4 className="font-serif text-sm font-normal text-zinc-900 dark:text-zinc-100 group-hover:text-[#FA5D00] transition-colors truncate">
+                            {rec.title}
+                          </h4>
+                          <p className="font-sans text-[11px] text-zinc-500 line-clamp-1 mt-0.5">
+                            {rec.description}
+                          </p>
+                        </div>
+                        <span className="font-mono text-[10px] text-zinc-400">
+                          by @{rec.authorHandle}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {/* 4. SUBMIT WEBSITE MODAL (Gated by Auth + Photo Preview)  */}
       {/* ======================================================== */}
       {showSubmitModal && (

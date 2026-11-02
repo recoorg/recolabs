@@ -40,6 +40,9 @@ import {
   listProjectSections,
   createProjectSection,
   deleteProjectSection,
+  listProjectComments,
+  createProjectComment,
+  deleteProjectComment,
   saveProjectAsset,
   getProjectAsset,
 } from "./db.js"
@@ -916,6 +919,204 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const deleted = await deleteProjectSection(id);
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, deleted }));
+      return;
+    }
+
+        // 17A. PROJECT COMMENTS LIST: GET /api/network/projects/:id/comments or /api/network/comments?projectId=:id
+    if (
+      req.method === "GET" &&
+      ((pathname.startsWith("/api/network/projects/") && pathname.endsWith("/comments")) ||
+       pathname === "/api/network/comments" ||
+       pathname === "/api/comments")
+    ) {
+      let projectId = Number(searchParams.get("projectId") || searchParams.get("project_id"));
+      if (!projectId) {
+        const match = pathname.match(/\/projects\/(\d+)\/comments/);
+        if (match) projectId = Number(match[1]);
+      }
+      if (!projectId || isNaN(projectId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid projectId is required" }));
+        return;
+      }
+      const comments = await listProjectComments(projectId);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, comments }));
+      return;
+    }
+
+    // 17B. ADD PROJECT COMMENT / FEEDBACK: POST /api/network/projects/:id/comments or /api/network/comments
+    if (
+      req.method === "POST" &&
+      ((pathname.startsWith("/api/network/projects/") && pathname.endsWith("/comments")) ||
+       pathname === "/api/network/comments" ||
+       pathname === "/api/comments")
+    ) {
+      let projectId = Number(searchParams.get("projectId") || searchParams.get("project_id"));
+      if (!projectId) {
+        const match = pathname.match(/\/projects\/(\d+)\/comments/);
+        if (match) projectId = Number(match[1]);
+      }
+      const body = await parseBody();
+      if (!projectId) projectId = Number(body.projectId || body.project_id);
+
+      if (!projectId || isNaN(projectId)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid projectId is required" }));
+        return;
+      }
+      if (!body.content || !body.content.trim()) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Comment / feedback content is required" }));
+        return;
+      }
+
+      const user = getAuthUser();
+
+      const comment = await createProjectComment({
+        projectId,
+        userId: user ? user.id : undefined,
+        authorName: (body.authorName || body.author_name || (user ? user.username : "") || "Curious Builder").trim(),
+        authorUsername: (body.authorUsername || body.author_username || (user ? user.username : "") || "").trim() || undefined,
+        authorAvatar: (body.authorAvatar || body.author_avatar || "").trim() || undefined,
+        content: body.content.trim(),
+        type: body.type || "feedback",
+      });
+
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, comment }));
+      return;
+    }
+
+    // 17C. DELETE PROJECT COMMENT: DELETE /api/network/comments/:id or POST /api/network/comments/delete
+    if (
+      (req.method === "DELETE" && pathname.startsWith("/api/network/comments/")) ||
+      (req.method === "POST" && (pathname === "/api/network/comments/delete" || pathname === "/api/comments/delete"))
+    ) {
+      const body = await parseBody();
+      const id = Number(body.id || pathname.split("/").pop());
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid comment ID is required" }));
+        return;
+      }
+      const isAdmin = checkAdminAuth(req);
+      const user = getAuthUser();
+
+      if (!isAdmin && !user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized" }));
+        return;
+      }
+
+      const deleted = await deleteProjectComment(id, user ? user.id : undefined, isAdmin);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, deleted }));
+      return;
+    }
+
+    // 18. ADMIN CUSTOM MAIL SENDER: POST /api/network/admin/send-email (Sender: noreply@recolabs.in)
+    if (req.method === "POST" && (pathname === "/api/network/admin/send-email" || pathname === "/api/admin/send-email")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Admin credentials required to send emails." }));
+        return;
+      }
+
+      const body = await parseBody();
+      const { to, subject, message, html } = body;
+
+      if (!to || !subject || (!message && !html)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Recipient email (to), subject, and message content are required." }));
+        return;
+      }
+
+      const recipients = Array.isArray(to) ? to : [to];
+      const resendApiKey = process.env.RESEND_API_KEY;
+
+      const emailHtml = html || `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0c0c0e; color: #f4f4f5; margin: 0; padding: 40px 20px; }
+    .card { max-width: 580px; margin: 0 auto; background: #121214; border: 1px solid #27272a; border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: bold; font-family: monospace; font-size: 14px; color: #fff; text-decoration: none; margin-bottom: 24px; }
+    .logo-badge { background: #FA5D00; color: #000; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; }
+    h1 { font-size: 22px; color: #ffffff; margin-top: 0; font-weight: 600; line-height: 1.3; }
+    .content { font-size: 14px; line-height: 1.7; color: #d4d4d8; white-space: pre-wrap; margin: 20px 0; }
+    .footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid #27272a; font-size: 11px; color: #71717a; text-align: center; }
+    .btn { display: inline-block; background: #FA5D00; color: #000 !important; font-weight: bold; text-decoration: none; padding: 10px 24px; border-radius: 9999px; font-size: 13px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a href="https://recolabs.in" class="logo">
+      <span class="logo-badge">R</span>
+      <span>Reco Labs</span>
+    </a>
+    <h1>${escapeHtml(subject)}</h1>
+    <div class="content">${escapeHtml(message || "")}</div>
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="https://recolabs.in" class="btn">Visit Reco Labs ↗</a>
+    </div>
+    <div class="footer">
+      Sent by Reco Labs Guild · <a href="https://recolabs.in" style="color: #a1a1aa;">recolabs.in</a><br>
+      Dispatched via noreply@recolabs.in
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+      if (resendApiKey) {
+        try {
+          const resendResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + resendApiKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "Reco Labs <noreply@recolabs.in>",
+              to: recipients,
+              subject: subject,
+              html: emailHtml,
+              text: message || "",
+            }),
+          });
+          const resendData: any = await resendResponse.json();
+          if (resendResponse.ok) {
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true, provider: "resend", id: resendData.id, to: recipients }));
+            return;
+          } else {
+            res.statusCode = 502;
+            res.end(JSON.stringify({ success: false, provider: "resend", error: resendData }));
+            return;
+          }
+        } catch (mailErr: any) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ success: false, error: "Failed to dispatch via Resend: " + mailErr.message }));
+          return;
+        }
+      }
+
+      res.statusCode = 200;
+      res.end(
+        JSON.stringify({
+          success: false,
+          setupRequired: true,
+          message: "Ready to send. Set RESEND_API_KEY in Vercel environment variables to send live emails from noreply@recolabs.in.",
+          samplePayload: {
+            from: "Reco Labs <noreply@recolabs.in>",
+            to: recipients,
+            subject,
+          },
+        })
+      );
       return;
     }
 

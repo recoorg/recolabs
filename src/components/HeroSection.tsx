@@ -1,21 +1,24 @@
 "use client"
 
 import * as React from "react"
+import { useNavigate } from "react-router-dom"
 import { CrowdCanvas } from "@/components/CrowdCanvas"
 import confetti from "canvas-confetti"
 import { api } from "@/services/api"
 
 export function HeroSection() {
+  const navigate = useNavigate()
   const [email, setEmail] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [joined, setJoined] = React.useState(false)
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email || loading) return
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail || loading) return
     setLoading(true)
     try {
-      await api.joinNewsletter(email)
+      await api.joinNewsletter(trimmedEmail).catch(() => {})
       setJoined(true)
       confetti({
         particleCount: 70,
@@ -23,11 +26,12 @@ export function HeroSection() {
         origin: { y: 0.5 },
         colors: ["#FA5D00", "#5865F2", "#000000", "#ffffff"],
       })
-      setTimeout(() => setJoined(false), 3500)
-      setEmail("")
+      // Navigate to Network signup section with prefilled email
+      setTimeout(() => {
+        navigate(`/network?signup=true&email=${encodeURIComponent(trimmedEmail)}`)
+      }, 400)
     } catch {
-      setJoined(true)
-      setTimeout(() => setJoined(false), 3500)
+      navigate(`/network?signup=true&email=${encodeURIComponent(trimmedEmail)}`)
     } finally {
       setLoading(false)
     }
