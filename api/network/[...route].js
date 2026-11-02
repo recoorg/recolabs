@@ -1863,52 +1863,72 @@ async function handleNetworkRequest(req, res) {
 </body>
 </html>
 `;
-      if (resendApiKey) {
-        try {
-          const resendResponse = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              "Authorization": "Bearer " + resendApiKey,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              from: "Reco Labs <noreply@recolabs.in>",
-              to: recipients,
-              subject,
-              html: emailHtml,
-              text: message || ""
-            })
-          });
-          const resendData = await resendResponse.json();
-          if (resendResponse.ok) {
-            res.statusCode = 200;
-            res.end(JSON.stringify({ success: true, provider: "resend", id: resendData.id, to: recipients }));
-            return;
-          } else {
-            res.statusCode = 502;
-            res.end(JSON.stringify({ success: false, provider: "resend", error: resendData }));
-            return;
+      const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+      const smtpPort = Number(process.env.SMTP_PORT || 587);
+      const smtpUser = process.env.SMTP_USER || "devadibxr@gmail.com";
+      const smtpPass = process.env.SMTP_PASS || "adzxxkjdxekhhjlr";
+      try {
+        const nodemailerPkg = await import("nodemailer");
+        const nodemailer = nodemailerPkg.default || nodemailerPkg;
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpPort === 465,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass
           }
-        } catch (mailErr) {
-          res.statusCode = 500;
-          res.end(JSON.stringify({ success: false, error: "Failed to dispatch via Resend: " + mailErr.message }));
-          return;
-        }
-      }
-      res.statusCode = 200;
-      res.end(
-        JSON.stringify({
-          success: false,
-          setupRequired: true,
-          message: "Ready to send. Set RESEND_API_KEY in Vercel environment variables to send live emails from noreply@recolabs.in.",
-          samplePayload: {
-            from: "Reco Labs <noreply@recolabs.in>",
+        });
+        const info = await transporter.sendMail({
+          from: `"Reco Labs" <${smtpUser}>`,
+          replyTo: "noreply@recolabs.in",
+          to: recipients,
+          subject,
+          text: message || "",
+          html: emailHtml
+        });
+        res.statusCode = 200;
+        res.end(
+          JSON.stringify({
+            success: true,
+            provider: "gmail_smtp",
+            messageId: info.messageId,
             to: recipients,
-            subject
+            sender: `Reco Labs <${smtpUser}>`
+          })
+        );
+        return;
+      } catch (smtpErr) {
+        console.error("Gmail SMTP error:", smtpErr);
+        if (resendApiKey) {
+          try {
+            const resendResponse = await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Authorization": "Bearer " + resendApiKey,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                from: "Reco Labs <noreply@recolabs.in>",
+                to: recipients,
+                subject,
+                html: emailHtml,
+                text: message || ""
+              })
+            });
+            const resendData = await resendResponse.json();
+            if (resendResponse.ok) {
+              res.statusCode = 200;
+              res.end(JSON.stringify({ success: true, provider: "resend", id: resendData.id, to: recipients }));
+              return;
+            }
+          } catch {
           }
-        })
-      );
-      return;
+        }
+        res.statusCode = 500;
+        res.end(JSON.stringify({ success: false, error: "SMTP delivery failed: " + (smtpErr?.message || String(smtpErr)) }));
+        return;
+      }
     }
     res.statusCode = 404;
     res.end(JSON.stringify({ error: `API endpoint not found: ${req.method} ${pathname}` }));

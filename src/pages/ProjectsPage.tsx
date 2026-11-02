@@ -43,6 +43,17 @@ import {
   Send,
   Trash2,
   Clock,
+  ArrowLeft,
+  ArrowRight,
+  Bookmark,
+  MoreHorizontal,
+  ArrowUp,
+  Play,
+  Tag,
+  Paperclip,
+  Smile,
+  Award,
+  Star,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile } from "@/services/networkApi"
@@ -151,6 +162,26 @@ export function ProjectsPage() {
 
   // Selected project for detail modal + recommendations below
   const [selectedProject, setSelectedProject] = React.useState<CatalogProject | null>(null)
+
+  // Upvotes & Ratings state for projects
+  const [upvotesMap, setUpvotesMap] = React.useState<Record<string, number>>({})
+  const [hasUpvoted, setHasUpvoted] = React.useState<Record<string, boolean>>({})
+  const [copiedLinkNotice, setCopiedLinkNotice] = React.useState(false)
+  const [ratingSubmitted, setRatingSubmitted] = React.useState(false)
+  const [activeCommentTab, setActiveCommentTab] = React.useState<"comments" | "upvotes">("comments")
+
+  const handleUpvote = (projectId: number | string) => {
+    const key = String(projectId)
+    const isUp = hasUpvoted[key]
+    setHasUpvoted((prev) => ({ ...prev, [key]: !isUp }))
+    setUpvotesMap((prev) => ({
+      ...prev,
+      [key]: (prev[key] || 1) + (isUp ? -1 : 1),
+    }))
+    if (!isUp) {
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } })
+    }
+  }
 
   // Project Comments & Feedback State
   const [projectComments, setProjectComments] = React.useState<any[]>([])
@@ -680,6 +711,15 @@ export function ProjectsPage() {
       return matchesCategory && matchesSearch && matchesFav
     })
   }, [allProjects, activeCategory, searchQuery, showFavoritesOnly, favorites])
+
+  // Previous & Next navigation for floating modal arrows
+  const currentIndex = React.useMemo(() => {
+    if (!selectedProject) return -1
+    return filteredProjects.findIndex((p) => String(p.id) === String(selectedProject.id))
+  }, [selectedProject, filteredProjects])
+
+  const prevProject = currentIndex > 0 ? filteredProjects[currentIndex - 1] : null
+  const nextProject = currentIndex >= 0 && currentIndex < filteredProjects.length - 1 ? filteredProjects[currentIndex + 1] : null
 
   // Render stylized visual mockup preview inside the card matching screenshot
   const renderVisualMockup = (p: CatalogProject) => {
@@ -1395,351 +1435,547 @@ export function ProjectsPage() {
       </div>
 
       {/* ======================================================== */}
-            {/* ======================================================== */}
-      {/* 3.5 PROJECT DETAIL INSPECTOR MODAL + COMMENTS & FEEDBACK */}
+                  {/* ======================================================== */}
+      {/* 3.5 PROJECT DETAIL MODAL (Matching Peerlist Launchpad)    */}
       {/* ======================================================== */}
       {selectedProject && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in overflow-y-auto"
           onClick={() => setSelectedProject(null)}
         >
-          <div 
-            className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Top Bar */}
-            <div className="flex-none flex items-center justify-between px-5 sm:px-6 py-4 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40">
-              <div className="flex items-center gap-2.5">
-                <span className="px-2.5 py-1 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-mono text-[11px] font-bold">
-                  {selectedProject.category}
-                </span>
-                {selectedProject.isSponsored && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-bold">
-                    SPONSORED
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <a
-                  href={selectedProject.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-1.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold hover:opacity-90 transition-opacity flex items-center gap-1.5 shadow-xs"
-                >
-                  <span>Visit</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-
-                <button
-                  onClick={() => setSelectedProject(null)}
-                  className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Scrollable Body */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 sliderbar">
-              {/* Hero Screenshot / Visual Canvas */}
-              <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                {(selectedProject.preview_image_url || (selectedProject as any).previewImageUrl) ? (
+          {/* Floating Previous Project Navigation (Desktop) */}
+          {prevProject && (
+            <div 
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedProject(prevProject)
+              }}
+              className="hidden xl:flex flex-col items-center gap-1.5 fixed left-6 top-1/2 -translate-y-1/2 z-50 cursor-pointer group select-none"
+            >
+              <div className="w-13 h-13 rounded-2xl bg-[#18181b]/90 border border-zinc-700/80 p-2.5 flex items-center justify-center shadow-2xl backdrop-blur-md group-hover:scale-105 group-hover:border-[#FA5D00] transition-all">
+                {prevProject.preview_image_url ? (
                   <img
-                    src={(selectedProject.preview_image_url || (selectedProject as any).previewImageUrl)}
-                    alt={selectedProject.title}
-                    className="w-full h-full object-cover object-top"
+                    src={prevProject.preview_image_url}
+                    alt=""
+                    className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-zinc-900">
-                    <span className="font-serif text-2xl text-zinc-100 font-normal">
-                      {selectedProject.title}
-                    </span>
-                    <span className="font-mono text-xs text-zinc-400 mt-2">
-                      {selectedProject.url}
-                    </span>
+                  <div className="w-full h-full rounded-lg bg-zinc-800 flex items-center justify-center text-xs font-bold text-white">
+                    {prevProject.title[0]}
                   </div>
                 )}
               </div>
+              <div className="px-2.5 py-1 rounded-full bg-black/80 border border-zinc-700 text-white font-mono text-[11px] font-medium flex items-center gap-1 group-hover:text-[#FA5D00] transition-colors shadow-md">
+                <ArrowLeft className="w-3 h-3" />
+                <span>Prev</span>
+              </div>
+            </div>
+          )}
 
-              {/* Title & Metadata */}
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <h2 className="font-serif text-2xl sm:text-3xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight">
-                    {selectedProject.title}
-                  </h2>
-                  <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-500">
-                    {selectedProject.url && (
-                      <img
-                        src={`https://www.google.com/s2/favicons?domain=${(() => {
-                          try { return new URL(selectedProject.url.startsWith("http") ? selectedProject.url : `https://${selectedProject.url}`).hostname }
-                          catch { return "recolabs.in" }
-                        })()}&sz=32`}
-                        alt=""
-                        className="w-4 h-4 rounded-xs object-contain"
-                        onError={(e) => { e.currentTarget.style.display = "none" }}
-                      />
-                    )}
-                    <span>by <strong className="text-zinc-900 dark:text-zinc-100 font-semibold">@{selectedProject.authorHandle}</strong></span>
-                  </div>
-                </div>
-
-                <p className="mt-2.5 font-sans text-sm sm:text-base text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                  {selectedProject.description}
-                </p>
-
-                {/* Tag Pills */}
-                {selectedProject.tags && selectedProject.tags.length > 0 && (
-                  <div className="mt-3.5 flex flex-wrap gap-1.5">
-                    {selectedProject.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono text-[11px]"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
+          {/* Floating Next Project Navigation (Desktop) */}
+          {nextProject && (
+            <div 
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedProject(nextProject)
+              }}
+              className="hidden xl:flex flex-col items-center gap-1.5 fixed right-6 top-1/2 -translate-y-1/2 z-50 cursor-pointer group select-none"
+            >
+              <div className="w-13 h-13 rounded-2xl bg-[#18181b]/90 border border-zinc-700/80 p-2.5 flex items-center justify-center shadow-2xl backdrop-blur-md group-hover:scale-105 group-hover:border-[#FA5D00] transition-all">
+                {nextProject.preview_image_url ? (
+                  <img
+                    src={nextProject.preview_image_url}
+                    alt=""
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-lg bg-zinc-800 flex items-center justify-center text-xs font-bold text-white">
+                    {nextProject.title[0]}
                   </div>
                 )}
               </div>
+              <div className="px-2.5 py-1 rounded-full bg-black/80 border border-zinc-700 text-white font-mono text-[11px] font-medium flex items-center gap-1 group-hover:text-[#FA5D00] transition-colors shadow-md">
+                <span>Next</span>
+                <ArrowRight className="w-3 h-3" />
+              </div>
+            </div>
+          )}
 
-              <div className="border-t border-zinc-200 dark:border-zinc-800" />
+          {/* Main Modal Card */}
+          <div 
+            className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111113] shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Right Action Icons Bar */}
+            <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5">
+              {/* Bookmark Button */}
+              <button
+                onClick={(e) => toggleFavorite(selectedProject.id, e)}
+                title={favorites.includes(selectedProject.id) ? "Remove bookmark" : "Bookmark project"}
+                className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-750 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] dark:hover:text-[#FA5D00] transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+              >
+                <Bookmark className={`w-4 h-4 ${favorites.includes(selectedProject.id) ? "fill-[#FA5D00] text-[#FA5D00]" : ""}`} />
+              </button>
 
-              {/* ===================================================== */}
-              {/* USER FEEDBACK & SUGGESTED CHANGES SECTION            */}
-              {/* ===================================================== */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-[#FA5D00]" />
-                    <h3 className="font-serif text-lg text-zinc-950 dark:text-zinc-100 font-normal">
-                      Feedback & Suggested Changes
-                    </h3>
-                    <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 font-mono text-xs text-zinc-600 dark:text-zinc-400 font-bold">
-                      {projectComments.length}
-                    </span>
-                  </div>
-                </div>
+              {/* Share / More Button */}
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(selectedProject.url || window.location.href)
+                  setCopiedLinkNotice(true)
+                  setTimeout(() => setCopiedLinkNotice(false), 2000)
+                }}
+                title="Copy project link"
+                className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-750 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors flex items-center justify-center cursor-pointer shadow-xs relative"
+              >
+                {copiedLinkNotice ? <Check className="w-4 h-4 text-emerald-500" /> : <MoreHorizontal className="w-4 h-4" />}
+              </button>
 
-                <p className="font-sans text-xs text-zinc-500 dark:text-zinc-400">
-                  Suggest UI tweaks, feature requests, or point out bugs directly to the maker of {selectedProject.title}.
-                </p>
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedProject(null)}
+                title="Close"
+                className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-750 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-                {/* Post Feedback Form */}
-                <form onSubmit={handlePostComment} className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 space-y-3">
-                  {/* Category Type Pills */}
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { type: "feedback", label: "💬 Feedback" },
-                      { type: "suggestion", label: "💡 Suggestion" },
-                      { type: "fix", label: "🐛 Bug / Fix" },
-                      { type: "general", label: "✨ General" },
-                    ].map((btn) => (
-                      <button
-                        key={btn.type}
-                        type="button"
-                        onClick={() => setCommentType(btn.type as any)}
-                        className={`px-2.5 py-1 rounded-lg font-mono text-xs font-medium transition-all cursor-pointer ${
-                          commentType === btn.type
-                            ? "bg-[#FA5D00] text-black font-bold shadow-xs"
-                            : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-400"
-                        }`}
-                      >
-                        {btn.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Guest Name input if not logged in */}
-                  {!currentUser && (
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
-                      <input
-                        type="text"
-                        value={guestName}
-                        onChange={(e) => setGuestName(e.target.value)}
-                        placeholder="Your name or handle (e.g. @alex)"
-                        className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 font-mono text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00] max-w-xs"
-                      />
-                      <span className="font-mono text-[11px] text-zinc-400">
-                        or{" "}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAuthMode("login")
-                            setShowAuthModal(true)
-                          }}
-                          className="text-[#FA5D00] underline font-bold cursor-pointer"
-                        >
-                          sign in
-                        </button>{" "}
-                        to use your profile
-                      </span>
+            {/* Scrollable Content Container */}
+            <div className="flex-1 overflow-y-auto px-5 sm:px-8 pt-7 pb-8 sliderbar space-y-6">
+              
+              {/* Centered Identity: App Logo + Title + Tagline + Maker */}
+              <div className="text-center max-w-xl mx-auto pt-2">
+                {/* Squircle App Logo */}
+                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl mx-auto p-2 bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl flex items-center justify-center overflow-hidden">
+                  {selectedProject.preview_image_url ? (
+                    <img
+                      src={selectedProject.preview_image_url}
+                      alt={selectedProject.title}
+                      className="w-full h-full object-cover rounded-xl"
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-xl bg-[#FA5D00] flex items-center justify-center text-black font-bold font-mono text-xl">
+                      {selectedProject.title[0]}
                     </div>
                   )}
+                </div>
 
-                  {/* Comment Textarea */}
-                  <div className="relative">
-                    <textarea
-                      rows={3}
-                      required
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      placeholder={`What would you improve about ${selectedProject.title}? (e.g. "Try darker contrast on headers", "Mobile nav button is slightly clipping", etc.)`}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 font-sans text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#FA5D00]"
+                {/* Project Title */}
+                <h1 className="font-serif text-2xl sm:text-3xl font-normal text-zinc-950 dark:text-zinc-50 tracking-tight mt-3.5">
+                  {selectedProject.title}
+                </h1>
+
+                {/* Subtitle */}
+                <p className="font-sans text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1.5 leading-relaxed">
+                  {selectedProject.description || "Curated tool & engineering rig for builders."}
+                </p>
+
+                {/* Maker / Submitter */}
+                <div className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-mono text-zinc-600 dark:text-zinc-400">
+                  <div className="w-4.5 h-4.5 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={`https://www.google.com/s2/favicons?domain=${(() => {
+                        try { return new URL(selectedProject.url.startsWith("http") ? selectedProject.url : `https://${selectedProject.url}`).hostname }
+                        catch { return "recolabs.in" }
+                      })()}&sz=32`}
+                      alt=""
+                      className="w-full h-full object-contain"
+                      onError={(e) => { e.currentTarget.style.display = "none" }}
                     />
                   </div>
+                  <span>{selectedProject.author || "Community"}</span>
+                  <span className="text-zinc-400">(@{selectedProject.authorHandle || "builder"})</span>
+                </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    {commentSuccessMsg ? (
-                      <span className="font-mono text-xs text-emerald-500 font-bold animate-in fade-in">
-                        ✓ {commentSuccessMsg}
-                      </span>
-                    ) : (
-                      <span className="font-mono text-[11px] text-zinc-400">
-                        Constructive, honest feedback helps builders ship better craft.
-                      </span>
-                    )}
+                {/* Action Buttons: Visit & Upvote */}
+                <div className="mt-4 flex items-center justify-center gap-2.5">
+                  <a
+                    href={selectedProject.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-mono text-xs font-semibold hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors flex items-center gap-1.5 shadow-xs"
+                  >
+                    <span>Visit</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
 
-                    <button
-                      type="submit"
-                      disabled={submittingComment || !commentText.trim()}
-                      className="px-4 py-1.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-mono text-xs font-bold hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-colors disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>{submittingComment ? "Posting..." : "Post"}</span>
-                      <Send className="w-3 h-3" />
-                    </button>
-                  </div>
-                </form>
-
-                {/* Comments List */}
-                <div className="space-y-3 pt-2">
-                  {loadingComments ? (
-                    <div className="text-center py-6 font-mono text-xs text-zinc-400">
-                      Loading feedback...
-                    </div>
-                  ) : projectComments.length === 0 ? (
-                    <div className="p-6 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 text-center font-mono text-xs text-zinc-500">
-                      No feedback or change suggestions yet. Be the first builder to suggest an improvement!
-                    </div>
-                  ) : (
-                    projectComments.map((comment) => {
-                      const isAuthor = currentUser?.id && comment.user_id === currentUser.id
-                      const badgeBg =
-                        comment.type === "suggestion"
-                          ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                          : comment.type === "fix"
-                          ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                          : comment.type === "general"
-                          ? "bg-purple-500/10 text-purple-500 border-purple-500/20"
-                          : "bg-blue-500/10 text-blue-500 border-blue-500/20"
-
-                      return (
-                        <div
-                          key={comment.id}
-                          className="p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 space-y-2"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              {comment.author_avatar ? (
-                                <img
-                                  src={comment.author_avatar}
-                                  alt=""
-                                  className="w-6 h-6 rounded-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-6 h-6 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-bold flex items-center justify-center">
-                                  {(comment.author_name || "B")[0].toUpperCase()}
-                                </div>
-                              )}
-                              <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                                {comment.author_name}
-                              </span>
-                              {comment.author_username && (
-                                <span className="font-mono text-[11px] text-zinc-400">
-                                  @{comment.author_username}
-                                </span>
-                              )}
-                              <span className={`px-2 py-0.2 rounded-full font-mono text-[10px] uppercase font-bold border ${badgeBg}`}>
-                                {comment.type || "feedback"}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-[10px] text-zinc-400">
-                                {new Date(comment.created_at).toLocaleDateString()}
-                              </span>
-                              {isAuthor && (
-                                <button
-                                  onClick={() => handleDeleteComment(comment.id)}
-                                  title="Delete your comment"
-                                  className="p-1 text-zinc-400 hover:text-rose-500 transition-colors"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          <p className="font-sans text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed pl-8">
-                            {comment.content}
-                          </p>
-                        </div>
-                      )
-                    })
-                  )}
+                  <button
+                    onClick={() => handleUpvote(selectedProject.id)}
+                    className={`px-4 py-1.5 rounded-full font-mono text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+                      hasUpvoted[String(selectedProject.id)]
+                        ? "bg-[#FA5D00] text-black"
+                        : "bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black"
+                    }`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                    <span>Upvote</span>
+                    <span className="opacity-80">
+                      {upvotesMap[String(selectedProject.id)] || selectedProject.stars || 1}
+                    </span>
+                  </button>
                 </div>
               </div>
 
+              {/* Divider Line */}
               <div className="border-t border-zinc-200 dark:border-zinc-800" />
 
-              {/* ===================================================== */}
-              {/* RECOMMENDED FOR YOU (Proximity Scored Projects)       */}
-              {/* ===================================================== */}
-              <div className="space-y-3 pt-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif text-lg text-zinc-950 dark:text-zinc-100 font-normal">
-                    Similar in {selectedProject.category} & Recommended For You
-                  </h3>
-                  <span className="font-mono text-xs text-zinc-400">
-                    Hand-picked suggestions
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {recommendations.map((rec) => (
-                    <div
-                      key={rec.id}
-                      onClick={() => setSelectedProject(rec)}
-                      className="p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:border-[#FA5D00] bg-zinc-50 dark:bg-zinc-900/40 transition-all cursor-pointer flex gap-3 group"
-                    >
-                      <div className="w-20 h-16 rounded-xl overflow-hidden bg-zinc-950 flex-none border border-zinc-200 dark:border-zinc-800">
-                        {(rec.preview_image_url || (rec as any).previewImageUrl) ? (
-                          <img
-                            src={(rec.preview_image_url || (rec as any).previewImageUrl)}
-                            alt={rec.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center font-serif text-xs text-zinc-400">
-                            {rec.title[0]}
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1 flex flex-col justify-between">
-                        <div>
-                          <h4 className="font-serif text-sm font-normal text-zinc-900 dark:text-zinc-100 group-hover:text-[#FA5D00] transition-colors truncate">
-                            {rec.title}
-                          </h4>
-                          <p className="font-sans text-[11px] text-zinc-500 line-clamp-1 mt-0.5">
-                            {rec.description}
-                          </p>
+              {/* Two-Column Body: Content Left & Launchpad Scorecard Right */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                {/* LEFT COLUMN: Gallery, Tags, Description, Feedback input, Comments */}
+                <div className="lg:col-span-7 space-y-5">
+                  
+                  {/* Screenshot Gallery (3 cards in a row matching Peerlist) */}
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    {/* Card 1 with video play overlay */}
+                    <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-zinc-950 border border-zinc-200 dark:border-zinc-800 group shadow-xs">
+                      {selectedProject.preview_image_url ? (
+                        <img
+                          src={selectedProject.preview_image_url}
+                          alt=""
+                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-xs font-mono text-zinc-500">
+                          Preview 1
                         </div>
-                        <span className="font-mono text-[10px] text-zinc-400">
-                          by @{rec.authorHandle}
-                        </span>
+                      )}
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity">
+                        <div className="w-8 h-8 rounded-full bg-white/90 text-black flex items-center justify-center shadow-md">
+                          <Play className="w-3.5 h-3.5 fill-black ml-0.5" />
+                        </div>
                       </div>
                     </div>
-                  ))}
+
+                    {/* Card 2 */}
+                    <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-zinc-950 border border-zinc-200 dark:border-zinc-800 group shadow-xs">
+                      {selectedProject.preview_image_url ? (
+                        <img
+                          src={selectedProject.preview_image_url}
+                          alt=""
+                          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-xs font-mono text-zinc-500">
+                          Preview 2
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card 3 */}
+                    <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-zinc-950 border border-zinc-200 dark:border-zinc-800 group shadow-xs">
+                      {selectedProject.preview_image_url ? (
+                        <img
+                          src={selectedProject.preview_image_url}
+                          alt=""
+                          className="w-full h-full object-cover object-bottom group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-xs font-mono text-zinc-500">
+                          Preview 3
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Category & Tags Row */}
+                  <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-500">
+                    <Tag className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>
+                      {selectedProject.category}
+                      {selectedProject.tags && selectedProject.tags.length > 0 && ` · ${selectedProject.tags.join(" · ")}`}
+                    </span>
+                  </div>
+
+                  {/* Rich Description */}
+                  <div className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed font-sans space-y-2">
+                    <p>
+                      <strong className="text-zinc-950 dark:text-zinc-50 font-semibold">{selectedProject.title}</strong> is a curated tool built for designers, developers, and makers. Designed with high attention to interface craft and performance.
+                    </p>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-xs">
+                      {selectedProject.description}
+                    </p>
+                  </div>
+
+                  {/* Interactive Feedback Input Bar (Exact Peerlist style with send arrow) */}
+                  <form onSubmit={handlePostComment} className="pt-2">
+                    <div className="flex items-center gap-2.5 p-1.5 pr-2 rounded-full border border-zinc-200 dark:border-zinc-750 bg-zinc-50 dark:bg-zinc-900/80 shadow-xs focus-within:border-[#FA5D00] focus-within:ring-2 focus-within:ring-[#FA5D00]/20 transition-all">
+                      {/* Avatar */}
+                      <div className="w-8 h-8 rounded-full bg-[#FA5D00] p-1 flex items-center justify-center flex-none shadow-xs overflow-hidden">
+                        {currentUser?.avatar_url ? (
+                          <img src={currentUser.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                          <img src="/favicon.png" alt="" className="w-full h-full object-contain filter brightness-0 dark:filter-none" />
+                        )}
+                      </div>
+
+                      {/* Input */}
+                      <input
+                        type="text"
+                        required
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder="Share your feedback!"
+                        className="flex-1 bg-transparent border-0 outline-none font-sans text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 px-1"
+                      />
+
+                      {/* Icons & Submit button */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setCommentType(commentType === "feedback" ? "suggestion" : "feedback")}
+                          title={`Type: ${commentType}`}
+                          className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                        >
+                          <Paperclip className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCommentText((prev) => prev + " 🔥")}
+                          className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                        >
+                          <Smile className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={submittingComment || !commentText.trim()}
+                          className="w-7 h-7 rounded-full bg-emerald-600 hover:bg-[#FA5D00] text-white flex items-center justify-center transition-all disabled:opacity-40 cursor-pointer shadow-sm"
+                        >
+                          <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+
+                  {/* Tabs: COMMENTS · N | UPVOTES */}
+                  <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pt-2 pb-1 font-mono text-xs">
+                    <div className="flex items-center gap-6">
+                      <button
+                        onClick={() => setActiveCommentTab("comments")}
+                        className={`pb-2.5 font-bold transition-colors relative cursor-pointer ${
+                          activeCommentTab === "comments"
+                            ? "text-zinc-950 dark:text-zinc-50 border-b-2 border-emerald-600 dark:border-emerald-500"
+                            : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                        }`}
+                      >
+                        COMMENTS · {projectComments.length}
+                      </button>
+
+                      <button
+                        onClick={() => setActiveCommentTab("upvotes")}
+                        className={`pb-2.5 font-bold transition-colors cursor-pointer ${
+                          activeCommentTab === "upvotes"
+                            ? "text-zinc-950 dark:text-zinc-50 border-b-2 border-emerald-600 dark:border-emerald-500"
+                            : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                        }`}
+                      >
+                        UPVOTES
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-zinc-400 text-[11px]">
+                      <span>Newest</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </div>
+                  </div>
+
+                  {/* Comments List (Connected live to Supabase DB) */}
+                  <div className="space-y-3 pt-1">
+                    {loadingComments ? (
+                      <div className="text-center py-6 font-mono text-xs text-zinc-400">
+                        Loading comments from database...
+                      </div>
+                    ) : projectComments.length === 0 ? (
+                      <div className="py-6 text-center font-mono text-xs text-zinc-400">
+                        No comments yet. Share your feedback above!
+                      </div>
+                    ) : (
+                      projectComments.map((comment) => {
+                        const isAuthor = currentUser?.id && comment.user_id === currentUser.id
+                        return (
+                          <div
+                            key={comment.id}
+                            className="p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/40 space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                {comment.author_avatar ? (
+                                  <img
+                                    src={comment.author_avatar}
+                                    alt=""
+                                    className="w-6 h-6 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-bold flex items-center justify-center">
+                                    {(comment.author_name || "B")[0].toUpperCase()}
+                                  </div>
+                                )}
+                                <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                                  {comment.author_name}
+                                </span>
+                                {comment.author_username && (
+                                  <span className="font-mono text-[11px] text-zinc-400">
+                                    @{comment.author_username}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-[10px] text-zinc-400">
+                                  {new Date(comment.created_at).toLocaleDateString()}
+                                </span>
+                                {isAuthor && (
+                                  <button
+                                    onClick={() => handleDeleteComment(comment.id)}
+                                    title="Delete comment"
+                                    className="text-zinc-400 hover:text-rose-500"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            <p className="font-sans text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 pl-8 leading-relaxed">
+                              {comment.content}
+                            </p>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN: Reco Labs Launchpad Card + 5.0 Rating Scorecard */}
+                <div className="lg:col-span-5 space-y-4">
+                  <div className="p-5 sm:p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 shadow-xs space-y-5">
+                    
+                    {/* Laurel Wreath Badge Header */}
+                    <div className="text-center pt-1">
+                      <span className="font-mono text-[10px] uppercase font-bold tracking-widest text-zinc-400 block mb-0.5">
+                        WEEK 45 · 2026
+                      </span>
+                      <div className="flex items-center justify-center gap-1.5 text-zinc-900 dark:text-zinc-100">
+                        <Award className="w-4 h-4 text-[#FA5D00]" />
+                        <h3 className="font-serif text-lg font-normal tracking-tight">
+                          Reco Labs <span className="font-sans font-light text-zinc-500 italic text-sm">Launchpad</span>
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Stats 3 Columns */}
+                    <div className="grid grid-cols-3 gap-2 text-center py-1 border-y border-zinc-200 dark:border-zinc-800">
+                      <div>
+                        <div className="font-serif text-lg text-zinc-950 dark:text-zinc-50 font-normal">
+                          {upvotesMap[String(selectedProject.id)] || selectedProject.stars || 2}
+                        </div>
+                        <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
+                          Upvotes
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="font-serif text-lg text-zinc-950 dark:text-zinc-50 font-normal">
+                          {projectComments.length || 1}
+                        </div>
+                        <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
+                          Comments
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="font-serif text-lg text-zinc-950 dark:text-zinc-50 font-normal">
+                          {((selectedProject.stars || 1) * 7 + 12)}
+                        </div>
+                        <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
+                          Views
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Peer avatar pile */}
+                    <div className="text-center space-y-1.5">
+                      <div className="flex items-center justify-center -space-x-1.5">
+                        <div className="w-6 h-6 rounded-full border-2 border-white dark:border-zinc-900 bg-indigo-500 text-white font-mono text-[9px] font-bold flex items-center justify-center">
+                          A
+                        </div>
+                        <div className="w-6 h-6 rounded-full border-2 border-white dark:border-zinc-900 bg-emerald-500 text-white font-mono text-[9px] font-bold flex items-center justify-center">
+                          T
+                        </div>
+                        <div className="w-6 h-6 rounded-full border-2 border-white dark:border-zinc-900 bg-amber-500 text-white font-mono text-[9px] font-bold flex items-center justify-center">
+                          R
+                        </div>
+                      </div>
+                      <span className="font-mono text-[11px] text-zinc-500 block">
+                        3 Peers supporting this project!
+                      </span>
+                    </div>
+
+                    {/* 5.0 Rating Scorecard */}
+                    <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
+                      <div className="grid grid-cols-12 gap-3 items-center">
+                        {/* Left: 5.0 + Stars */}
+                        <div className="col-span-5 text-center">
+                          <div className="font-serif text-3xl font-normal text-zinc-950 dark:text-zinc-50 leading-none">
+                            5.0
+                          </div>
+                          <div className="flex items-center justify-center gap-0.5 text-[#FA5D00] mt-1.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star key={s} className="w-3 h-3 fill-[#FA5D00]" />
+                            ))}
+                          </div>
+                          <span className="font-mono text-[10px] text-zinc-400 block mt-1">
+                            1 rating
+                          </span>
+                        </div>
+
+                        {/* Right: Breakdown bars (Idea, Execution, Design) */}
+                        <div className="col-span-7 space-y-2 font-mono text-[11px]">
+                          <div>
+                            <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
+                              <span>Idea</span>
+                              <span className="font-bold">5.0</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                              <div className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full w-full" />
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
+                              <span>Execution</span>
+                              <span className="font-bold">5.0</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                              <div className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full w-full" />
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
+                              <span>Design</span>
+                              <span className="font-bold">5.0</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                              <div className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full w-full" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Rate Project Button */}
+                      <button
+                        onClick={() => {
+                          setRatingSubmitted(true)
+                          confetti({ particleCount: 60, spread: 55, origin: { y: 0.7 } })
+                          setTimeout(() => setRatingSubmitted(false), 2500)
+                        }}
+                        className="w-full py-2.5 rounded-full bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 font-mono text-xs font-bold hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-colors cursor-pointer shadow-sm text-center"
+                      >
+                        {ratingSubmitted ? "★ Rating Submitted (5.0)!" : "Rate Project"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1747,8 +1983,7 @@ export function ProjectsPage() {
         </div>
       )}
 
-
-      {/* 4. SUBMIT WEBSITE MODAL (Gated by Auth + Photo Preview)  */}
+{/* 4. SUBMIT WEBSITE MODAL (Gated by Auth + Photo Preview)  */}
       {/* ======================================================== */}
       {showSubmitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in overflow-y-auto">
