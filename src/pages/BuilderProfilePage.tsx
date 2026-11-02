@@ -350,21 +350,7 @@ export function BuilderProfilePage() {
                   </div>
 
                   <div className="mt-4 pt-4 border-t editorial-hairline flex items-center justify-between">
-                    <button
-                      onClick={() =>
-                        setScreenshotStartup({
-                          ...item,
-                          founder_name: profile.name,
-                          founder_username: profile.username,
-                          avatar_url: profile.avatar_url,
-                        } as any)
-                      }
-                      title="Create Shareable Screenshot Card"
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border editorial-hairline bg-orange-50 dark:bg-orange-950/30 text-[#FA5D00] font-mono text-[11px] font-bold hover:bg-[#FA5D00] hover:text-black transition-all cursor-pointer"
-                    >
-                      <Camera className="w-3 h-3" />
-                      <span>Snap Card</span>
-                    </button>
+                    <button onClick={() => setScreenshotStartup({ ...item, founder_name: profile.name, founder_username: profile.username, avatar_url: profile.avatar_url } as any)} title="Create Shareable Screenshot Card" className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] active:scale-95 transition-all cursor-pointer shadow-2xs"><Camera className="w-3.5 h-3.5 text-[#FA5D00]" /></button>
                     <a
                       href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
                       target="_blank"

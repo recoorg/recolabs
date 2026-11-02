@@ -520,7 +520,7 @@ export async function listStartups({
       SELECT s.id, s.name, s.url, s.problem_solving, s.category, s.stage, s.created_at,
              s.founder_name, s.founder_username, s.founder_email, s.founder_phone, s.founder_website, s.founder_discord,
              s.user_id,
-             u.name as author_name, u.username as author_username, u.phone as author_phone, u.website as author_website
+             u.name as author_name, u.username as author_username, u.phone as author_phone, u.website as author_website, u.avatar_url as author_avatar, u.avatar_url
       FROM startups s
       LEFT JOIN users u ON s.user_id = u.id
       WHERE 1=1

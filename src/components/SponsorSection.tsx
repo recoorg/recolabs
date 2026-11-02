@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Link } from "react-router-dom"
-import { Heart, Mail, ArrowUpRight, Copy, Check, Plus, ExternalLink, Sparkles } from "lucide-react"
+import { Heart, Mail, ArrowUpRight, Copy, Check, Plus, ExternalLink } from "lucide-react"
 
 interface HomeSponsorAd {
   id: number
@@ -26,7 +26,7 @@ export function SponsorSection() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Fetch live ads from Supabase
+  // Fetch live ads from Supabase / Postgres
   React.useEffect(() => {
     const fetchAds = async () => {
       try {
@@ -79,56 +79,53 @@ export function SponsorSection() {
   }
 
   return (
-    <section className="relative w-full py-20 sm:py-24 px-6 sm:px-8 bg-transparent overflow-hidden">
+    <section className="relative w-full py-28 px-6 sm:px-8 bg-transparent overflow-hidden">
       {/* Seamless ambient blurred glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-5xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
+      <div className="relative z-10 mx-auto max-w-6xl">
+        {/* Section Header - Matching RepoShowcase scale and rhythm */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-14 border-b editorial-hairline">
           
           {/* Left Editorial Copy */}
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100/70 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 text-[#FA5D00] font-mono text-xs font-semibold uppercase tracking-wider mb-4">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-orange-100/70 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 text-[#FA5D00] font-mono text-xs font-semibold uppercase tracking-wider mb-4">
               <span>SPONSORSHIP & BUILD GRANTS</span>
             </div>
 
-            <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-[1.05]">
-              Back the Next Generation of Builders<span className="text-[#FA5D00]">.</span>
+            <h2 className="font-serif text-4xl sm:text-6xl lg:text-7xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-[1.04]">
+              Back the next generation of builders<span className="text-[#FA5D00]">.</span>
             </h2>
 
-            <p className="mt-4 font-sans text-sm sm:text-base text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed">
+            <p className="mt-5 font-sans text-base sm:text-lg text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed max-w-2xl">
               Help us sponsor microcontroller boards, sensor kits, server compute, and prize bounties for curious high school and beginner hackers. Zero corporate bloat—every dollar goes directly to hands-on build projects.
             </p>
           </div>
 
           {/* Right Action Stack */}
-          <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end gap-3 flex-none">
+          <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end gap-3.5 flex-none">
             {/* Primary Sponsor Button */}
             <a
               href={`mailto:${sponsorEmail}?subject=Sponsoring%20Reco%20Labs&body=Hi%20Aditya%2C%0A%0AWe%20would%20love%20to%20sponsor%20Reco%20Labs.%20Here%20are%20the%20details%3A`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
             >
-              <Heart className="w-3.5 h-3.5 fill-black" />
+              <Heart className="w-4 h-4 fill-black" />
               <span>Sponsor Reco Labs</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <ArrowUpRight className="w-4 h-4" />
             </a>
 
             {/* Email Pill with Copy Trigger */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 font-mono text-xs text-zinc-700 dark:text-zinc-300 shadow-sm">
-              <Mail className="w-3.5 h-3.5 text-[#FA5D00] flex-none" />
-              <a
-                href={`mailto:${sponsorEmail}`}
-                className="hover:text-[#FA5D00] transition-colors"
-              >
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border editorial-hairline bg-white/70 dark:bg-zinc-900/60 font-mono text-xs text-zinc-700 dark:text-zinc-300 shadow-2xs">
+              <Mail className="w-3.5 h-3.5 text-[#FA5D00]" />
+              <a href={`mailto:${sponsorEmail}`} className="hover:text-[#FA5D00] transition-colors font-medium">
                 {sponsorEmail}
               </a>
               <button
-                type="button"
                 onClick={handleCopy}
-                title="Copy email address"
-                className="ml-1 p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                title="Copy sponsor email"
+                className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
               >
                 {copied ? (
                   <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -141,20 +138,20 @@ export function SponsorSection() {
 
         </div>
 
-        {/* Sponsor Grid: Shows Live Supabase Ads or Interactive Placeholder Slots */}
-        <div className="mt-14 pt-8 border-t editorial-hairline">
-          <div className="flex items-center justify-between mb-4 font-mono text-xs text-zinc-400">
-            <span className="uppercase tracking-wider">OFFICIAL HOMESCREEN SPONSOR SLOTS</span>
+        {/* Sponsor Grid: Full-sized, rich cards matching repository showcase density */}
+        <div className="mt-14">
+          <div className="flex items-center justify-between mb-6 font-mono text-xs text-zinc-400">
+            <span className="uppercase tracking-wider font-semibold">OFFICIAL HOMESCREEN SPONSOR TIERS</span>
             <Link
               to="/sponsors"
-              className="text-[#FA5D00] font-bold hover:underline inline-flex items-center gap-1"
+              className="text-[#FA5D00] font-bold hover:underline inline-flex items-center gap-1.5"
             >
-              <span>View All Tiers & Guidelines</span>
-              <ArrowUpRight className="w-3 h-3" />
+              <span>View All Tiers &amp; Guidelines</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {slotsConfig.map((slot, idx) => {
               // Check if an active ad matches this slot or general home placement
               const assignedAd = liveAds.find(
@@ -172,49 +169,53 @@ export function SponsorSection() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => handleAdClick(assignedAd.id)}
-                    className="group relative p-5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer"
+                    className="group relative p-7 rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between min-h-[220px] shadow-xs hover:shadow-xl cursor-pointer"
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="px-2 py-0.5 rounded-full bg-[#FA5D00] text-black font-mono text-[9px] font-bold uppercase">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-bold uppercase tracking-wider">
                           {assignedAd.badge_label || "Partner"}
                         </span>
-                        <ExternalLink className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
+                        <ExternalLink className="w-4 h-4 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
                       </div>
-                      <h4 className="font-serif text-base font-normal text-zinc-950 dark:text-zinc-50 line-clamp-1">
+                      <h4 className="font-serif text-2xl font-normal text-zinc-950 dark:text-zinc-50 leading-snug">
                         {assignedAd.title}
                       </h4>
-                      <p className="mt-1 font-sans text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                      <p className="mt-2.5 font-sans text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed">
                         {assignedAd.description || slot.defaultDesc}
                       </p>
                     </div>
 
-                    <div className="mt-4 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-[10px] font-mono text-zinc-400 flex items-center justify-between">
-                      <span>{assignedAd.sponsor_name || "Official Partner"}</span>
-                      <span className="text-[#FA5D00] group-hover:underline">Visit site ↗</span>
+                    <div className="mt-6 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs font-mono text-zinc-400 flex items-center justify-between">
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">{assignedAd.sponsor_name || "Official Partner"}</span>
+                      <span className="text-[#FA5D00] font-bold group-hover:underline">Visit site ↗</span>
                     </div>
                   </a>
                 )
               }
 
-              // Available Placeholder Slot
+              // Available Placeholder Slot - Rich, full-height card
               return (
                 <Link
                   key={slot.key}
                   to="/sponsors"
-                  className="group relative p-5 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 hover:border-[#FA5D00] bg-white/40 dark:bg-zinc-900/20 transition-all flex flex-col items-center justify-center text-center min-h-[140px] cursor-pointer"
+                  className="group relative p-7 rounded-3xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] bg-white/50 dark:bg-zinc-900/30 hover:bg-white dark:hover:bg-zinc-900/60 transition-all flex flex-col items-center justify-center text-center min-h-[220px] shadow-2xs hover:shadow-md cursor-pointer"
                 >
-                  <div className="w-8 h-8 rounded-full border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-colors mb-2">
-                    <Plus className="w-4 h-4" />
+                  <div className="w-12 h-12 rounded-full border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-all mb-3.5 group-hover:scale-110">
+                    <Plus className="w-5 h-5" />
                   </div>
-                  <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#FA5D00] mb-1.5">
                     {slot.tierLabel}
                   </span>
-                  <div className="font-serif text-sm text-zinc-800 dark:text-zinc-200 font-normal">
+                  <div className="font-serif text-lg sm:text-xl text-zinc-950 dark:text-zinc-50 font-normal">
                     {slot.defaultName}
                   </div>
-                  <span className="mt-2 text-[10px] font-mono text-[#FA5D00] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                    + Claim Slot
+                  <p className="mt-1.5 font-sans text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed max-w-[220px]">
+                    {slot.defaultDesc}
+                  </p>
+                  <span className="mt-3.5 inline-flex items-center gap-1 text-xs font-mono text-[#FA5D00] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span>+ Claim Slot</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                   </span>
                 </Link>
               )

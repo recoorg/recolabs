@@ -512,7 +512,7 @@ export function DashboardPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                (currentUser?.name || "B")[0].toUpperCase()
+                <img src={"https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(currentUser?.username || "builder")} alt={currentUser?.name || "Builder"} className="w-full h-full object-cover" />
               )}
             </div>
           </Link>

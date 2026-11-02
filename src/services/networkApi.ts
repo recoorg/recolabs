@@ -63,6 +63,8 @@ export interface StartupItem {
   founder_phone?: string | null
   founder_website?: string | null
   founder_discord?: string | null
+  avatar_url?: string | null
+  author_avatar?: string | null
   name: string
   url: string
   problem_solving: string

@@ -597,9 +597,7 @@ export function NetworkPage() {
                       className="w-5 h-5 rounded-full object-cover flex-none"
                     />
                   ) : (
-                    <span className="w-5 h-5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center flex-none">
-                      {(currentUser.name || "B")[0].toUpperCase()}
-                    </span>
+                    <img src={"https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(currentUser.username)} alt={currentUser.name} className="w-5 h-5 rounded-full object-cover flex-none" />
                   )}
                   <span>@{currentUser.username}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
@@ -756,14 +754,7 @@ export function NetworkPage() {
 
                         {/* Top Right Actions: Screenshot Card Snap & Link */}
                         <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setScreenshotStartup(item); }}
-                            title="Generate Shareable Screenshot Card"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-mono text-[10px] font-bold hover:border-[#FA5D00] hover:text-[#FA5D00] active:scale-95 transition-all cursor-pointer shadow-2xs"
-                          >
-                            <Camera className="w-3 h-3 text-[#FA5D00]" />
-                            <span className="hidden sm:inline">Snap</span>
-                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); setScreenshotStartup(item); }} title="Snap Screenshot Card" className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] active:scale-95 transition-all cursor-pointer shadow-2xs"><Camera className="w-3.5 h-3.5 text-[#FA5D00]" /></button>
 
                           <a
                             href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
@@ -814,9 +805,7 @@ export function NetworkPage() {
                           className="flex items-center gap-2 font-mono text-xs text-zinc-900 dark:text-zinc-100 font-bold hover:text-[#FA5D00] transition-colors truncate"
                           title={`View ${item.founder_name}'s profile`}
                         >
-                          <span className="w-6 h-6 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center flex-none">
-                            {initial}
-                          </span>
+                          <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-tr from-[#FA5D00] to-amber-400 flex-none border border-black/10 dark:border-white/10 shadow-2xs"><img src={(item as any).avatar_url || (item as any).author_avatar || "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(founderUser)} alt={item.founder_name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(founderUser); }} /></div>
                           <span className="truncate hover:underline underline-offset-4 decoration-[#FA5D00]">{item.founder_name}</span>
                         </Link>
                       </div>
@@ -1404,9 +1393,7 @@ export function NetworkPage() {
                     to={`/builder/${selectedStartup.founder_username || selectedStartup.founder_name.toLowerCase().replace(/[^a-z0-9_-]/g, "")}`}
                     className="inline-flex items-center gap-1.5 hover:text-[#FA5D00] transition-colors"
                   >
-                    <span className="w-5 h-5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold flex items-center justify-center">
-                      {(selectedStartup.founder_name || "B")[0].toUpperCase()}
-                    </span>
+                    <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-tr from-[#FA5D00] to-amber-400 flex-none border border-black/10 dark:border-white/10 shadow-2xs"><img src={(selectedStartup as any).avatar_url || (selectedStartup as any).author_avatar || "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(selectedStartup.founder_username || selectedStartup.founder_name)} alt={selectedStartup.founder_name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(selectedStartup.founder_username || selectedStartup.founder_name); }} /></div>
                     <span className="font-bold text-zinc-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-[#FA5D00]">
                       {selectedStartup.founder_name}
                     </span>
@@ -1611,15 +1598,7 @@ export function NetworkPage() {
                     {/* Supporting Peers Strip */}
                     <div className="text-center space-y-1.5">
                       <div className="flex items-center justify-center -space-x-1.5">
-                        {["#3b82f6", "#10b981", "#f59e0b", "#ec4899"].map((color, idx) => (
-                          <div
-                            key={idx}
-                            style={{ backgroundColor: color }}
-                            className="w-6 h-6 rounded-full border-2 border-white dark:border-zinc-900 flex items-center justify-center text-[10px] font-bold text-white shadow-xs"
-                          >
-                            {["A", "T", "R", "D"][idx]}
-                          </div>
-                        ))}
+                        {["https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=faces", "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=64&h=64&fit=crop&crop=faces", "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=64&h=64&fit=crop&crop=faces"].map((pfp, idx) => (<img key={idx} src={pfp} alt="Peer" className="w-6 h-6 rounded-full border-2 border-white dark:border-zinc-900 object-cover shadow-xs" />))}
                       </div>
                       <p className="font-mono text-[11px] text-zinc-500">
                         4 Peers supporting this startup!
