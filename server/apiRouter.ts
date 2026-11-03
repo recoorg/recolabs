@@ -1527,6 +1527,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
     // UPGRADE USER TO VERIFIED PRO / BLUE TICK
     if (req.method === "POST" && (pathname === "/api/network/upgrade-user" || pathname === "/api/upgrade-user")) {
       const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
       const body = await parseBody();
       const targetUserId = user?.id || Number(body?.user_id);
       const targetUsername = user?.username || body?.username;
@@ -1534,6 +1535,43 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       if (!targetUserId && !targetUsername) {
         res.statusCode = 401;
         res.end(JSON.stringify({ error: "Authentication required to upgrade." }));
+        return;
+      }
+
+      // Security check: Must be admin or carry valid payment verification
+      const paymentDetails = body?.paymentDetails;
+      const isRazorpayVerified = Boolean(
+        paymentDetails?.razorpay_payment_id && 
+        paymentDetails?.razorpay_order_id && 
+        paymentDetails?.razorpay_signature
+      );
+
+      // Verify Razorpay HMAC signature if secret is present
+      const rzpSecret = process.env.RAZORPAY_KEY_SECRET;
+      if (isRazorpayVerified && rzpSecret) {
+        try {
+          const crypto = await import("crypto");
+          const expectedSig = crypto
+            .createHmac("sha256", rzpSecret)
+            .update(`${paymentDetails.razorpay_order_id}|${paymentDetails.razorpay_payment_id}`)
+            .digest("hex");
+          if (expectedSig !== paymentDetails.razorpay_signature) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: "Invalid payment cryptographic signature." }));
+            return;
+          }
+        } catch (sigErr) {
+          console.error("Signature verification error:", sigErr);
+        }
+      }
+
+      // If user submits manual UPI without Razorpay confirmation and not admin
+      if (!isAdmin && !isRazorpayVerified) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({
+          error: "Verification requires confirmed payment. If you paid via UPI, verification activates automatically once verified by Razorpay webhook.",
+          pending: true
+        }));
         return;
       }
 

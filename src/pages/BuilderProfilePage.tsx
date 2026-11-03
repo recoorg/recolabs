@@ -228,21 +228,20 @@ export function BuilderProfilePage() {
                 <button
                   type="button"
                   onClick={handleCopyProfileUrl}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+                  title={copiedLink ? "Link Copied!" : "Copy profile link"}
+                  className="w-9 h-9 rounded-full bg-[#FA5D00] text-black hover:opacity-90 active:scale-95 transition-all shadow-sm flex items-center justify-center cursor-pointer flex-none"
                 >
-                  {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-                  <span>{copiedLink ? "Link Copied!" : "Share Profile"}</span>
+                  {copiedLink ? <Check className="w-4 h-4 stroke-[2.5]" /> : <Share2 className="w-4 h-4" />}
                 </button>
 
                 <a
                   href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${profile.name || profile.username}'s builder profile on @adibxr Reco Labs:`)}&url=${encodeURIComponent(`https://recolabs.in/builder/${profile.username}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="Share profile to Twitter/X with live photo card"
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-mono text-xs font-semibold hover:border-[#FA5D00] hover:text-[#FA5D00] transition-colors cursor-pointer"
+                  title="Share profile to Twitter/X"
+                  className="w-9 h-9 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 hover:border-[#FA5D00] hover:text-[#FA5D00] transition-colors flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs flex-none"
                 >
                   <TwitterIcon className="w-3.5 h-3.5 fill-current" />
-                  <span>Post on X</span>
                 </a>
               </div>
 

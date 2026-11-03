@@ -364,18 +364,7 @@ export const networkApi = {
       localStorage.setItem(USER_KEY, JSON.stringify(json.user))
       return json.user
     }
-    if (currentUser) {
-      const optimistic = {
-        ...currentUser,
-        is_verified: true,
-        is_pro: true,
-        plan,
-        plan_billing: billing,
-      }
-      localStorage.setItem(USER_KEY, JSON.stringify(optimistic))
-      return optimistic
-    }
-    throw new Error("Unable to complete upgrade")
+    throw new Error("Unable to complete upgrade without verified payment.")
   },
 
   async validateCoupon(code: string, amount: number): Promise<CouponValidationResult> {
@@ -408,9 +397,12 @@ export const networkApi = {
   },
 
     async boostStartup(startupId: number): Promise<boolean> {
+    const token = this.getToken()
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (token) headers["Authorization"] = `Bearer ${token}`
     const json = await safeJsonFetch<{ success: boolean }>("/api/network/boost-startup", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ id: startupId }),
     })
     return json.success || true

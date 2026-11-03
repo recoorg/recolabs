@@ -2776,12 +2776,39 @@ async function handleNetworkRequest(req, res) {
     }
     if (req.method === "POST" && (pathname === "/api/network/upgrade-user" || pathname === "/api/upgrade-user")) {
       const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
       const body = await parseBody();
       const targetUserId = user?.id || Number(body?.user_id);
       const targetUsername = user?.username || body?.username;
       if (!targetUserId && !targetUsername) {
         res.statusCode = 401;
         res.end(JSON.stringify({ error: "Authentication required to upgrade." }));
+        return;
+      }
+      const paymentDetails = body?.paymentDetails;
+      const isRazorpayVerified = Boolean(
+        paymentDetails?.razorpay_payment_id && paymentDetails?.razorpay_order_id && paymentDetails?.razorpay_signature
+      );
+      const rzpSecret = process.env.RAZORPAY_KEY_SECRET;
+      if (isRazorpayVerified && rzpSecret) {
+        try {
+          const crypto = await import("crypto");
+          const expectedSig = crypto.createHmac("sha256", rzpSecret).update(`${paymentDetails.razorpay_order_id}|${paymentDetails.razorpay_payment_id}`).digest("hex");
+          if (expectedSig !== paymentDetails.razorpay_signature) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: "Invalid payment cryptographic signature." }));
+            return;
+          }
+        } catch (sigErr) {
+          console.error("Signature verification error:", sigErr);
+        }
+      }
+      if (!isAdmin && !isRazorpayVerified) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({
+          error: "Verification requires confirmed payment. If you paid via UPI, verification activates automatically once verified by Razorpay webhook.",
+          pending: true
+        }));
         return;
       }
       const plan = (body?.plan || "pro").toString().toLowerCase();

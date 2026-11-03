@@ -1655,7 +1655,7 @@ export function NetworkPage() {
                         {/* Overall Score */}
                         <div className="col-span-5 text-center">
                           <div className="font-serif text-3xl font-normal text-zinc-950 dark:text-zinc-50 leading-none">
-                            {startupRatings.overall.toFixed(1)}
+                            {Number(startupRatings?.overall || 5).toFixed(1)}
                           </div>
                           <div className="flex items-center justify-center gap-0.5 text-[#FA5D00] mt-1.5">
                             {[1, 2, 3, 4, 5].map((s) => (
@@ -1672,11 +1672,11 @@ export function NetworkPage() {
                           <div>
                             <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
                               <span>Idea</span>
-                              <span className="font-bold">{startupRatings.idea.toFixed(1)}</span>
+                              <span className="font-bold">{Number(startupRatings?.idea || 5).toFixed(1)}</span>
                             </div>
                             <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                               <div
-                                style={{ width: `${(startupRatings.idea / 5) * 100}%` }}
+                                style={{ width: `${(Number(startupRatings?.idea || 5) / 5) * 100}%` }}
                                 className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
                               />
                             </div>
@@ -1685,11 +1685,11 @@ export function NetworkPage() {
                           <div>
                             <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
                               <span>Execution</span>
-                              <span className="font-bold">{startupRatings.execution.toFixed(1)}</span>
+                              <span className="font-bold">{Number(startupRatings?.execution || 5).toFixed(1)}</span>
                             </div>
                             <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                               <div
-                                style={{ width: `${(startupRatings.execution / 5) * 100}%` }}
+                                style={{ width: `${(Number(startupRatings?.execution || 5) / 5) * 100}%` }}
                                 className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
                               />
                             </div>
@@ -1698,11 +1698,11 @@ export function NetworkPage() {
                           <div>
                             <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
                               <span>Design</span>
-                              <span className="font-bold">{startupRatings.design.toFixed(1)}</span>
+                              <span className="font-bold">{Number(startupRatings?.design || 5).toFixed(1)}</span>
                             </div>
                             <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                               <div
-                                style={{ width: `${(startupRatings.design / 5) * 100}%` }}
+                                style={{ width: `${(Number(startupRatings?.design || 5) / 5) * 100}%` }}
                                 className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
                               />
                             </div>
@@ -1794,6 +1794,32 @@ export function NetworkPage() {
         <StartupScreenshotModal
           startup={screenshotStartup}
           onClose={() => setScreenshotStartup(null)}
+        />
+      )}
+
+      {/* MODAL 5: STARTUP SPOTLIGHT PROMOTION / PIN */}
+      {promoteStartup && (
+        <StartupPromoteModal
+          startup={promoteStartup}
+          onClose={() => setPromoteStartup(null)}
+          onBoostSuccess={(id) => {
+            setStartups((prev) => {
+              const updated = prev.map((item) =>
+                item.id === id ? { ...item, is_featured: true } : item
+              )
+              return updated.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
+            })
+            setPromoteStartup(null)
+          }}
+        />
+      )}
+
+      {/* MODAL 6: PROFILE UPGRADE / BLUE TICK */}
+      {showUpgradeModal && currentUser && (
+        <ProfileUpgradeModal
+          username={currentUser.username}
+          name={currentUser.name}
+          onClose={() => setShowUpgradeModal(false)}
         />
       )}
     </div>

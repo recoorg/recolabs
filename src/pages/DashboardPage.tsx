@@ -347,9 +347,9 @@ export function DashboardPage() {
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#09090b] text-zinc-950 dark:text-zinc-50 flex">
       
       {/* ======================================================== */}
-      {/* 1. SLIM VERTICAL LEFT DOCK (Matching Screenshot media_...) */}
+      {/* 1. SLIM VERTICAL LEFT DOCK (Desktop: fixed, Mobile: hidden) */}
       {/* ======================================================== */}
-      <aside className="w-18 sm:w-20 fixed left-0 top-0 bottom-0 z-40 bg-white/95 dark:bg-[#0c0c0e]/95 backdrop-blur-md border-r border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-between py-5 select-none shadow-xs">
+      <aside className="hidden md:flex w-20 fixed left-0 top-0 bottom-0 z-40 bg-white/95 dark:bg-[#0c0c0e]/95 backdrop-blur-md border-r border-zinc-200 dark:border-zinc-800 flex-col items-center justify-between py-5 select-none shadow-xs">
         
         {/* Top: Squircle RECO Logo */}
         <div className="flex flex-col items-center gap-6">
@@ -482,7 +482,7 @@ export function DashboardPage() {
             {/* 7.5 Get Blue Tick Pass */}
             <button
               type="button"
-              onClick={() => setShowUpgradeModal(true)}
+              onClick={() => navigate("/pricing")}
               className="w-11 h-11 rounded-2xl flex items-center justify-center text-blue-500 hover:text-white hover:bg-blue-600 transition-all group relative cursor-pointer"
               title="Get Blue Tick / Verified Pro"
             >
@@ -539,9 +539,58 @@ export function DashboardPage() {
       </aside>
 
       {/* ======================================================== */}
-      {/* 2. MAIN DASHBOARD CANVAS (Shifted next to the left dock)   */}
+      {/* 2. MAIN DASHBOARD CANVAS (Responsive: full on mobile)      */}
       {/* ======================================================== */}
-      <main className="flex-1 ml-18 sm:ml-20 min-h-screen py-10 px-6 sm:px-12 max-w-6xl">
+      <main className="flex-1 w-full ml-0 md:ml-20 min-h-screen py-6 md:py-10 px-4 sm:px-6 md:px-10 max-w-7xl mx-auto">
+        
+        {/* Mobile Top Navigation Bar (< md) */}
+        <div className="md:hidden pb-4 mb-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3">
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/favicon.png" alt="Logo" className="w-6 h-6 object-contain" />
+            <span className="font-serif font-bold text-sm text-zinc-950 dark:text-zinc-50">Reco Console</span>
+          </Link>
+          <div className="flex items-center gap-1 font-mono text-[11px] overflow-x-auto py-1">
+            <button
+              type="button"
+              onClick={() => setSection("overview")}
+              className={`px-3 py-1.5 rounded-full transition-colors ${
+                activeSection === "overview"
+                  ? "bg-[#FA5D00] text-black font-bold"
+                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              type="button"
+              onClick={() => setSection("jobs")}
+              className={`px-3 py-1.5 rounded-full transition-colors ${
+                activeSection === "jobs" || activeSection === "post-job"
+                  ? "bg-[#FA5D00] text-black font-bold"
+                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+              }`}
+            >
+              Jobs
+            </button>
+            <button
+              type="button"
+              onClick={() => setSection("hackathons")}
+              className={`px-3 py-1.5 rounded-full transition-colors ${
+                activeSection === "hackathons" || activeSection === "post-hackathon"
+                  ? "bg-[#FA5D00] text-black font-bold"
+                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+              }`}
+            >
+              Events
+            </button>
+            <Link
+              to={`/builder/${currentUser?.username || ""}`}
+              className="px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+            >
+              Profile ↗
+            </Link>
+          </div>
+        </div>
         
         {/* Top Header Row */}
         <div className="pb-8 mb-8 border-b editorial-hairline flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -567,7 +616,7 @@ export function DashboardPage() {
             {!(currentUser?.is_verified || currentUser?.is_pro) && (
               <button
                 type="button"
-                onClick={() => setShowUpgradeModal(true)}
+                onClick={() => navigate("/pricing")}
                 className="px-4 py-2 rounded-full font-mono text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <VerifiedBadge size="xs" />
@@ -606,7 +655,10 @@ export function DashboardPage() {
         {/* SECTION: OVERVIEW                                             */}
         {/* ------------------------------------------------------------- */}
         {activeSection === "overview" && (
-          <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* Left 8 cols: Core Metrics, Pass Banner, Active Listings */}
+            <div className="lg:col-span-8 space-y-8">
             
             {/* Stat Tiles in Signature Reco Editorial Style */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -707,7 +759,7 @@ export function DashboardPage() {
                 {currentUser?.is_verified || currentUser?.is_pro ? (
                   <button
                     type="button"
-                    onClick={() => setShowUpgradeModal(true)}
+                    onClick={() => navigate("/pricing")}
                     className="px-5 py-2.5 rounded-full border border-blue-500/30 bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 font-mono text-xs font-bold uppercase tracking-wider hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
                   >
                     Pass Details
@@ -715,7 +767,7 @@ export function DashboardPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setShowUpgradeModal(true)}
+                    onClick={() => navigate("/pricing")}
                     className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:opacity-95 active:scale-95 text-white font-mono text-xs font-bold uppercase tracking-wider shadow-md transition-all cursor-pointer inline-flex items-center gap-2"
                   >
                     <ShieldCheck className="w-4 h-4" />
@@ -833,6 +885,174 @@ export function DashboardPage() {
                     ))}
                   </div>
                 )}
+              </div>
+
+            </div>
+
+            </div>
+
+            {/* Right 4 cols: Builder Identity Snapshot & Quick Launchpad */}
+            <div className="lg:col-span-4 space-y-6">
+              
+              {/* Builder Profile Snapshot Card */}
+              <div className="p-6 rounded-3xl border editorial-hairline bg-white dark:bg-zinc-900/60 shadow-xs relative overflow-hidden">
+                <div className="flex items-center justify-between pb-4 border-b editorial-hairline font-mono text-xs">
+                  <span className="text-zinc-400 font-bold uppercase tracking-wider">Builder Identity</span>
+                  {currentUser?.is_verified || currentUser?.is_pro ? (
+                    <span className="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400">
+                      <VerifiedBadge size="xs" /> PRO
+                    </span>
+                  ) : (
+                    <span className="text-zinc-500 font-medium">Free Tier</span>
+                  )}
+                </div>
+
+                <div className="mt-5 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center overflow-hidden flex-none">
+                    {currentUser?.avatar_url ? (
+                      <img src={currentUser.avatar_url} alt={currentUser.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-serif text-2xl font-bold text-zinc-700 dark:text-zinc-300">
+                        {(currentUser?.name || "B").charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h4 className="font-serif text-lg font-bold text-zinc-950 dark:text-zinc-50 truncate">
+                        {currentUser?.name || "Anonymous Builder"}
+                      </h4>
+                      {(currentUser?.is_verified || currentUser?.is_pro) && (
+                        <VerifiedBadge size="sm" />
+                      )}
+                    </div>
+                    <p className="font-mono text-xs text-zinc-500 truncate mt-0.5">
+                      @{currentUser?.username || "builder"}
+                    </p>
+                  </div>
+                </div>
+
+                {currentUser?.bio && (
+                  <p className="mt-4 text-xs font-sans text-zinc-600 dark:text-zinc-400 leading-relaxed line-clamp-2">
+                    {currentUser.bio}
+                  </p>
+                )}
+
+                <div className="mt-5 pt-4 border-t editorial-hairline flex flex-col gap-2 font-mono text-xs">
+                  {currentUser?.username && (
+                    <Link
+                      to={`/builder/${currentUser.username}`}
+                      className="w-full py-2.5 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-black dark:hover:border-white font-bold text-center text-zinc-900 dark:text-zinc-100 flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <span>View Public Profile</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </Link>
+                  )}
+                  {!(currentUser?.is_verified || currentUser?.is_pro) && (
+                    <button
+                      type="button"
+                      onClick={() => navigate("/pricing")}
+                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text-center flex items-center justify-center gap-1.5 hover:opacity-95 transition-opacity cursor-pointer shadow-xs"
+                    >
+                      <VerifiedBadge size="xs" />
+                      <span>Upgrade to Blue Tick</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Launchpad Card */}
+              <div className="p-6 rounded-3xl border editorial-hairline bg-white dark:bg-zinc-900/60 shadow-xs">
+                <div className="flex items-center justify-between pb-4 border-b editorial-hairline font-mono text-xs text-zinc-400">
+                  <span className="font-bold uppercase tracking-wider">Quick Launchpad</span>
+                  <Rocket className="w-3.5 h-3.5 text-[#FA5D00]" />
+                </div>
+
+                <div className="mt-4 space-y-2 font-mono text-xs">
+                  <Link
+                    to="/network"
+                    className="p-3 rounded-2xl border editorial-hairline hover:border-[#FA5D00] hover:bg-[#FA5D00]/[0.02] flex items-center justify-between transition-colors group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-orange-500/10 text-[#FA5D00] flex items-center justify-center">
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-[#FA5D00] transition-colors">
+                        Launch Startup Prototype
+                      </span>
+                    </div>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setSection("post-job")}
+                    className="w-full p-3 rounded-2xl border editorial-hairline hover:border-[#FA5D00] hover:bg-[#FA5D00]/[0.02] flex items-center justify-between transition-colors group text-left cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                        <Briefcase className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-[#FA5D00] transition-colors">
+                        Post Engineering Job
+                      </span>
+                    </div>
+                    <Plus className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSection("post-hackathon")}
+                    className="w-full p-3 rounded-2xl border editorial-hairline hover:border-[#FA5D00] hover:bg-[#FA5D00]/[0.02] flex items-center justify-between transition-colors group text-left cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                        <Trophy className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-[#FA5D00] transition-colors">
+                        Host Builder Sprint
+                      </span>
+                    </div>
+                    <Plus className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
+                  </button>
+
+                  <Link
+                    to="/projects"
+                    className="p-3 rounded-2xl border editorial-hairline hover:border-[#FA5D00] hover:bg-[#FA5D00]/[0.02] flex items-center justify-between transition-colors group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                        <Globe className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-[#FA5D00] transition-colors">
+                        Browse 190+ Vaults
+                      </span>
+                    </div>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Guild Perks / Quick Help Card */}
+              <div className="p-6 rounded-3xl border editorial-hairline bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900/60 dark:to-zinc-950 font-mono text-xs">
+                <div className="flex items-center gap-2 text-zinc-950 dark:text-zinc-50 font-bold">
+                  <ShieldCheck className="w-4 h-4 text-[#FA5D00]" />
+                  <span>Reco Ecosystem Benefits</span>
+                </div>
+                <p className="mt-2 text-zinc-500 dark:text-zinc-400 font-sans text-xs leading-relaxed">
+                  Verified builders get top placement on Founder Network, priority review on hackathon submissions, and direct contact channels.
+                </p>
+                <div className="mt-4 pt-3 border-t editorial-hairline flex items-center justify-between text-[11px] text-zinc-400">
+                  <span>Reco Labs Guild</span>
+                  <a
+                    href="https://discord.com/invite/7dk4w37BhP"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#FA5D00] font-bold hover:underline"
+                  >
+                    Join Discord ↗
+                  </a>
+                </div>
               </div>
 
             </div>

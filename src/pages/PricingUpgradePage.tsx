@@ -18,7 +18,8 @@ import {
   Crown,
   Flame,
   Star,
-  Users
+  Users,
+  X
 } from "lucide-react"
 import { VerifiedBadge } from "@/components/VerifiedBadge"
 import { networkApi, type UserProfile, type CouponValidationResult } from "@/services/networkApi"
@@ -29,6 +30,7 @@ export function PricingUpgradePage() {
   const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(null)
   const [billing, setBilling] = React.useState<"monthly" | "yearly">("monthly")
   const [selectedPlan, setSelectedPlan] = React.useState<"pro" | "founder">("pro")
+  const [showCheckoutModal, setShowCheckoutModal] = React.useState(false)
 
   // Coupon State
   const [couponInput, setCouponInput] = React.useState("")
@@ -536,13 +538,15 @@ export function PricingUpgradePage() {
             <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
               <button
                 type="button"
-                className={`w-full py-3 rounded-full font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm ${
-                  selectedPlan === "pro"
-                    ? "bg-[#FA5D00] text-black hover:opacity-90 active:scale-95"
-                    : "bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-                }`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSelectedPlan("pro")
+                  setShowCheckoutModal(true)
+                }}
+                className="w-full py-3.5 rounded-full font-mono text-xs font-bold uppercase tracking-wider bg-[#FA5D00] text-black hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
               >
-                <span>Select Verified Pro</span>
+                <Zap className="w-4 h-4 fill-black" />
+                <span>Get Verified Pro</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -600,21 +604,52 @@ export function PricingUpgradePage() {
             <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
               <button
                 type="button"
-                className={`w-full py-3 rounded-full font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm ${
-                  selectedPlan === "founder"
-                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 active:scale-95"
-                    : "bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-                }`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSelectedPlan("founder")
+                  setShowCheckoutModal(true)
+                }}
+                className="w-full py-3.5 rounded-full font-mono text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
               >
-                <span>Select Founder Pass</span>
+                <Crown className="w-4 h-4 fill-black" />
+                <span>Get Founder Pass</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Interactive Payment & Checkout Section */}
-        <div className="mt-16 sm:mt-24 max-w-2xl mx-auto rounded-3xl bg-zinc-50 dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 p-6 sm:p-10 shadow-xl">
+        {/* Interactive Payment & Checkout Modal (Zero Scroll Required) */}
+        {showCheckoutModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+            onClick={() => setShowCheckoutModal(false)}
+          >
+            <div
+              className="relative max-w-lg w-full max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden font-sans"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="p-5 pb-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 flex-none">
+                <div>
+                  <div className="flex items-center gap-1.5 font-mono text-[10px] text-[#FA5D00] uppercase font-bold tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>STEP 2 · INSTANT CHECKOUT</span>
+                  </div>
+                  <h3 className="font-serif text-2xl font-bold text-zinc-950 dark:text-zinc-50">
+                    {activePlan.name} ({billing})
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowCheckoutModal(false)}
+                  className="p-1.5 rounded-full text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body (Scrollable if small phone) */}
+              <div className="p-5 overflow-y-auto space-y-4">
           <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-5">
             <div>
               <span className="font-mono text-xs text-zinc-400 uppercase tracking-wider">
@@ -840,7 +875,10 @@ export function PricingUpgradePage() {
               )}
             </div>
           )}
-        </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* FAQ Section */}
         <div className="mt-20 max-w-2xl mx-auto space-y-6">
