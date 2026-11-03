@@ -1552,7 +1552,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
 
       console.log(`Razorpay webhook event: ${event}`, { paymentId: payment?.id, notes });
 
-      if (event === "payment.captured" || event === "order.paid") {
+      if (event === "payment.captured" || event === "order.paid" || event === "qr_code.credited") {
         const client = await pool.connect();
         try {
           if (notes.startup_id) {

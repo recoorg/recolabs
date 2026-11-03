@@ -18,6 +18,7 @@ import {
   Calendar,
   Building2,
   ShieldCheck,
+  Zap,
   Edit3,
   X,
   Camera,

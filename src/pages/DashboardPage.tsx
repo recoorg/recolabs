@@ -39,12 +39,12 @@ import {
   Target,
   Settings,
   Share2,
+  ShieldCheck,
 } from "lucide-react"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { networkApi, type UserProfile, type BuilderJob, type BuilderHackathon } from "@/services/networkApi"
-import { AdminDashboardView } from "@/components/AdminDashboardView"
 
-type DashboardSection = "overview" | "jobs" | "post-job" | "hackathons" | "post-hackathon" | "startups" | "settings" | "admin"
+type DashboardSection = "overview" | "jobs" | "post-job" | "hackathons" | "post-hackathon" | "startups" | "settings"
 
 export function DashboardPage() {
   usePageMeta({
@@ -110,7 +110,7 @@ export function DashboardPage() {
   // Sync section with URL query
   React.useEffect(() => {
     const tabParam = searchParams.get("tab") as DashboardSection
-    if (tabParam && ["overview", "jobs", "post-job", "hackathons", "post-hackathon", "startups", "settings", "admin"].includes(tabParam)) {
+    if (tabParam && ["overview", "jobs", "post-job", "hackathons", "post-hackathon", "startups", "settings"].includes(tabParam)) {
       setActiveSection(tabParam)
     }
   }, [searchParams])
@@ -476,6 +476,22 @@ export function DashboardPage() {
               </span>
             </button>
 
+            {/* Admin System External Repo Link */}
+            {currentUser && (currentUser.username === "rawenergon" || currentUser.username === "b127" || currentUser.email === "devadibxr@gmail.com") && (
+              <a
+                href="https://github.com/rawenergon/adminsys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-11 h-11 rounded-2xl flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-[#FA5D00] hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group relative cursor-pointer"
+                title="adminsys Master Repo"
+              >
+                <ShieldCheck className="w-5 h-5 text-[#FA5D00]" />
+                <span className="hidden group-hover:block absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-black text-white dark:bg-zinc-800 text-[11px] font-mono whitespace-nowrap z-50 shadow-md">
+                  adminsys Repo ↗
+                </span>
+              </a>
+            )}
+
             {/* 8. Global Projects Catalogue */}
             <button
               type="button"
@@ -539,7 +555,6 @@ export function DashboardPage() {
               {activeSection === "jobs" && "Your Career Postings."}
               {activeSection === "post-job" && "Publish Opportunity."}
               {activeSection === "hackathons" && "Your Hosted Hackathons."}
-              {activeSection === "admin" && "Admin Master Console."}
               {activeSection === "post-hackathon" && "Schedule Hackathon."}
             </h1>
             <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -1584,11 +1599,6 @@ export function DashboardPage() {
               </div>
             </div>
           </div>
-        )}
-
-          {/* 6. ADMIN MASTER CONSOLE */}
-        {activeSection === "admin" && (
-          <AdminDashboardView currentUser={currentUser} />
         )}
       </main>
     </div>
