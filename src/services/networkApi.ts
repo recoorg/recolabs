@@ -317,7 +317,47 @@ export const networkApi = {
     return json.user
   },
 
-  async getBuilderProfile(username: string): Promise<{ user: UserProfile; startups: StartupItem[] }> {
+  async upgradeProfile(plan: string = "pro", paymentDetails?: any): Promise<UserProfile> {
+    const token = this.getToken()
+    const currentUser = this.getCurrentUser()
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    }
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`
+    }
+    const json = await safeJsonFetch<{ success: boolean; user: UserProfile }>("/api/network/upgrade-user", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        plan,
+        user_id: currentUser?.id,
+        username: currentUser?.username,
+        paymentDetails
+      }),
+    })
+    if (json.user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(json.user))
+      return json.user
+    }
+    if (currentUser) {
+      const optimistic = { ...currentUser, is_verified: true, is_pro: true, plan }
+      localStorage.setItem(USER_KEY, JSON.stringify(optimistic))
+      return optimistic
+    }
+    throw new Error("Unable to complete upgrade")
+  },
+
+  async createRazorpayOrder(amount: number, notes?: any): Promise<{ order: any; keyId: string }> {
+    const json = await safeJsonFetch<{ success: boolean; order: any; keyId: string }>("/api/network/create-razorpay-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount, notes }),
+    })
+    return { order: json.order, keyId: json.keyId }
+  },
+
+    async getBuilderProfile(username: string): Promise<{ user: UserProfile; startups: StartupItem[] }> {
     const json = await safeJsonFetch<{ success: boolean; user: UserProfile; startups: StartupItem[] }>(
       `/api/network/builder/${encodeURIComponent(username)}`
     )

@@ -825,6 +825,13 @@ export function NetworkPage() {
                         >
                           <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-tr from-[#FA5D00] to-amber-400 flex-none border border-black/10 dark:border-white/10 shadow-2xs"><img src={(item as any).avatar_url || (item as any).author_avatar || "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(founderUser)} alt={item.founder_name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(founderUser); }} /></div>
                           <span className="truncate hover:underline underline-offset-4 decoration-[#FA5D00]">{item.founder_name}</span>
+                          {((item as any).is_verified || (item as any).is_pro || founderUser === "rawenergon" || founderUser === "b127" || founderUser === "adibxr") && (
+                            <span className="inline-flex items-center text-blue-500 flex-none" title="Verified Pro Builder (Blue Tick)">
+                              <svg className="w-3.5 h-3.5 fill-blue-500" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                              </svg>
+                            </span>
+                          )}
                         </Link>
                       </div>
 

@@ -2630,6 +2630,87 @@ async function handleNetworkRequest(req, res) {
       res.end(JSON.stringify({ success: deleted }));
       return;
     }
+    if (req.method === "POST" && (pathname === "/api/network/upgrade-user" || pathname === "/api/upgrade-user")) {
+      const user = getAuthUser();
+      const body = await parseBody();
+      const targetUserId = user?.id || Number(body?.user_id);
+      const targetUsername = user?.username || body?.username;
+      if (!targetUserId && !targetUsername) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to upgrade." }));
+        return;
+      }
+      const plan = (body?.plan || "pro").toString().toLowerCase();
+      const client = await pool.connect();
+      try {
+        let resDb;
+        if (targetUserId) {
+          resDb = await client.query(
+            "UPDATE users SET is_verified = true, is_pro = true, plan = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, is_verified, is_pro, plan, updated_at",
+            [plan, targetUserId]
+          );
+        } else {
+          resDb = await client.query(
+            "UPDATE users SET is_verified = true, is_pro = true, plan = $1, updated_at = NOW() WHERE LOWER(username) = LOWER($2) RETURNING id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, is_verified, is_pro, plan, updated_at",
+            [plan, targetUsername]
+          );
+        }
+        const updated = resDb.rows[0];
+        console.log(`[Upgrade] User @${updated?.username || targetUsername} upgraded to ${plan}`);
+        res.statusCode = 200;
+        res.end(JSON.stringify({ success: true, user: updated }));
+      } catch (err) {
+        console.error("Upgrade error:", err);
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: err.message || "Failed to upgrade profile." }));
+      } finally {
+        client.release();
+      }
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/create-razorpay-order" || pathname === "/api/create-razorpay-order")) {
+      const body = await parseBody();
+      const amount = Number(body?.amount) || 99900;
+      const currency = body?.currency || "INR";
+      const notes = body?.notes || {};
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_default";
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      if (keySecret) {
+        try {
+          const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+          const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Basic ${auth}`
+            },
+            body: JSON.stringify({
+              amount,
+              currency,
+              receipt: `rcpt_${Date.now()}`,
+              notes
+            })
+          });
+          const orderData = await orderRes.json();
+          res.statusCode = 200;
+          res.end(JSON.stringify({ success: true, order: orderData, keyId }));
+          return;
+        } catch (e) {
+          console.error("Razorpay order API error:", e);
+        }
+      }
+      res.statusCode = 200;
+      res.end(JSON.stringify({
+        success: true,
+        order: {
+          id: `order_${Date.now()}`,
+          amount,
+          currency
+        },
+        keyId
+      }));
+      return;
+    }
     if (req.method === "POST" && (pathname === "/api/network/webhooks/razorpay" || pathname === "/api/webhooks/razorpay")) {
       const body = await parseBody();
       const secret = process.env.RAZORPAY_WEBHOOK_SECRET;

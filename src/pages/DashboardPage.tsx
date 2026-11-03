@@ -43,10 +43,12 @@ import {
 } from "lucide-react"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { networkApi, type UserProfile, type BuilderJob, type BuilderHackathon } from "@/services/networkApi"
+import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
 
 type DashboardSection = "overview" | "jobs" | "post-job" | "hackathons" | "post-hackathon" | "startups" | "settings"
 
 export function DashboardPage() {
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
   usePageMeta({
     title: "Builder Console | Reco Labs",
     description: "Manage your engineering listings, post hackathons, and monitor guild telemetry from the Reco Labs console.",
@@ -476,21 +478,18 @@ export function DashboardPage() {
               </span>
             </button>
 
-            {/* Admin System External Repo Link */}
-            {currentUser && (currentUser.username === "rawenergon" || currentUser.username === "b127" || currentUser.email === "devadibxr@gmail.com") && (
-              <a
-                href="https://github.com/rawenergon/adminsys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-11 h-11 rounded-2xl flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-[#FA5D00] hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group relative cursor-pointer"
-                title="adminsys Master Repo"
-              >
-                <ShieldCheck className="w-5 h-5 text-[#FA5D00]" />
-                <span className="hidden group-hover:block absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-black text-white dark:bg-zinc-800 text-[11px] font-mono whitespace-nowrap z-50 shadow-md">
-                  adminsys Repo ↗
-                </span>
-              </a>
-            )}
+            {/* 7.5 Get Blue Tick Pass */}
+            <button
+              type="button"
+              onClick={() => setShowUpgradeModal(true)}
+              className="w-11 h-11 rounded-2xl flex items-center justify-center text-blue-500 hover:text-white hover:bg-blue-600 transition-all group relative cursor-pointer"
+              title="Get Blue Tick / Verified Pro"
+            >
+              <ShieldCheck className="w-5 h-5 text-blue-500 group-hover:text-white" />
+              <span className="hidden group-hover:block absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-black text-white dark:bg-zinc-800 text-[11px] font-mono whitespace-nowrap z-50 shadow-md">
+                ⚡ Get Blue Tick Pass
+              </span>
+            </button>
 
             {/* 8. Global Projects Catalogue */}
             <button
@@ -564,6 +563,16 @@ export function DashboardPage() {
 
           {/* Quick Header Action Pills */}
           <div className="flex items-center gap-2.5 flex-wrap">
+            {!(currentUser?.is_verified || currentUser?.is_pro) && (
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(true)}
+                className="px-4 py-2 rounded-full font-mono text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Get Blue Tick</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setSection("post-job")}
@@ -652,6 +661,67 @@ export function DashboardPage() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   <span>Reco Labs & Hack Club aggregates</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Verified Pro / Blue Tick Status & Upgrade Card */}
+            <div className={`p-6 sm:p-7 rounded-3xl border-2 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm ${
+              currentUser?.is_verified || currentUser?.is_pro
+                ? "border-blue-500/30 bg-gradient-to-r from-blue-500/[0.04] to-indigo-500/[0.04] dark:from-blue-500/[0.08] dark:to-indigo-500/[0.08]"
+                : "border-blue-500/30 bg-gradient-to-r from-blue-500/[0.03] via-indigo-500/[0.02] to-transparent dark:from-blue-500/[0.06] dark:via-indigo-500/[0.03]"
+            }`}>
+              <div className="flex items-start gap-4">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-none ${
+                  currentUser?.is_verified || currentUser?.is_pro
+                    ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
+                    : "bg-blue-500/10 text-blue-500 border border-blue-500/30"
+                }`}>
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-serif text-2xl text-zinc-950 dark:text-zinc-50 font-normal">
+                      {currentUser?.is_verified || currentUser?.is_pro ? "Verified Pro Builder" : "Free Builder Pass"}
+                    </h3>
+                    {currentUser?.is_verified || currentUser?.is_pro ? (
+                      <span className="inline-flex items-center gap-1 font-mono text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold border border-blue-500/20">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Active Blue Tick</span>
+                      </span>
+                    ) : (
+                      <span className="font-mono text-[11px] px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-medium">
+                        Standard Builder
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-sans text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-1 max-w-xl leading-relaxed">
+                    {currentUser?.is_verified || currentUser?.is_pro
+                      ? "Your account carries an official blue checkmark badge across all comments, startups, and directory rankings with priority recruiter visibility."
+                      : "Upgrade your profile with an official blue tick badge, top placement in Founder Network, and direct recruiter contact — no need to post multiple startups to qualify."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex-none">
+                {currentUser?.is_verified || currentUser?.is_pro ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="px-5 py-2.5 rounded-full border border-blue-500/30 bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 font-mono text-xs font-bold uppercase tracking-wider hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                  >
+                    Pass Details
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:opacity-95 active:scale-95 text-white font-mono text-xs font-bold uppercase tracking-wider shadow-md transition-all cursor-pointer inline-flex items-center gap-2"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Get Blue Tick Pass</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1599,6 +1669,21 @@ export function DashboardPage() {
               </div>
             </div>
           </div>
+        )}
+        {showUpgradeModal && currentUser && (
+          <ProfileUpgradeModal
+            username={currentUser.username}
+            name={currentUser.name}
+            onClose={() => {
+              setShowUpgradeModal(false);
+              const fresh = networkApi.getCurrentUser();
+              if (fresh) setCurrentUser(fresh);
+            }}
+            onUpgradeSuccess={() => {
+              const fresh = networkApi.getCurrentUser();
+              if (fresh) setCurrentUser(fresh);
+            }}
+          />
         )}
       </main>
     </div>

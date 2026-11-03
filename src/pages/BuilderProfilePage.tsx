@@ -198,9 +198,11 @@ export function BuilderProfilePage() {
                   <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-[#FA5D00] font-bold">
                     @{profile.username}
                   </span>
-                  {(profile.is_verified || profile.is_pro) && (
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
-                      <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                  {(profile.is_verified || profile.is_pro || profile.username === "rawenergon" || profile.username === "b127" || profile.username === "adibxr") && (
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold border border-blue-500/30 shadow-2xs">
+                      <svg className="w-3.5 h-3.5 fill-blue-500" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                      </svg>
                       <span>{profile.plan === "founder" ? "Pro Founder" : "Verified Pro"}</span>
                     </span>
                   )}
@@ -267,17 +269,7 @@ export function BuilderProfilePage() {
                   </button>
                 )}
 
-                {(profile.username === "rawenergon" || profile.username === "b127" || profile.username === "aditya" || profile.email === "devadibxr@gmail.com") && (
-                  <a
-                    href="https://github.com/rawenergon/adminsys"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#FA5D00]/40 bg-[#FA5D00]/10 text-[#FA5D00] font-mono text-[11px] font-bold hover:bg-[#FA5D00] hover:text-black transition-colors"
-                  >
-                    <ShieldCheck className="w-3 h-3" />
-                    <span>adminsys ↗</span>
-                  </a>
-                )}
+                
               </div>
             </div>
 
