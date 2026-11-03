@@ -4,52 +4,176 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Reco Labs</title>
-    <meta name="description" content="The Skill Exchange for curious Mind. A global collective of young hackers, builders, and makers shipping high-impact software, hardware rigs, and tutorials." />
-    <meta name="keywords" content="recolabs, reco labs, recolabs.in, skill exchange, student builders, young hackers, open source guild, high school hackathons, developer tools, hardware hacking, esp32 firmware, reverse engineering, webgl shaders, founder network, curated design catalogue, designeer, peerlist alternative, startup showcase, rawenergon, aditya raj, tanish, tech guild, teenage founders" />
-    <meta name="author" content="Reco Labs (Aditya Raj & Tanish)" />
+    
+    <!-- Primary SEO Page Title & Disambiguation -->
+    <title>Reco Labs — The Skill Exchange &amp; Open-Source Guild for Builders (recolabs.in)</title>
+    <meta name="title" content="Reco Labs — The Skill Exchange &amp; Open-Source Guild for Builders (recolabs.in)" />
+    <meta name="description" content="Official platform of Reco Labs (recolabs.in). The Skill Exchange and global open-source collective for curious minds, student builders, and teenage hackers. Founded by Aditya Raj &amp; Tanish. Discover curated engineering vaults, founder startup launchpad, hackathons, and guild opportunities." />
+    <meta name="keywords" content="recolabs, reco labs, recolabs.in, reco labs guild, reco labs official, skill exchange, student builders, young hackers, open source guild, high school hackathons, developer tools, hardware hacking, esp32 firmware, reverse engineering, webgl shaders, founder network, curated design catalogue, peerlist alternative, startup showcase, rawenergon, aditya raj, tanish, tech guild, teenage founders" />
+    <meta name="author" content="Reco Labs (Aditya Raj &amp; Tanish)" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <link rel="canonical" href="https://recolabs.in/" />
     <meta name="theme-color" content="#FA5D00" />
 
-    <!-- Schema.org JSON-LD Structured Data for Search Engines -->
+    <!-- Schema.org Comprehensive JSON-LD Graph for Search Engines & Google Rich Sitelinks -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Reco Labs",
-      "alternateName": ["recolabs", "Reco Labs Guild"],
-      "url": "https://recolabs.in",
-      "logo": "https://recolabs.in/favicon.png",
-      "foundingDate": "2026",
-      "founders": [
+      "@graph": [
         {
-          "@type": "Person",
-          "name": "Aditya Raj",
-          "url": "https://x.com/adibxr"
+          "@type": "WebSite",
+          "@id": "https://recolabs.in/#website",
+          "url": "https://recolabs.in",
+          "name": "Reco Labs",
+          "alternateName": ["recolabs", "recolabs.in", "Reco Labs Guild", "RecoLabs"],
+          "description": "The Skill Exchange for curious Mind. A global open-source collective of young hackers, builders, and makers shipping software, hardware, and engineering vaults.",
+          "publisher": {
+            "@id": "https://recolabs.in/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://recolabs.in/projects?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          },
+          "inLanguage": "en-US"
         },
         {
-          "@type": "Person",
-          "name": "Tanish"
+          "@type": "Organization",
+          "@id": "https://recolabs.in/#organization",
+          "name": "Reco Labs",
+          "alternateName": ["recolabs", "recolabs.in", "Reco Labs Tech Guild", "RecoLabs"],
+          "legalName": "Reco Labs",
+          "url": "https://recolabs.in",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://recolabs.in/logo-black.png",
+            "width": "512",
+            "height": "512",
+            "caption": "Reco Labs Logo"
+          },
+          "image": "https://recolabs.in/twitter-image.png",
+          "foundingDate": "2026",
+          "founders": [
+            {
+              "@type": "Person",
+              "name": "Aditya Raj",
+              "alternateName": ["adibxr", "rawenergon"],
+              "url": "https://x.com/adibxr",
+              "sameAs": [
+                "https://x.com/adibxr",
+                "https://github.com/recoorg",
+                "https://instagram.com/rawenergon"
+              ]
+            },
+            {
+              "@type": "Person",
+              "name": "Tanish",
+              "url": "https://recolabs.in/about"
+            }
+          ],
+          "sameAs": [
+            "https://github.com/recoorg",
+            "https://discord.com/invite/7dk4w37BhP",
+            "https://x.com/adibxr",
+            "https://instagram.com/rawenergon",
+            "https://blog.recolabs.in"
+          ],
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "devadibxr@gmail.com",
+            "contactType": "Community, Partnerships & Sponsorships",
+            "url": "https://recolabs.in/about"
+          },
+          "description": "The Skill Exchange for curious Mind. A global collective of young hackers, builders, and makers shipping high-impact software, hardware rigs, and tutorials.",
+          "knowsAbout": [
+            "Open Source Software",
+            "Developer Tools",
+            "Hardware Hacking",
+            "Hackathons",
+            "Skill Exchange",
+            "Engineering Rigs",
+            "High School Hackers",
+            "Startup Launchpad",
+            "Peer-to-Peer Learning"
+          ]
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "@id": "https://recolabs.in/#sitelinks",
+          "name": [
+            "Curated Projects",
+            "Founder Network",
+            "Hackathons & Sprints",
+            "Guild Roles & Jobs",
+            "Founders Story",
+            "Sponsorships & Grants"
+          ],
+          "url": [
+            "https://recolabs.in/projects",
+            "https://recolabs.in/network",
+            "https://recolabs.in/hackathons",
+            "https://recolabs.in/jobs",
+            "https://recolabs.in/about",
+            "https://recolabs.in/sponsors"
+          ]
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://recolabs.in/#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://recolabs.in"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Projects",
+              "item": "https://recolabs.in/projects"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Founder Network",
+              "item": "https://recolabs.in/network"
+            },
+            {
+              "@type": "ListItem",
+              "position": 4,
+              "name": "Hackathons",
+              "item": "https://recolabs.in/hackathons"
+            },
+            {
+              "@type": "ListItem",
+              "position": 5,
+              "name": "Jobs",
+              "item": "https://recolabs.in/jobs"
+            },
+            {
+              "@type": "ListItem",
+              "position": 6,
+              "name": "About",
+              "item": "https://recolabs.in/about"
+            }
+          ]
         }
-      ],
-      "sameAs": [
-        "https://github.com/recoorg",
-        "https://discord.com/invite/7dk4w37BhP",
-        "https://x.com/adibxr",
-        "https://instagram.com/rawenergon",
-        "https://blog.recolabs.in"
-      ],
-      "description": "The Skill Exchange for curious Mind. A collective of young hackers, builders, and makers shipping high-impact software, hardware, and tutorials."
+      ]
     }
     </script>
 
     <!-- Open Graph / Facebook / LinkedIn / Discord / WhatsApp -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Reco Labs" />
-    <meta property="og:title" content="Reco Labs" />
-    <meta property="og:description" content="The Skill Exchange for curious Mind. A collective of young hackers, builders, and makers shipping high-impact software, hardware, and tutorials." />
+    <meta property="og:title" content="Reco Labs — The Skill Exchange &amp; Open-Source Guild for Builders (recolabs.in)" />
+    <meta property="og:description" content="Official platform of Reco Labs (recolabs.in). The Skill Exchange and global open-source collective for curious minds, student builders, and teenage hackers. Founded by Aditya Raj &amp; Tanish. Discover curated engineering vaults, founder startup launchpad, hackathons, and guild opportunities." />
+    <meta property="og:url" content="https://recolabs.in/" />
     <meta property="og:image" content="https://recolabs.in/twitter-image.png" />
     <meta property="og:image:secure_url" content="https://recolabs.in/twitter-image.png" />
     <meta property="og:image:type" content="image/png" />
@@ -61,8 +185,8 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@adibxr" />
     <meta name="twitter:creator" content="@adibxr" />
-    <meta name="twitter:title" content="Reco Labs" />
-    <meta name="twitter:description" content="The Skill Exchange for curious Mind. A collective of young hackers, builders, and makers shipping high-impact software, hardware, and tutorials." />
+    <meta name="twitter:title" content="Reco Labs — The Skill Exchange &amp; Open-Source Guild for Builders (recolabs.in)" />
+    <meta name="twitter:description" content="Official platform of Reco Labs (recolabs.in). The Skill Exchange and global open-source collective for curious minds, student builders, and teenage hackers. Founded by Aditya Raj &amp; Tanish." />
     <meta name="twitter:image" content="https://recolabs.in/twitter-image.png" />
     <meta name="twitter:image:alt" content="Reco Labs — The Skill Exchange for curious Mind." />
     
@@ -70,6 +194,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    
     <!-- Tracwell Analytics: Product Analytics across all routes -->
     <script
       defer
@@ -79,7 +204,64 @@
     ></script>
   </head>
   <body class="antialiased bg-white text-zinc-950">
-    <div id="root"></div>
+    <div id="root">
+      <!-- Semantic Pre-Rendered Crawl Tree for Googlebot, Bingbot & Search Indexers -->
+      <!-- Hydrated seamlessly on client load by React -->
+      <header style="padding: 20px 40px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center;">
+        <a href="/" style="font-weight: bold; font-size: 20px; color: #0a0a0a; text-decoration: none;">Reco Labs</a>
+        <nav aria-label="Main Navigation">
+          <ul style="display: flex; gap: 20px; list-style: none; margin: 0; padding: 0;">
+            <li><a href="/projects">Projects</a></li>
+            <li><a href="/network">Founder Network</a></li>
+            <li><a href="/hackathons">Hackathons</a></li>
+            <li><a href="/jobs">Jobs</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/sponsors">Sponsors</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      <main style="max-width: 1000px; margin: 40px auto; padding: 0 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <article>
+          <h1 style="font-size: 48px; line-height: 1.1; margin-bottom: 24px; color: #09090b;">
+            The Skill Exchange for curious Mind — Reco Labs
+          </h1>
+          <p style="font-size: 18px; line-height: 1.6; color: #3f3f46; margin-bottom: 32px;">
+            <strong>Reco Labs</strong> (accessible officially at <a href="https://recolabs.in">recolabs.in</a>) is a global open-source collective, developer ecosystem, and peer-to-peer tech guild founded by high school hackers <strong>Aditya Raj</strong> and <strong>Tanish</strong>. Started as a Grade 10 experiment to solve real technical problems, Reco Labs has evolved into a worldwide movement empowering curious young minds across software engineering, hardware rigs, reverse engineering, and web technologies.
+          </p>
+
+          <section style="margin-bottom: 40px;">
+            <h2 style="font-size: 28px; margin-bottom: 12px; color: #09090b;">Core Pillars of the Reco Labs Ecosystem</h2>
+            <ul style="line-height: 1.8; font-size: 16px; color: #52525b;">
+              <li><strong>Curated Repositories &amp; Engineering Vaults:</strong> Over 190+ high-craft UI component collections, design systems, firmware loaders, and developer toolkits available at <a href="https://recolabs.in/projects">recolabs.in/projects</a>.</li>
+              <li><strong>Founder Network &amp; Startup Launchpad:</strong> A community platform for early-stage builders to showcase prototypes, receive functional ratings on idea, execution, and design, and connect with peers at <a href="https://recolabs.in/network">recolabs.in/network</a>.</li>
+              <li><strong>Hackathons &amp; Builder Sprints:</strong> Aggregated high school and collegiate hackathons with real cash bounties, hardware grants, and global mentor access at <a href="https://recolabs.in/hackathons">recolabs.in/hackathons</a>.</li>
+              <li><strong>Guild Roles &amp; Career Opportunities:</strong> High-velocity startup roles, engineering internships, and contributor bounties for curious young makers at <a href="https://recolabs.in/jobs">recolabs.in/jobs</a>.</li>
+              <li><strong>Hardware Lab &amp; Compute Grants:</strong> Zero-corporate-bloat funding for ESP32 microcontrollers, FPGA boards, soldering tools, and cloud compute at <a href="https://recolabs.in/sponsors">recolabs.in/sponsors</a>.</li>
+            </ul>
+          </section>
+
+          <section style="margin-bottom: 40px; padding: 24px; background: #fafafa; border-radius: 12px; border: 1px solid #e4e4e7;">
+            <h2 style="font-size: 22px; margin-bottom: 12px; color: #09090b;">Official Links &amp; Communities</h2>
+            <p style="font-size: 15px; line-height: 1.6; color: #52525b; margin-bottom: 12px;">
+              Join thousands of teenage builders and makers collaborating in real time:
+            </p>
+            <ul style="line-height: 1.8; font-size: 15px;">
+              <li>Official Website: <a href="https://recolabs.in">https://recolabs.in</a></li>
+              <li>Official GitHub Organization: <a href="https://github.com/recoorg">https://github.com/recoorg</a></li>
+              <li>Discord Guild: <a href="https://discord.com/invite/7dk4w37BhP">https://discord.com/invite/7dk4w37BhP</a></li>
+              <li>Technical Blog: <a href="https://blog.recolabs.in">https://blog.recolabs.in</a></li>
+              <li>Founder Aditya Raj on X: <a href="https://x.com/adibxr">@adibxr</a></li>
+              <li>Contact &amp; Sponsorships: <a href="mailto:devadibxr@gmail.com">devadibxr@gmail.com</a></li>
+            </ul>
+          </section>
+        </article>
+      </main>
+
+      <footer style="padding: 30px 40px; border-top: 1px solid #e5e5e5; text-align: center; font-size: 13px; color: #71717a;">
+        <p>© 2026 Reco Labs (recolabs.in) · Founded by Aditya Raj &amp; Tanish · 100% Open Source</p>
+      </footer>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

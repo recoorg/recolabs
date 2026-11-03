@@ -9,9 +9,9 @@ export interface PageMetaOptions {
   type?: "website" | "profile" | "article"
 }
 
-const DEFAULT_TITLE = "Reco Labs"
+const DEFAULT_TITLE = "Reco Labs — The Skill Exchange & Open-Source Guild (recolabs.in)"
 const DEFAULT_DESC =
-  "The Skill Exchange for curious Mind. A global collective of young hackers, builders, and makers shipping high-impact software, hardware rigs, and tutorials."
+  "Official home of Reco Labs (recolabs.in). The Skill Exchange and global open-source collective for curious minds, student builders, and teenage hackers. Founded by Aditya Raj & Tanish. Explore curated codebases, founder startup launchpad, hackathons, and guild opportunities."
 const DEFAULT_IMAGE = "https://recolabs.in/twitter-image.png"
 const BASE_ORIGIN = "https://recolabs.in"
 

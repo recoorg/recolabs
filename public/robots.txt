@@ -1,0 +1,25 @@
+# Reco Labs Robots Directives
+# Website: https://recolabs.in
+
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /api/
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+Sitemap: https://recolabs.in/sitemap.xml
+Host: https://recolabs.in

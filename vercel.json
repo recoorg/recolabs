@@ -1,6 +1,31 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.recolabs.in"
+        }
+      ],
+      "destination": "https://recolabs.in/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/robots.txt",
+      "destination": "/robots.txt"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/sitemap.xml"
+    },
+    {
+      "source": "/manifest.json",
+      "destination": "/manifest.json"
+    },
     {
       "source": "/api/hackclub/(.*)",
       "destination": "https://hackathons.hackclub.com/$1"
@@ -16,17 +41,6 @@
     {
       "source": "/api/network/(.*)",
       "destination": "/api/network/[...route]"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=root"
     },
     {
       "source": "/builder/:username",
@@ -51,149 +65,56 @@
       "destination": "/api/network/builder-preview?username=:username"
     },
     {
-      "source": "/projects",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=projects"
-    },
-    {
-      "source": "/projects/(.*)",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=projects"
-    },
-    {
-      "source": "/network",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=network"
-    },
-    {
-      "source": "/network/(.*)",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=network"
-    },
-    {
-      "source": "/jobs",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=jobs"
-    },
-    {
-      "source": "/jobs/(.*)",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=jobs"
-    },
-    {
-      "source": "/about",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=about"
-    },
-    {
-      "source": "/about/(.*)",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=about"
-    },
-    {
-      "source": "/hackathons",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=hackathons"
-    },
-    {
-      "source": "/hackathons/(.*)",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=hackathons"
-    },
-    {
-      "source": "/sponsors",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=sponsors"
-    },
-    {
-      "source": "/sponsors/(.*)",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|whatsapp|telegrambot|slackbot|discordbot|linkedinbot|embedly|quora link preview|rogerbot|showyoubot|outbrain|pinterest|vkShare|w3c_validator).*"
-        }
-      ],
-      "destination": "/api/network/seo-preview?page=sponsors"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
     {
+      "source": "/robots.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
       "source": "/assets/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
         }
       ]
     }

@@ -35,9 +35,9 @@ interface MixedHackathon {
 
 export function HackathonsPage() {
   usePageMeta({
-    title: "Hackathons | Reco Labs",
-    description: "Curated youth hackathons and builder sprints. Host your own hackathon or join high-velocity build jams across the globe.",
-    image: "/twitter-image.png",
+    title: "Hackathons & Builder Sprints | Reco Labs (recolabs.in)",
+    description: "Curated youth hackathons and high-velocity builder sprints on Reco Labs (recolabs.in). Host your own hackathon, ship prototypes, and compete for grants and cash bounties.",
+    image: "/twitter-hackathons.png",
   })
 
   const [endpointMode, setEndpointMode] = React.useState<EndpointMode>("upcoming")

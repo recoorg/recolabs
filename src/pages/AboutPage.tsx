@@ -7,9 +7,9 @@ import { GithubIcon } from "@/components/icons"
 
 export function AboutPage() {
   usePageMeta({
-    title: "About | Reco Labs",
-    description: "From high school experiment to global guild. Founded by Aditya Raj & Tanish to empower curious young minds.",
-    image: "/twitter-image.png",
+    title: "About Reco Labs — From High School Experiment to Global Guild (recolabs.in)",
+    description: "The story of Reco Labs (recolabs.in). Founded by Aditya Raj & Tanish as a Grade 10 experiment, now an international open-source guild for young hackers and makers.",
+    image: "/twitter-about.png",
   })
 
   return (

@@ -10,8 +10,8 @@ import { usePageMeta } from "@/hooks/usePageMeta"
 
 export function HomePage() {
   usePageMeta({
-    title: "Reco Labs",
-    description: "The Skill Exchange for curious Mind. A global collective of young hackers, builders, and makers shipping high-impact software, hardware rigs, and tutorials.",
+    title: "Reco Labs — The Skill Exchange & Open-Source Guild for Builders (recolabs.in)",
+    description: "Official platform of Reco Labs (recolabs.in). The Skill Exchange and global open-source collective for curious minds, student builders, and teenage hackers. Founded by Aditya Raj & Tanish. Discover curated engineering vaults, founder startup launchpad, hackathons, and guild opportunities.",
     image: "/twitter-image.png",
   })
 

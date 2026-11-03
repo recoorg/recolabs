@@ -49,8 +49,8 @@ const CATEGORIES = ["ALL", "Software", "Hardware", "Security", "AI", "Education 
 
 export function NetworkPage() {
   usePageMeta({
-    title: "Network | Reco Labs",
-    description: "The professional network for builders to show and tell. Showcase your work, launch projects, find jobs, and connect with peers.",
+    title: "Founder Network & Startup Launchpad | Reco Labs (recolabs.in)",
+    description: "The professional builder launchpad on Reco Labs (recolabs.in). Discover early-stage startups, submit functional reviews on idea/execution/design, and connect with peer founders.",
     image: "/twitter-network.png",
   })
 

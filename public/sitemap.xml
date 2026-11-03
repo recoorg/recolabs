@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Reco Labs Homepage -->
+  <url>
+    <loc>https://recolabs.in/</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://recolabs.in/twitter-image.png</image:loc>
+      <image:title>Reco Labs — The Skill Exchange for Curious Minds</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://recolabs.in/logo-black.png</image:loc>
+      <image:title>Reco Labs Logo</image:title>
+    </image:image>
+  </url>
+
+  <!-- Curated Projects & Engineering Vaults -->
+  <url>
+    <loc>https://recolabs.in/projects</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://recolabs.in/twitter-projects.png</image:loc>
+      <image:title>Reco Labs Curated Projects and Design Systems</image:title>
+    </image:image>
+  </url>
+
+  <!-- Founder Network & Startup Launchpad -->
+  <url>
+    <loc>https://recolabs.in/network</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://recolabs.in/twitter-network.png</image:loc>
+      <image:title>Reco Labs Founder Network &amp; Startup Launchpad</image:title>
+    </image:image>
+  </url>
+
+  <!-- Hackathons & Builder Sprints -->
+  <url>
+    <loc>https://recolabs.in/hackathons</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://recolabs.in/twitter-hackathons.png</image:loc>
+      <image:title>Reco Labs Hackathons and Builder Sprints</image:title>
+    </image:image>
+  </url>
+
+  <!-- Guild Roles & Startup Careers -->
+  <url>
+    <loc>https://recolabs.in/jobs</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://recolabs.in/twitter-jobs.png</image:loc>
+      <image:title>Reco Labs Guild Roles and Opportunities</image:title>
+    </image:image>
+  </url>
+
+  <!-- About Reco Labs: Founders Story -->
+  <url>
+    <loc>https://recolabs.in/about</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://recolabs.in/twitter-about.png</image:loc>
+      <image:title>About Reco Labs — From Grade 10 Project to Global Guild</image:title>
+    </image:image>
+  </url>
+
+  <!-- Sponsorships & Build Grants -->
+  <url>
+    <loc>https://recolabs.in/sponsors</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://recolabs.in/twitter-sponsors.png</image:loc>
+      <image:title>Sponsor Reco Labs Hardware and Compute Grants</image:title>
+    </image:image>
+  </url>
+
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://recolabs.in/privacy</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Core Founder Profiles -->
+  <url>
+    <loc>https://recolabs.in/builder/adibxr</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://recolabs.in/builder/rawenergon</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://recolabs.in/builder/tanish</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>

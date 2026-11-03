@@ -27,8 +27,8 @@ interface UnifiedJob {
 
 export function JobsPage() {
   usePageMeta({
-    title: "Jobs & Opportunities | Reco Labs",
-    description: "Work with high-velocity startups and developer tool founders. Verified internships, contracts, and engineering roles.",
+    title: "Guild Roles & Career Opportunities | Reco Labs (recolabs.in)",
+    description: "Engineering roles, founding designer internships, and paid contracts for teenage builders at high-velocity startups on Reco Labs (recolabs.in).",
     image: "/twitter-jobs.png",
   })
 

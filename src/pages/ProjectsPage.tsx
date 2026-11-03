@@ -96,8 +96,8 @@ const DEFAULT_BROWSE_SECTIONS = [
 
 export function ProjectsPage() {
   usePageMeta({
-    title: "Projects | Reco Labs",
-    description: "190+ hand-picked design systems, open source tools, terminal utilities, and engineering rigs.",
+    title: "Curated Projects & Engineering Vaults | Reco Labs (recolabs.in)",
+    description: "Explore 190+ hand-picked design systems, open source UI libraries, terminal toolkits, and engineering hardware rigs curated by Reco Labs (recolabs.in).",
     image: "/twitter-projects.png",
   })
 
