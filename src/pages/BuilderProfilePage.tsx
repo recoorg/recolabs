@@ -198,6 +198,12 @@ export function BuilderProfilePage() {
                   <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-[#FA5D00] font-bold">
                     @{profile.username}
                   </span>
+                  {(profile.is_verified || profile.is_pro) && (
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
+                      <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                      <span>{profile.plan === "founder" ? "Pro Founder" : "Verified Pro"}</span>
+                    </span>
+                  )}
                 </div>
 
                 <div className="mt-1 font-mono text-xs text-zinc-400 flex items-center gap-2">
@@ -238,16 +244,41 @@ export function BuilderProfilePage() {
                 </a>
               </div>
 
-              {isSelf && (
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
-                >
-                  <Edit3 className="w-3 h-3 text-[#FA5D00]" />
-                  <span>Edit Profile</span>
-                </button>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {isSelf && (
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-95 active:scale-95 transition-all shadow-md cursor-pointer"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-black" />
+                    <span>Get Verified Pro</span>
+                  </button>
+                )}
+
+                {isSelf && (
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
+                  >
+                    <Edit3 className="w-3 h-3 text-[#FA5D00]" />
+                    <span>Edit Profile</span>
+                  </button>
+                )}
+
+                {(profile.username === "rawenergon" || profile.username === "b127" || profile.username === "aditya" || profile.email === "devadibxr@gmail.com") && (
+                  <a
+                    href="https://github.com/rawenergon/adminsys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#FA5D00]/40 bg-[#FA5D00]/10 text-[#FA5D00] font-mono text-[11px] font-bold hover:bg-[#FA5D00] hover:text-black transition-colors"
+                  >
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>adminsys ↗</span>
+                  </a>
+                )}
+              </div>
             </div>
 
           </div>
