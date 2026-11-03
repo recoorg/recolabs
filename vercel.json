@@ -1,18 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.recolabs.in"
-        }
-      ],
-      "destination": "https://recolabs.in/:path*",
-      "permanent": true
-    }
-  ],
   "rewrites": [
     {
       "source": "/robots.txt",
