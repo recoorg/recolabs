@@ -54,7 +54,9 @@ import {
   Smile,
   Award,
   Star,
+  Zap,
 } from "lucide-react"
+import { VerifiedBadge } from "@/components/VerifiedBadge"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile } from "@/services/networkApi"
 import { INITIAL_PROJECTS, type CatalogProject } from "@/data/initialCatalog"
@@ -1145,6 +1147,20 @@ export function ProjectsPage() {
                         <div className="px-3.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 truncate">
                           Signed in as <strong className="text-zinc-800 dark:text-zinc-200">@{currentUser.username}</strong>
                         </div>
+                        {currentUser.is_verified || currentUser.is_pro ? (
+                          <div className="px-3.5 py-1.5 flex items-center gap-1.5 text-[11px] text-emerald-500 font-bold border-b border-zinc-100 dark:border-zinc-800 bg-emerald-500/5">
+                            <VerifiedBadge size="xs" />
+                            <span>Verified Pro</span>
+                          </div>
+                        ) : (
+                          <Link
+                            to="/pricing"
+                            className="flex items-center gap-2 px-3.5 py-2 hover:bg-orange-500/10 text-[#FA5D00] font-semibold transition-colors border-b border-zinc-100 dark:border-zinc-800"
+                          >
+                            <Zap className="w-3.5 h-3.5 fill-[#FA5D00]" />
+                            <span>⚡ Get Blue Tick</span>
+                          </Link>
+                        )}
                         <Link
                           to={`/builder/${currentUser.username}`}
                           className="flex items-center gap-2 px-3.5 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[#FA5D00] transition-colors"

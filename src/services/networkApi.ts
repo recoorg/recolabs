@@ -13,7 +13,24 @@ export interface UserProfile {
   is_verified?: boolean
   is_pro?: boolean
   plan?: string
+  plan_billing?: "monthly" | "yearly" | string
+  subscription_start?: string | null
+  subscription_end?: string | null
   created_at?: string
+}
+
+export interface CouponValidationResult {
+  valid: boolean
+  error?: string
+  coupon?: {
+    id: number
+    code: string
+    discount_type: "percentage" | "flat"
+    discount_value: number
+    discount_amount: number
+  }
+  discountAmount?: number
+  finalAmount?: number
 }
 
 export interface BuilderJob {
@@ -317,7 +334,12 @@ export const networkApi = {
     return json.user
   },
 
-  async upgradeProfile(plan: string = "pro", paymentDetails?: any): Promise<UserProfile> {
+  async upgradeProfile(
+    plan: string = "pro",
+    billing: string = "monthly",
+    couponCode?: string,
+    paymentDetails?: any
+  ): Promise<UserProfile> {
     const token = this.getToken()
     const currentUser = this.getCurrentUser()
     const headers: Record<string, string> = {
@@ -331,9 +353,11 @@ export const networkApi = {
       headers,
       body: JSON.stringify({
         plan,
+        billing,
+        coupon_code: couponCode,
         user_id: currentUser?.id,
         username: currentUser?.username,
-        paymentDetails
+        paymentDetails,
       }),
     })
     if (json.user) {
@@ -341,11 +365,37 @@ export const networkApi = {
       return json.user
     }
     if (currentUser) {
-      const optimistic = { ...currentUser, is_verified: true, is_pro: true, plan }
+      const optimistic = {
+        ...currentUser,
+        is_verified: true,
+        is_pro: true,
+        plan,
+        plan_billing: billing,
+      }
       localStorage.setItem(USER_KEY, JSON.stringify(optimistic))
       return optimistic
     }
     throw new Error("Unable to complete upgrade")
+  },
+
+  async validateCoupon(code: string, amount: number): Promise<CouponValidationResult> {
+    return await safeJsonFetch<CouponValidationResult>("/api/network/coupons/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, amount }),
+    })
+  },
+
+  async pinProject(projectId: number): Promise<boolean> {
+    const token = this.getToken()
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (token) headers["Authorization"] = `Bearer ${token}`
+    const json = await safeJsonFetch<{ success: boolean }>("/api/network/pin-project", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ id: projectId }),
+    })
+    return json.success || true
   },
 
   async createRazorpayOrder(amount: number, notes?: any): Promise<{ order: any; keyId: string }> {

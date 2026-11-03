@@ -216,6 +216,30 @@ async function initDb() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS is_pro BOOLEAN DEFAULT false;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'free';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_billing TEXT DEFAULT 'monthly';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_start TIMESTAMPTZ;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_end TIMESTAMPTZ;
+
+      CREATE TABLE IF NOT EXISTS coupons (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        discount_type VARCHAR(20) DEFAULT 'percentage',
+        discount_value NUMERIC(10, 2) NOT NULL,
+        min_order_amount NUMERIC(10, 2) DEFAULT 0,
+        max_uses INTEGER DEFAULT NULL,
+        uses_count INTEGER DEFAULT 0,
+        expires_at TIMESTAMPTZ DEFAULT NULL,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(LOWER(code));
+
+      INSERT INTO coupons (code, discount_type, discount_value, min_order_amount, is_active)
+      VALUES 
+        ('BUILDER50', 'percentage', 50.00, 100, true),
+        ('RECO100', 'flat', 100.00, 200, true)
+      ON CONFLICT (code) DO NOTHING;
 
       CREATE TABLE IF NOT EXISTS builder_hackathons (
         id SERIAL PRIMARY KEY,
@@ -383,7 +407,12 @@ async function getUserById(id) {
   const client = await pool.connect();
   try {
     const res = await client.query(
-      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, created_at
+      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, 
+              COALESCE(is_verified, false) as is_verified, 
+              COALESCE(is_pro, false) as is_pro, 
+              COALESCE(plan, 'free') as plan, 
+              COALESCE(plan_billing, 'monthly') as plan_billing, 
+              subscription_start, subscription_end, created_at
        FROM users WHERE id = $1`,
       [id]
     );
@@ -396,7 +425,12 @@ async function getUserByUsername(username) {
   const client = await pool.connect();
   try {
     const res = await client.query(
-      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, created_at
+      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, 
+              COALESCE(is_verified, false) as is_verified, 
+              COALESCE(is_pro, false) as is_pro, 
+              COALESCE(plan, 'free') as plan, 
+              COALESCE(plan_billing, 'monthly') as plan_billing, 
+              subscription_start, subscription_end, created_at
        FROM users WHERE LOWER(username) = LOWER($1)`,
       [username.trim()]
     );
@@ -1365,7 +1399,7 @@ async function listAllPaidEntitiesAdmin() {
     const [startups, jobs, users] = await Promise.all([
       client.query("SELECT id, name, url, founder_name, founder_username, category, stage, created_at, is_featured FROM startups WHERE is_featured = true ORDER BY created_at DESC"),
       client.query("SELECT id, title, company_name, author_name, location, job_type, salary_range, created_at, is_featured FROM builder_jobs WHERE is_featured = true ORDER BY created_at DESC"),
-      client.query("SELECT id, name, username, email, is_verified, is_pro, plan, avatar_url, created_at FROM users WHERE is_verified = true OR is_pro = true ORDER BY created_at DESC")
+      client.query("SELECT id, name, username, email, is_verified, is_pro, plan, COALESCE(plan_billing, 'monthly') as plan_billing, subscription_start, subscription_end, avatar_url, created_at FROM users WHERE is_verified = true OR is_pro = true ORDER BY created_at DESC")
     ]);
     return {
       featuredStartups: startups.rows,
@@ -1379,9 +1413,20 @@ async function listAllPaidEntitiesAdmin() {
 async function toggleUserVerification(id) {
   const client = await pool.connect();
   try {
+    const check = await client.query("SELECT is_verified FROM users WHERE id = $1", [id]);
+    const willVerify = !check.rows[0]?.is_verified;
     const res = await client.query(
-      "UPDATE users SET is_verified = NOT COALESCE(is_verified, false), is_pro = NOT COALESCE(is_verified, false) WHERE id = $1 RETURNING id, is_verified, is_pro",
-      [id]
+      `UPDATE users SET 
+        is_verified = $1, 
+        is_pro = $1, 
+        plan = CASE WHEN $1 THEN COALESCE(plan, 'pro') ELSE 'free' END,
+        plan_billing = CASE WHEN $1 THEN COALESCE(plan_billing, 'monthly') ELSE 'monthly' END,
+        subscription_start = CASE WHEN $1 THEN NOW() ELSE NULL END,
+        subscription_end = CASE WHEN $1 THEN NOW() + INTERVAL '30 days' ELSE NULL END,
+        updated_at = NOW() 
+       WHERE id = $2 
+       RETURNING id, is_verified, is_pro, plan, plan_billing, subscription_start, subscription_end`,
+      [willVerify, id]
     );
     return res.rows[0];
   } finally {
@@ -1420,6 +1465,105 @@ async function setHackathonApproval(id, approved) {
       [approved, id]
     );
     return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function listCouponsAdmin() {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("SELECT * FROM coupons ORDER BY created_at DESC");
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function createCouponAdmin(data) {
+  const client = await pool.connect();
+  try {
+    const cleanCode = data.code.trim().toUpperCase();
+    const res = await client.query(
+      `INSERT INTO coupons (code, discount_type, discount_value, min_order_amount, max_uses, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [
+        cleanCode,
+        data.discount_type || "percentage",
+        data.discount_value,
+        data.min_order_amount || 0,
+        data.max_uses || null,
+        data.expires_at || null
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function toggleCouponAdmin(id) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "UPDATE coupons SET is_active = NOT COALESCE(is_active, true), updated_at = NOW() WHERE id = $1 RETURNING *",
+      [id]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function deleteCouponAdmin(id) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("DELETE FROM coupons WHERE id = $1 RETURNING id", [id]);
+    return res.rowCount ? res.rowCount > 0 : false;
+  } finally {
+    client.release();
+  }
+}
+async function validateCoupon(code, amount) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT * FROM coupons WHERE LOWER(code) = LOWER($1) LIMIT 1`,
+      [code.trim()]
+    );
+    if (res.rows.length === 0) {
+      return { valid: false, error: "Invalid coupon code." };
+    }
+    const coupon = res.rows[0];
+    if (!coupon.is_active) {
+      return { valid: false, error: "This coupon is no longer active." };
+    }
+    if (coupon.expires_at && new Date(coupon.expires_at) < /* @__PURE__ */ new Date()) {
+      return { valid: false, error: "This coupon has expired." };
+    }
+    if (coupon.max_uses && coupon.uses_count >= coupon.max_uses) {
+      return { valid: false, error: "This coupon has reached its maximum usage limit." };
+    }
+    if (coupon.min_order_amount && amount < Number(coupon.min_order_amount)) {
+      return { valid: false, error: `Minimum order amount of \u20B9${coupon.min_order_amount} required to use this coupon.` };
+    }
+    let discountAmount = 0;
+    const discountVal = Number(coupon.discount_value);
+    if (coupon.discount_type === "percentage") {
+      discountAmount = Math.round(amount * discountVal / 100);
+    } else {
+      discountAmount = Math.min(amount, discountVal);
+    }
+    const finalAmount = Math.max(0, amount - discountAmount);
+    return {
+      valid: true,
+      coupon: {
+        id: coupon.id,
+        code: coupon.code,
+        discount_type: coupon.discount_type,
+        discount_value: discountVal,
+        discount_amount: discountAmount
+      },
+      discountAmount,
+      finalAmount
+    };
   } finally {
     client.release();
   }
@@ -2641,22 +2785,46 @@ async function handleNetworkRequest(req, res) {
         return;
       }
       const plan = (body?.plan || "pro").toString().toLowerCase();
+      const billing = (body?.billing || body?.plan_billing || "monthly").toString().toLowerCase();
+      const couponCode = body?.coupon_code ? body.coupon_code.toString().trim().toUpperCase() : null;
+      const durationInterval = billing === "yearly" ? "365 days" : "30 days";
       const client = await pool.connect();
       try {
+        if (couponCode) {
+          await client.query("UPDATE coupons SET uses_count = uses_count + 1, updated_at = NOW() WHERE LOWER(code) = LOWER($1)", [couponCode]);
+        }
         let resDb;
         if (targetUserId) {
           resDb = await client.query(
-            "UPDATE users SET is_verified = true, is_pro = true, plan = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, is_verified, is_pro, plan, updated_at",
-            [plan, targetUserId]
+            `UPDATE users SET 
+              is_verified = true, 
+              is_pro = true, 
+              plan = $1, 
+              plan_billing = $2,
+              subscription_start = NOW(),
+              subscription_end = (NOW() + $3::INTERVAL),
+              updated_at = NOW() 
+             WHERE id = $4 
+             RETURNING id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, is_verified, is_pro, plan, plan_billing, subscription_start, subscription_end, updated_at`,
+            [plan, billing, durationInterval, targetUserId]
           );
         } else {
           resDb = await client.query(
-            "UPDATE users SET is_verified = true, is_pro = true, plan = $1, updated_at = NOW() WHERE LOWER(username) = LOWER($2) RETURNING id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, is_verified, is_pro, plan, updated_at",
-            [plan, targetUsername]
+            `UPDATE users SET 
+              is_verified = true, 
+              is_pro = true, 
+              plan = $1, 
+              plan_billing = $2,
+              subscription_start = NOW(),
+              subscription_end = (NOW() + $3::INTERVAL),
+              updated_at = NOW() 
+             WHERE LOWER(username) = LOWER($4) 
+             RETURNING id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, is_verified, is_pro, plan, plan_billing, subscription_start, subscription_end, updated_at`,
+            [plan, billing, durationInterval, targetUsername]
           );
         }
         const updated = resDb.rows[0];
-        console.log(`[Upgrade] User @${updated?.username || targetUsername} upgraded to ${plan}`);
+        console.log(`[Upgrade] User @${updated?.username || targetUsername} upgraded to ${plan} (${billing})`);
         res.statusCode = 200;
         res.end(JSON.stringify({ success: true, user: updated }));
       } catch (err) {
@@ -2739,18 +2907,39 @@ async function handleNetworkRequest(req, res) {
         try {
           if (notes.user_id || notes.username) {
             const plan = (notes.plan || "pro").toString().toLowerCase();
+            const billing = (notes.billing || notes.plan_billing || "monthly").toString().toLowerCase();
+            const durationInterval = billing === "yearly" ? "365 days" : "30 days";
+            if (notes.coupon_code) {
+              await client.query("UPDATE coupons SET uses_count = uses_count + 1, updated_at = NOW() WHERE LOWER(code) = LOWER($1)", [notes.coupon_code]);
+            }
             if (notes.user_id) {
               await client.query(
-                "UPDATE users SET is_verified = true, is_pro = true, plan = $1, updated_at = NOW() WHERE id = $2",
-                [plan, Number(notes.user_id)]
+                `UPDATE users SET 
+                  is_verified = true, 
+                  is_pro = true, 
+                  plan = $1, 
+                  plan_billing = $2,
+                  subscription_start = NOW(),
+                  subscription_end = (NOW() + $3::INTERVAL),
+                  updated_at = NOW() 
+                 WHERE id = $4`,
+                [plan, billing, durationInterval, Number(notes.user_id)]
               );
             } else if (notes.username) {
               await client.query(
-                "UPDATE users SET is_verified = true, is_pro = true, plan = $1, updated_at = NOW() WHERE LOWER(username) = LOWER($2)",
-                [plan, notes.username]
+                `UPDATE users SET 
+                  is_verified = true, 
+                  is_pro = true, 
+                  plan = $1, 
+                  plan_billing = $2,
+                  subscription_start = NOW(),
+                  subscription_end = (NOW() + $3::INTERVAL),
+                  updated_at = NOW() 
+                 WHERE LOWER(username) = LOWER($4)`,
+                [plan, billing, durationInterval, notes.username]
               );
             }
-            console.log(`[Webhook] Auto-verified user @${notes.username || notes.user_id} (${plan})`);
+            console.log(`[Webhook] Auto-verified user @${notes.username || notes.user_id} (${plan} - ${billing})`);
           }
           if (notes.startup_id) {
             await client.query("UPDATE startups SET is_featured = true WHERE id = $1", [Number(notes.startup_id)]);
@@ -2811,19 +3000,129 @@ async function handleNetworkRequest(req, res) {
       }
       const client = await pool.connect();
       try {
+        const check = await client.query("SELECT id, name, is_featured, user_id, founder_username FROM startups WHERE id = $1", [Number(body.id)]);
+        if (check.rows.length === 0) {
+          res.statusCode = 404;
+          res.end(JSON.stringify({ error: "Startup not found." }));
+          return;
+        }
+        const current = check.rows[0];
+        const newStatus = body.toggle ? !current.is_featured : true;
         const resDb = await client.query(
-          "UPDATE startups SET is_featured = true WHERE id = $1 RETURNING id, name, is_featured",
-          [Number(body.id)]
+          "UPDATE startups SET is_featured = $1 WHERE id = $2 RETURNING id, name, is_featured",
+          [newStatus, Number(body.id)]
         );
-        console.log(`[Boost] Pinned startup ID ${body.id} to #1 on feed`);
+        console.log(`[Boost] Pinned startup ID ${body.id} (featured: ${newStatus})`);
         res.statusCode = 200;
-        res.end(JSON.stringify({ success: true, startup: resDb.rows[0] }));
+        res.end(JSON.stringify({ success: true, startup: resDb.rows[0], message: "Startup pinned to feed successfully!" }));
       } catch (err) {
         res.statusCode = 500;
         res.end(JSON.stringify({ error: err.message || "Failed to pin startup." }));
       } finally {
         client.release();
       }
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/pin-project" || pathname === "/api/pin-project")) {
+      const body = await parseBody();
+      if (!body.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Project ID required." }));
+        return;
+      }
+      const client = await pool.connect();
+      try {
+        const resDb = await client.query(
+          "UPDATE catalog_projects SET is_sponsored = true, sponsored_label = '\u2726 Featured Builder' WHERE id = $1 RETURNING id, title, is_sponsored, sponsored_label",
+          [Number(body.id)]
+        );
+        res.statusCode = 200;
+        res.end(JSON.stringify({ success: true, project: resDb.rows[0], message: "Project pinned with Pro status!" }));
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: err.message || "Failed to pin project." }));
+      } finally {
+        client.release();
+      }
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/coupons/validate" || pathname === "/api/coupons/validate")) {
+      const body = await parseBody();
+      const code = body?.code;
+      const amount = Number(body?.amount) || 0;
+      if (!code) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ valid: false, error: "Coupon code is required." }));
+        return;
+      }
+      const result = await validateCoupon(code, amount);
+      res.statusCode = 200;
+      res.end(JSON.stringify(result));
+      return;
+    }
+    if (req.method === "GET" && (pathname === "/api/network/admin/coupons" || pathname === "/api/admin/coupons")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const coupons = await listCouponsAdmin();
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, coupons }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/admin/coupons" || pathname === "/api/admin/coupons")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body?.code || !body?.discount_value) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Coupon code and discount value are required." }));
+        return;
+      }
+      const coupon = await createCouponAdmin({
+        code: body.code,
+        discount_type: body.discount_type || "percentage",
+        discount_value: Number(body.discount_value),
+        min_order_amount: Number(body.min_order_amount) || 0,
+        max_uses: body.max_uses ? Number(body.max_uses) : null,
+        expires_at: body.expires_at || null
+      });
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, coupon }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/admin/toggle-coupon" || pathname === "/api/admin/toggle-coupon")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body?.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Coupon ID is required." }));
+        return;
+      }
+      const coupon = await toggleCouponAdmin(Number(body.id));
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, coupon }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/admin/delete-coupon" || pathname === "/api/admin/delete-coupon") || req.method === "DELETE" && (pathname.startsWith("/api/network/admin/coupons/") || pathname.startsWith("/api/admin/coupons/"))) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      const id = Number(body?.id || pathname.split("/").pop());
+      const deleted = await deleteCouponAdmin(id);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: deleted }));
       return;
     }
     if (req.method === "POST" && (pathname === "/api/network/admin/toggle-startup-featured" || pathname === "/api/admin/toggle-startup-featured")) {

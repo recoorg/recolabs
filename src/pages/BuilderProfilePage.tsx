@@ -247,7 +247,7 @@ export function BuilderProfilePage() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                {isSelf && (
+                {isSelf && !profile.is_verified && !profile.is_pro && (
                   <button
                     type="button"
                     onClick={() => setShowUpgradeModal(true)}

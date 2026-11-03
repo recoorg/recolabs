@@ -227,6 +227,30 @@ export async function initDb() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS is_pro BOOLEAN DEFAULT false;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'free';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_billing TEXT DEFAULT 'monthly';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_start TIMESTAMPTZ;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_end TIMESTAMPTZ;
+
+      CREATE TABLE IF NOT EXISTS coupons (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        discount_type VARCHAR(20) DEFAULT 'percentage',
+        discount_value NUMERIC(10, 2) NOT NULL,
+        min_order_amount NUMERIC(10, 2) DEFAULT 0,
+        max_uses INTEGER DEFAULT NULL,
+        uses_count INTEGER DEFAULT 0,
+        expires_at TIMESTAMPTZ DEFAULT NULL,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(LOWER(code));
+
+      INSERT INTO coupons (code, discount_type, discount_value, min_order_amount, is_active)
+      VALUES 
+        ('BUILDER50', 'percentage', 50.00, 100, true),
+        ('RECO100', 'flat', 100.00, 200, true)
+      ON CONFLICT (code) DO NOTHING;
 
       CREATE TABLE IF NOT EXISTS builder_hackathons (
         id SERIAL PRIMARY KEY,
@@ -424,7 +448,12 @@ export async function getUserById(id: number) {
   const client = await pool.connect()
   try {
     const res = await client.query(
-      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, created_at
+      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, 
+              COALESCE(is_verified, false) as is_verified, 
+              COALESCE(is_pro, false) as is_pro, 
+              COALESCE(plan, 'free') as plan, 
+              COALESCE(plan_billing, 'monthly') as plan_billing, 
+              subscription_start, subscription_end, created_at
        FROM users WHERE id = $1`,
       [id]
     )
@@ -439,7 +468,12 @@ export async function getUserByUsername(username: string) {
   const client = await pool.connect()
   try {
     const res = await client.query(
-      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, created_at
+      `SELECT id, name, username, email, phone, website, bio, discord, github, auth_provider, avatar_url, 
+              COALESCE(is_verified, false) as is_verified, 
+              COALESCE(is_pro, false) as is_pro, 
+              COALESCE(plan, 'free') as plan, 
+              COALESCE(plan_billing, 'monthly') as plan_billing, 
+              subscription_start, subscription_end, created_at
        FROM users WHERE LOWER(username) = LOWER($1)`,
       [username.trim()]
     )
@@ -1557,7 +1591,7 @@ export async function listAllPaidEntitiesAdmin() {
     const [startups, jobs, users] = await Promise.all([
       client.query("SELECT id, name, url, founder_name, founder_username, category, stage, created_at, is_featured FROM startups WHERE is_featured = true ORDER BY created_at DESC"),
       client.query("SELECT id, title, company_name, author_name, location, job_type, salary_range, created_at, is_featured FROM builder_jobs WHERE is_featured = true ORDER BY created_at DESC"),
-      client.query("SELECT id, name, username, email, is_verified, is_pro, plan, avatar_url, created_at FROM users WHERE is_verified = true OR is_pro = true ORDER BY created_at DESC")
+      client.query("SELECT id, name, username, email, is_verified, is_pro, plan, COALESCE(plan_billing, 'monthly') as plan_billing, subscription_start, subscription_end, avatar_url, created_at FROM users WHERE is_verified = true OR is_pro = true ORDER BY created_at DESC")
     ]);
     return {
       featuredStartups: startups.rows,
@@ -1572,9 +1606,20 @@ export async function listAllPaidEntitiesAdmin() {
 export async function toggleUserVerification(id: number) {
   const client = await pool.connect();
   try {
+    const check = await client.query("SELECT is_verified FROM users WHERE id = $1", [id]);
+    const willVerify = !check.rows[0]?.is_verified;
     const res = await client.query(
-      "UPDATE users SET is_verified = NOT COALESCE(is_verified, false), is_pro = NOT COALESCE(is_verified, false) WHERE id = $1 RETURNING id, is_verified, is_pro",
-      [id]
+      `UPDATE users SET 
+        is_verified = $1, 
+        is_pro = $1, 
+        plan = CASE WHEN $1 THEN COALESCE(plan, 'pro') ELSE 'free' END,
+        plan_billing = CASE WHEN $1 THEN COALESCE(plan_billing, 'monthly') ELSE 'monthly' END,
+        subscription_start = CASE WHEN $1 THEN NOW() ELSE NULL END,
+        subscription_end = CASE WHEN $1 THEN NOW() + INTERVAL '30 days' ELSE NULL END,
+        updated_at = NOW() 
+       WHERE id = $2 
+       RETURNING id, is_verified, is_pro, plan, plan_billing, subscription_start, subscription_end`,
+      [willVerify, id]
     );
     return res.rows[0];
   } finally {
@@ -1616,6 +1661,119 @@ export async function setHackathonApproval(id: number, approved: boolean) {
       [approved, id]
     );
     return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function listCouponsAdmin() {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("SELECT * FROM coupons ORDER BY created_at DESC");
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createCouponAdmin(data: {
+  code: string;
+  discount_type?: string;
+  discount_value: number;
+  min_order_amount?: number;
+  max_uses?: number | null;
+  expires_at?: string | null;
+}) {
+  const client = await pool.connect();
+  try {
+    const cleanCode = data.code.trim().toUpperCase();
+    const res = await client.query(
+      `INSERT INTO coupons (code, discount_type, discount_value, min_order_amount, max_uses, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [
+        cleanCode,
+        data.discount_type || "percentage",
+        data.discount_value,
+        data.min_order_amount || 0,
+        data.max_uses || null,
+        data.expires_at || null,
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function toggleCouponAdmin(id: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "UPDATE coupons SET is_active = NOT COALESCE(is_active, true), updated_at = NOW() WHERE id = $1 RETURNING *",
+      [id]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteCouponAdmin(id: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("DELETE FROM coupons WHERE id = $1 RETURNING id", [id]);
+    return res.rowCount ? res.rowCount > 0 : false;
+  } finally {
+    client.release();
+  }
+}
+
+export async function validateCoupon(code: string, amount: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT * FROM coupons WHERE LOWER(code) = LOWER($1) LIMIT 1`,
+      [code.trim()]
+    );
+    if (res.rows.length === 0) {
+      return { valid: false, error: "Invalid coupon code." };
+    }
+    const coupon = res.rows[0];
+    if (!coupon.is_active) {
+      return { valid: false, error: "This coupon is no longer active." };
+    }
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+      return { valid: false, error: "This coupon has expired." };
+    }
+    if (coupon.max_uses && coupon.uses_count >= coupon.max_uses) {
+      return { valid: false, error: "This coupon has reached its maximum usage limit." };
+    }
+    if (coupon.min_order_amount && amount < Number(coupon.min_order_amount)) {
+      return { valid: false, error: `Minimum order amount of ₹${coupon.min_order_amount} required to use this coupon.` };
+    }
+
+    let discountAmount = 0;
+    const discountVal = Number(coupon.discount_value);
+    if (coupon.discount_type === "percentage") {
+      discountAmount = Math.round((amount * discountVal) / 100);
+    } else {
+      discountAmount = Math.min(amount, discountVal);
+    }
+    const finalAmount = Math.max(0, amount - discountAmount);
+
+    return {
+      valid: true,
+      coupon: {
+        id: coupon.id,
+        code: coupon.code,
+        discount_type: coupon.discount_type,
+        discount_value: discountVal,
+        discount_amount: discountAmount,
+      },
+      discountAmount,
+      finalAmount,
+    };
   } finally {
     client.release();
   }

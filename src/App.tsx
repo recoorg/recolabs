@@ -17,6 +17,7 @@ import { BuilderProfilePage } from "@/pages/BuilderProfilePage"
 import { PrivacyPage } from "@/pages/PrivacyPage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
 import { DashboardPage } from "@/pages/DashboardPage"
+import { PricingUpgradePage } from "@/pages/PricingUpgradePage"
 import { networkApi } from "@/services/networkApi"
 
 function GlobalOAuthListener() {
@@ -72,6 +73,9 @@ function AppContent() {
             <Route path="/sponsor" element={<SponsorsPage />} />
             <Route path="/network" element={<NetworkPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/pricing" element={<PricingUpgradePage />} />
+            <Route path="/upgrade" element={<PricingUpgradePage />} />
+            <Route path="/payment" element={<PricingUpgradePage />} />
             <Route path="/builder/:username" element={<BuilderProfilePage />} />
             <Route path="/builders/:username" element={<BuilderProfilePage />} />
             <Route path="/privacy" element={<PrivacyPage />} />

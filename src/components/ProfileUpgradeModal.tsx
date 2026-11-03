@@ -16,6 +16,8 @@ import {
   Loader2,
 } from "lucide-react"
 import confetti from "canvas-confetti"
+import QRCode from "qrcode"
+import { Link } from "react-router-dom" 
 import { networkApi } from "@/services/networkApi"
 import { VerifiedBadge } from "@/components/VerifiedBadge"
 
@@ -89,7 +91,22 @@ export function ProfileUpgradeModal({
   const activePlanObj = plans.find((p) => p.id === selectedPlan)!
 
   const upiPaymentUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Reco Labs")}&am=${activePlanObj.amountNum}&cu=INR&tn=${encodeURIComponent(`VerifiedPro_${username}`)}`
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=6&data=${encodeURIComponent(upiPaymentUri)}`
+  const [qrCodeUrl, setQrCodeUrl] = React.useState<string>("")
+
+  React.useEffect(() => {
+    let active = true
+    QRCode.toDataURL(upiPaymentUri, {
+      width: 240,
+      margin: 2,
+      color: { dark: "#000000", light: "#ffffff" }
+    }).then(url => {
+      if (active) setQrCodeUrl(url)
+    }).catch(err => {
+      console.error("QR render error:", err)
+      if (active) setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiPaymentUri)}`)
+    })
+    return () => { active = false }
+  }, [upiPaymentUri])
 
   const handleCopyUpi = () => {
     navigator.clipboard.writeText(upiId)

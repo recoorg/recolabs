@@ -17,8 +17,10 @@ import {
   Lock,
   Loader2,
   CheckCircle2,
+  Crown,
 } from "lucide-react"
 import confetti from "canvas-confetti"
+import QRCode from "qrcode"
 import type { StartupItem } from "@/services/networkApi"
 import { networkApi } from "@/services/networkApi"
 
@@ -69,8 +71,26 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
   }
 
   const activeTier = tiers[selectedTier]
+  const currentUser = networkApi.getCurrentUser()
+  const isUserPro = Boolean(currentUser?.is_verified || currentUser?.is_pro)
+
   const upiPaymentUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Reco Labs")}&am=${activeTier.amountNum}&cu=INR&tn=${encodeURIComponent(`Boost_${startup.name.replace(/[^a-zA-Z0-9]/g, "")}`)}`
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=6&data=${encodeURIComponent(upiPaymentUri)}`
+  const [qrCodeUrl, setQrCodeUrl] = React.useState<string>("")
+
+  React.useEffect(() => {
+    let active = true
+    QRCode.toDataURL(upiPaymentUri, {
+      width: 220,
+      margin: 2,
+      color: { dark: "#000000", light: "#ffffff" }
+    }).then(url => {
+      if (active) setQrCodeUrl(url)
+    }).catch(err => {
+      console.error("QR render error:", err)
+      if (active) setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentUri)}`)
+    })
+    return () => { active = false }
+  }, [upiPaymentUri])
 
   const handleCopyUpi = () => {
     navigator.clipboard.writeText(upiId)
@@ -149,6 +169,30 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
             </div>
           ) : (
             <>
+              {/* Pro Founder Complimentary Pin Banner */}
+              {isUserPro && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-500/30 flex items-center justify-between gap-3 animate-in fade-in">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500 font-mono">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>PRO BUILDER BENEFIT ACTIVE</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-sans mt-0.5">
+                      Complimentary startup pinning is included with your Verified Pro membership!
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleExecutePin}
+                    disabled={loading}
+                    className="px-4 py-2 rounded-xl bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-md flex-none disabled:opacity-50"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-black" />
+                    <span>{loading ? "Pinning..." : "Pin Free"}</span>
+                  </button>
+                </div>
+              )}
+
               {/* Tier Selection */}
               <div className="grid grid-cols-2 gap-2.5 font-mono">
                 {(["spotlight", "surge"] as const).map((t) => {
