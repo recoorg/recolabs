@@ -3,6 +3,7 @@
 import * as React from "react"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { Heart, Mail, ArrowUpRight, Copy, Check, Plus, Image as ImageIcon, ExternalLink, ShieldCheck, Cpu, Zap, Users } from "lucide-react"
+import { SponsorBookingModal } from "@/components/SponsorBookingModal"
 
 // ==============================================================================
 // SPONSOR ROSTER CONFIGURATION
@@ -130,6 +131,7 @@ export function SponsorsPage() {
 
   const [sponsors] = React.useState<SponsorItem[]>(INITIAL_SPONSORS)
   const [copied, setCopied] = React.useState(false)
+  const [bookingTierKey, setBookingTierKey] = React.useState<string | null>(null)
   const sponsorEmail = "devadibxr@gmail.com"
 
   const handleCopy = () => {

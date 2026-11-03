@@ -211,6 +211,8 @@ async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_builder_jobs_active ON builder_jobs(is_active);
       CREATE INDEX IF NOT EXISTS idx_builder_jobs_user ON builder_jobs(user_id);
       CREATE INDEX IF NOT EXISTS idx_builder_jobs_created ON builder_jobs(created_at DESC);
+      ALTER TABLE startups ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
+      ALTER TABLE builder_jobs ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
 
       CREATE TABLE IF NOT EXISTS builder_hackathons (
         id SERIAL PRIMARY KEY,
@@ -456,6 +458,7 @@ async function listStartups({
   try {
     let query = `
       SELECT s.id, s.name, s.url, s.problem_solving, s.category, s.stage, s.created_at,
+             COALESCE(s.is_featured, false) as is_featured,
              s.founder_name, s.founder_username, s.founder_email, s.founder_phone, s.founder_website, s.founder_discord,
              s.user_id,
              u.name as author_name, u.username as author_username, u.phone as author_phone, u.website as author_website, u.avatar_url as author_avatar, u.avatar_url
@@ -476,7 +479,7 @@ async function listStartups({
       params.push(`%${search.trim().toLowerCase()}%`);
       query += ` AND (LOWER(s.name) LIKE $${params.length} OR LOWER(s.problem_solving) LIKE $${params.length} OR LOWER(s.founder_name) LIKE $${params.length} OR LOWER(s.founder_username) LIKE $${params.length})`;
     }
-    query += ` ORDER BY s.created_at DESC`;
+    query += ` ORDER BY COALESCE(s.is_featured, false) DESC, s.created_at DESC`;
     const res = await client.query(query, params);
     return res.rows;
   } finally {
@@ -1170,7 +1173,7 @@ async function listBuilderJobs(options = {}) {
     if (options.onlyActive !== false) {
       queryStr += " WHERE is_active = true";
     }
-    queryStr += " ORDER BY created_at DESC";
+    queryStr += " ORDER BY COALESCE(is_featured, false) DESC, created_at DESC";
     if (options.limit) {
       params.push(options.limit);
       queryStr += " LIMIT $" + params.length;
@@ -1198,8 +1201,8 @@ async function createBuilderJob(data) {
   try {
     const res = await client.query(
       `INSERT INTO builder_jobs
-       (user_id, author_name, author_username, title, company_name, company_logo, location, is_remote, job_type, salary_range, skills, description, apply_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       (user_id, author_name, author_username, title, company_name, company_logo, location, is_remote, job_type, salary_range, skills, description, apply_url, is_featured)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
       [
         data.userId || null,
@@ -1214,7 +1217,8 @@ async function createBuilderJob(data) {
         data.salaryRange?.trim() || null,
         data.skills || [],
         data.description.trim(),
-        data.applyUrl.trim()
+        data.applyUrl.trim(),
+        Boolean(data.isFeatured)
       ]
     );
     return res.rows[0];
@@ -2413,7 +2417,8 @@ async function handleNetworkRequest(req, res) {
         salaryRange: body.salary_range,
         skills: Array.isArray(body.skills) ? body.skills : body.skills ? body.skills.split(",").map((s) => s.trim()) : [],
         description: body.description,
-        applyUrl: body.apply_url
+        applyUrl: body.apply_url,
+        isFeatured: Boolean(body.is_featured)
       });
       res.statusCode = 201;
       res.end(JSON.stringify({ success: true, job }));

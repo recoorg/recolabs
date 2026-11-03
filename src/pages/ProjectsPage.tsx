@@ -1012,6 +1012,30 @@ export function ProjectsPage() {
           </div>
         )}
 
+                {/* Reco Vault Pro Digital Kit */}
+        <div className="mt-4 p-4 rounded-2xl border border-orange-300 dark:border-orange-800/80 bg-gradient-to-b from-orange-500/[0.08] to-orange-500/[0.02] dark:from-orange-500/[0.12] dark:to-transparent shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-mono text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FA5D00] text-black">
+              VAULT PRO
+            </span>
+            <span className="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              $49
+            </span>
+          </div>
+          <h4 className="font-serif text-sm font-normal text-zinc-900 dark:text-zinc-100">
+            190+ Production Stacks
+          </h4>
+          <p className="font-sans text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+            All shaders, templates, and agent architectures in one bundle.
+          </p>
+          <a
+            href="mailto:devadibxr@gmail.com?subject=Reco%20Vault%20Pro%20Access%20Purchase&body=Hi%20Aditya%2C%0A%0AI%20would%20like%20to%20purchase%20access%20to%20the%20Reco%20Vault%20Pro%20($49%20USD%20/%20INR).%20Please%20send%20the%20direct%20checkout%20link%20and%20access%20keys."
+            className="mt-3 block text-center py-1.5 px-3 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-bold uppercase tracking-wider hover:bg-[#e05300] active:scale-95 transition-all shadow-2xs"
+          >
+            Get Instant Access ↗
+          </a>
+        </div>
+
         <p className="mt-4 font-mono text-[10px] text-zinc-400 text-center">
           Curated by Reco Labs · © 2026
         </p>

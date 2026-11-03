@@ -1355,6 +1355,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         skills: Array.isArray(body.skills) ? body.skills : (body.skills ? body.skills.split(",").map((s: string) => s.trim()) : []),
         description: body.description,
         applyUrl: body.apply_url,
+        isFeatured: Boolean(body.is_featured),
       });
 
       res.statusCode = 201;

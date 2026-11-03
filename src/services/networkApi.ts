@@ -29,6 +29,7 @@ export interface BuilderJob {
   description: string
   apply_url: string
   is_active: boolean
+  is_featured?: boolean
   created_at: string
 }
 
@@ -70,6 +71,7 @@ export interface StartupItem {
   problem_solving: string
   category: string
   stage: string
+  is_featured?: boolean
   created_at: string
 }
 

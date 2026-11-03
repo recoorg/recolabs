@@ -21,6 +21,7 @@ import {
   Check,
   RefreshCw,
   Sparkles,
+  Zap,
   ArrowUpRight,
   ArrowRight,
   ShieldCheck,
@@ -43,6 +44,7 @@ import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
+import { StartupPromoteModal } from "@/components/StartupPromoteModal"
 import { NetworkAvatarCloud } from "@/components/NetworkAvatarCloud"
 
 const CATEGORIES = ["ALL", "Software", "Hardware", "Security", "AI", "Education & Tooling"]
@@ -68,6 +70,7 @@ export function NetworkPage() {
   const [showPostModal, setShowPostModal] = React.useState(false)
   const [showProfileModal, setShowProfileModal] = React.useState(false)
   const [screenshotStartup, setScreenshotStartup] = React.useState<StartupItem | null>(null)
+  const [promoteStartup, setPromoteStartup] = React.useState<StartupItem | null>(null)
 
   // Selected Startup for Peerlist Launchpad Detail Modal
   const [selectedStartup, setSelectedStartup] = React.useState<StartupItem | null>(null)
@@ -729,7 +732,11 @@ export function NetworkPage() {
                   <div
                     key={item.id}
                     onClick={() => selectStartupWithUrl(item)}
-                    className="group relative p-6 sm:p-7 rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between shadow-sm hover:shadow-md cursor-pointer"
+                    className={`group relative p-6 sm:p-7 rounded-3xl border-2 transition-all flex flex-col justify-between shadow-sm hover:shadow-md cursor-pointer ${
+                      item.is_featured
+                        ? "border-[#FA5D00] dark:border-[#FA5D00] bg-orange-500/[0.04] dark:bg-orange-500/[0.06] shadow-lg shadow-[#FA5D00]/10"
+                        : "border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00]"
+                    }`}
                   >
                     <div>
                       {/* Top Bar: Category, Stage, Screenshot Snap & External Link */}
@@ -754,6 +761,17 @@ export function NetworkPage() {
 
                         {/* Top Right Actions: Screenshot Card Snap & Link */}
                         <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPromoteStartup(item);
+                            }}
+                            title="Boost this startup to #1"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-orange-300 dark:border-orange-800/80 bg-orange-100/80 dark:bg-orange-950/60 text-[#FA5D00] hover:bg-[#FA5D00] hover:text-black font-mono text-[10px] font-bold uppercase transition-all shadow-2xs active:scale-95"
+                          >
+                            <Zap className="w-3 h-3" />
+                            <span>Boost</span>
+                          </button>
                           <button onClick={(e) => { e.stopPropagation(); setScreenshotStartup(item); }} title="Snap Screenshot Card" className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] active:scale-95 transition-all cursor-pointer shadow-2xs"><Camera className="w-3.5 h-3.5 text-[#FA5D00]" /></button>
 
                           <a

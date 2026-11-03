@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Link } from "react-router-dom"
 import { Heart, Mail, ArrowUpRight, Copy, Check, Plus, ExternalLink } from "lucide-react"
+import { SponsorBookingModal } from "@/components/SponsorBookingModal"
 
 interface HomeSponsorAd {
   id: number
@@ -18,6 +19,7 @@ interface HomeSponsorAd {
 export function SponsorSection() {
   const [copied, setCopied] = React.useState(false)
   const [liveAds, setLiveAds] = React.useState<HomeSponsorAd[]>([])
+  const [selectedTierKey, setSelectedTierKey] = React.useState<string | null>(null)
   const sponsorEmail = "devadibxr@gmail.com"
 
   const handleCopy = () => {
@@ -196,10 +198,11 @@ export function SponsorSection() {
 
               // Available Placeholder Slot - Rich, full-height card
               return (
-                <Link
+                <button
                   key={slot.key}
-                  to="/sponsors"
-                  className="group relative p-7 rounded-3xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] bg-white/50 dark:bg-zinc-900/30 hover:bg-white dark:hover:bg-zinc-900/60 transition-all flex flex-col items-center justify-center text-center min-h-[220px] shadow-2xs hover:shadow-md cursor-pointer"
+                  type="button"
+                  onClick={() => setSelectedTierKey(slot.key)}
+                  className="group relative p-7 rounded-3xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] bg-white/50 dark:bg-zinc-900/30 hover:bg-white dark:hover:bg-zinc-900/60 transition-all flex flex-col items-center justify-center text-center min-h-[220px] shadow-2xs hover:shadow-md cursor-pointer w-full"
                 >
                   <div className="w-12 h-12 rounded-full border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-[#FA5D00] group-hover:border-[#FA5D00] transition-all mb-3.5 group-hover:scale-110">
                     <Plus className="w-5 h-5" />
@@ -217,13 +220,19 @@ export function SponsorSection() {
                     <span>+ Claim Slot</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </span>
-                </Link>
+                </button>
               )
             })}
           </div>
         </div>
 
       </div>
+
+      <SponsorBookingModal
+        isOpen={Boolean(selectedTierKey)}
+        onClose={() => setSelectedTierKey(null)}
+        initialTierKey={selectedTierKey || undefined}
+      />
     </section>
   )
 }

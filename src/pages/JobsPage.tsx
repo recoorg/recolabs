@@ -19,6 +19,7 @@ interface UnifiedJob {
   skills?: string[]
   description: string
   apply_url: string
+  is_featured?: boolean
   source: "builder" | "google"
   author_name?: string
   author_username?: string
@@ -92,6 +93,7 @@ export function JobsPage() {
       skills: b.skills || [],
       description: b.description,
       apply_url: b.apply_url,
+      is_featured: Boolean(b.is_featured),
       source: "builder",
       author_name: b.author_name,
       author_username: b.author_username || undefined,
@@ -313,6 +315,8 @@ export function JobsPage() {
               <div
                 key={job.id}
                 className={`rounded-3xl border p-6 transition-all shadow-xs hover:shadow-md ${
+                  job.is_featured
+                    ? "bg-orange-500/[0.04] dark:bg-orange-500/[0.07] border-[#FA5D00] shadow-md shadow-[#FA5D00]/10" :
                   job.source === "builder"
                     ? "bg-white dark:bg-zinc-900/60 border-orange-300 dark:border-orange-800/80 hover:border-[#FA5D00]"
                     : "bg-white dark:bg-zinc-900/40 editorial-hairline hover:border-black dark:hover:border-zinc-600"
@@ -339,6 +343,11 @@ export function JobsPage() {
                           {job.title}
                         </h2>
 
+                        {job.is_featured && (
+                          <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-black uppercase tracking-wider flex items-center gap-1 shadow-2xs">
+                            <span>🔥 FEATURED ROLE</span>
+                          </span>
+                        )}
                         {job.source === "builder" ? (
                           <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-black">
                             DIRECT GUILD POST

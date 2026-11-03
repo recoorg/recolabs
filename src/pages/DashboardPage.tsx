@@ -80,6 +80,7 @@ export function DashboardPage() {
     skills: "",
     description: "",
     apply_url: "",
+    is_featured: false,
   })
   const [submittingJob, setSubmittingJob] = React.useState(false)
   const [jobError, setJobError] = React.useState<string | null>(null)
@@ -180,6 +181,7 @@ export function DashboardPage() {
           skills: "",
           description: "",
           apply_url: "",
+          is_featured: false,
         })
         setTimeout(() => {
           setSection("jobs")
@@ -1051,6 +1053,52 @@ export function DashboardPage() {
                     onChange={(e) => setJobForm({ ...jobForm, description: e.target.value })}
                     className="w-full p-4 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-sans focus:outline-none focus:border-[#FA5D00] resize-y"
                   />
+                </div>
+
+                {/* Listing Tier Selector */}
+                <div>
+                  <label className="block font-bold text-zinc-700 dark:text-zinc-300 mb-2">
+                    LISTING TIER *
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setJobForm({ ...jobForm, is_featured: false })}
+                      className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                        !jobForm.is_featured
+                          ? "border-[#FA5D00] bg-orange-50/50 dark:bg-orange-950/20"
+                          : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 hover:border-zinc-400"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs text-zinc-900 dark:text-zinc-100">Community Role</span>
+                        <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold">FREE</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 leading-snug">
+                        Standard feed listing. Visible to all guild builders.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setJobForm({ ...jobForm, is_featured: true })}
+                      className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                        jobForm.is_featured
+                          ? "border-[#FA5D00] bg-orange-500/10 dark:bg-orange-950/40 shadow-sm shadow-[#FA5D00]/10"
+                          : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 hover:border-zinc-400"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs text-[#FA5D00] flex items-center gap-1">
+                          <span>⚡ Featured Guild Role</span>
+                        </span>
+                        <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-[#FA5D00] text-black font-extrabold">$99 / ₹3,499</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 leading-snug">
+                        Pinned to top of /jobs · Glowing flame border · 5x views.
+                      </p>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="pt-2">
