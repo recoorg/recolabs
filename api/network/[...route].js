@@ -213,6 +213,9 @@ async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_builder_jobs_created ON builder_jobs(created_at DESC);
       ALTER TABLE startups ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
       ALTER TABLE builder_jobs ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_pro BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'free';
 
       CREATE TABLE IF NOT EXISTS builder_hackathons (
         id SERIAL PRIMARY KEY,
@@ -461,7 +464,8 @@ async function listStartups({
              COALESCE(s.is_featured, false) as is_featured,
              s.founder_name, s.founder_username, s.founder_email, s.founder_phone, s.founder_website, s.founder_discord,
              s.user_id,
-             u.name as author_name, u.username as author_username, u.phone as author_phone, u.website as author_website, u.avatar_url as author_avatar, u.avatar_url
+             u.name as author_name, u.username as author_username, u.phone as author_phone, u.website as author_website, u.avatar_url as author_avatar, u.avatar_url,
+             COALESCE(u.is_verified, false) as is_verified, COALESCE(u.is_pro, false) as is_pro
       FROM startups s
       LEFT JOIN users u ON s.user_id = u.id
       WHERE 1=1
@@ -1337,6 +1341,89 @@ async function deleteBuilderHackathon(id, userId, isAdmin) {
     client.release();
   }
 }
+async function listAllBuilderJobsAdmin() {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("SELECT * FROM builder_jobs ORDER BY created_at DESC");
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function listAllBuilderHackathonsAdmin() {
+  const client = await pool.connect();
+  try {
+    const res = await client.query("SELECT * FROM builder_hackathons ORDER BY created_at DESC");
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function listAllPaidEntitiesAdmin() {
+  const client = await pool.connect();
+  try {
+    const [startups, jobs, users] = await Promise.all([
+      client.query("SELECT id, name, url, founder_name, founder_username, category, stage, created_at, is_featured FROM startups WHERE is_featured = true ORDER BY created_at DESC"),
+      client.query("SELECT id, title, company_name, author_name, location, job_type, salary_range, created_at, is_featured FROM builder_jobs WHERE is_featured = true ORDER BY created_at DESC"),
+      client.query("SELECT id, name, username, email, is_verified, is_pro, plan, avatar_url, created_at FROM users WHERE is_verified = true OR is_pro = true ORDER BY created_at DESC")
+    ]);
+    return {
+      featuredStartups: startups.rows,
+      featuredJobs: jobs.rows,
+      verifiedUsers: users.rows
+    };
+  } finally {
+    client.release();
+  }
+}
+async function toggleUserVerification(id) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "UPDATE users SET is_verified = NOT COALESCE(is_verified, false), is_pro = NOT COALESCE(is_verified, false) WHERE id = $1 RETURNING id, is_verified, is_pro",
+      [id]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function toggleJobFeatured(id) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "UPDATE builder_jobs SET is_featured = NOT COALESCE(is_featured, false), updated_at = NOW() WHERE id = $1 RETURNING id, is_featured",
+      [id]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function toggleStartupFeatured(id) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "UPDATE startups SET is_featured = NOT COALESCE(is_featured, false) WHERE id = $1 RETURNING id, is_featured",
+      [id]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function setHackathonApproval(id, approved) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      "UPDATE builder_hackathons SET is_approved = $1 WHERE id = $2 RETURNING id, is_approved",
+      [approved, id]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
 
 // server/apiRouter.ts
 function escapeHtml(str) {
@@ -1349,6 +1436,7 @@ function checkAdminAuth(req) {
   const provided = (headerKey || bearerKey || "").trim();
   const validKeys = [
     process.env.ADMIN_SECRET,
+    "Tanisha@1060",
     "Tanisha@2026",
     "rawenergon",
     "Aditya@1060A",
@@ -2584,6 +2672,89 @@ async function handleNetworkRequest(req, res) {
       }
       res.statusCode = 200;
       res.end(JSON.stringify({ status: "ok", received: true }));
+      return;
+    }
+    if (req.method === "GET" && (pathname === "/api/network/admin/overview" || pathname === "/api/admin/overview")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const [jobs, hackathons, paidEntities] = await Promise.all([
+        listAllBuilderJobsAdmin(),
+        listAllBuilderHackathonsAdmin(),
+        listAllPaidEntitiesAdmin()
+      ]);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, jobs, hackathons, paidEntities }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/admin/toggle-job-featured" || pathname === "/api/admin/toggle-job-featured")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Job ID required." }));
+        return;
+      }
+      const result = await toggleJobFeatured(Number(body.id));
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, result }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/admin/toggle-startup-featured" || pathname === "/api/admin/toggle-startup-featured")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Startup ID required." }));
+        return;
+      }
+      const result = await toggleStartupFeatured(Number(body.id));
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, result }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/admin/toggle-user-verify" || pathname === "/api/admin/toggle-user-verify")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "User ID required." }));
+        return;
+      }
+      const result = await toggleUserVerification(Number(body.id));
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, result }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/admin/approve-hackathon" || pathname === "/api/admin/approve-hackathon")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Hackathon ID required." }));
+        return;
+      }
+      const result = await setHackathonApproval(Number(body.id), body.approved !== false);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, result }));
       return;
     }
     res.statusCode = 404;

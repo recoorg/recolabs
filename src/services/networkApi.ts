@@ -10,6 +10,9 @@ export interface UserProfile {
   github?: string | null
   avatar_url?: string | null
   auth_provider?: string
+  is_verified?: boolean
+  is_pro?: boolean
+  plan?: string
   created_at?: string
 }
 
@@ -749,6 +752,103 @@ export const networkApi = {
       return !!res.success
     } catch {
       return false
+    }
+  },
+
+
+  // --- Admin Master Console API ---
+  async getAdminOverview(adminKey?: string): Promise<{
+    success: boolean;
+    jobs: BuilderJob[];
+    hackathons: BuilderHackathon[];
+    paidEntities: {
+      featuredStartups: any[];
+      featuredJobs: any[];
+      verifiedUsers: any[];
+    };
+  }> {
+    try {
+      const token = this.getToken();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (adminKey) headers["x-admin-key"] = adminKey;
+
+      const res = await safeJsonFetch<any>("/api/network/admin/overview", { headers });
+      return res || { success: false, jobs: [], hackathons: [], paidEntities: { featuredStartups: [], featuredJobs: [], verifiedUsers: [] } };
+    } catch {
+      return { success: false, jobs: [], hackathons: [], paidEntities: { featuredStartups: [], featuredJobs: [], verifiedUsers: [] } };
+    }
+  },
+
+  async adminToggleJobFeatured(id: number, adminKey?: string): Promise<boolean> {
+    try {
+      const token = this.getToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (adminKey) headers["x-admin-key"] = adminKey;
+
+      const res = await safeJsonFetch<{ success: boolean }>("/api/network/admin/toggle-job-featured", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ id }),
+      });
+      return !!res?.success;
+    } catch {
+      return false;
+    }
+  },
+
+  async adminToggleStartupFeatured(id: number, adminKey?: string): Promise<boolean> {
+    try {
+      const token = this.getToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (adminKey) headers["x-admin-key"] = adminKey;
+
+      const res = await safeJsonFetch<{ success: boolean }>("/api/network/admin/toggle-startup-featured", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ id }),
+      });
+      return !!res?.success;
+    } catch {
+      return false;
+    }
+  },
+
+  async adminToggleUserVerify(id: number, adminKey?: string): Promise<boolean> {
+    try {
+      const token = this.getToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (adminKey) headers["x-admin-key"] = adminKey;
+
+      const res = await safeJsonFetch<{ success: boolean }>("/api/network/admin/toggle-user-verify", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ id }),
+      });
+      return !!res?.success;
+    } catch {
+      return false;
+    }
+  },
+
+  async adminApproveHackathon(id: number, approved: boolean, adminKey?: string): Promise<boolean> {
+    try {
+      const token = this.getToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (adminKey) headers["x-admin-key"] = adminKey;
+
+      const res = await safeJsonFetch<{ success: boolean }>("/api/network/admin/approve-hackathon", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ id, approved }),
+      });
+      return !!res?.success;
+    } catch {
+      return false;
     }
   },
 

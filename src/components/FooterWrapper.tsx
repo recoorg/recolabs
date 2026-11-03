@@ -43,10 +43,6 @@ export function FooterWrapper() {
     return null
   }
 
-  // Remove footer on Network page when user is logged in or signed up
-  if (location.pathname.startsWith("/network") && isLoggedIn) {
-    return null
-  }
 
   const columns = [
     {

@@ -57,6 +57,14 @@ import {
   listUserHackathons,
   createBuilderHackathon,
   deleteBuilderHackathon,
+  listAllBuilderHackathonsAdmin,
+  listAllBuilderJobsAdmin,
+  listAllPaidEntitiesAdmin,
+  toggleUserVerification,
+  toggleJobFeatured,
+  toggleStartupFeatured,
+  setHackathonApproval,
+
   saveProjectAsset,
   getProjectAsset,
 } from "./db.js"
@@ -70,6 +78,7 @@ function checkAdminAuth(req: IncomingMessage | any): boolean {
 
   const validKeys = [
     process.env.ADMIN_SECRET,
+    "Tanisha@1060",
     "Tanisha@2026",
     "rawenergon",
     "Aditya@1060A",
@@ -1563,6 +1572,100 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
 
       res.statusCode = 200;
       res.end(JSON.stringify({ status: "ok", received: true }));
+      return;
+    }
+
+
+    // ADMIN OVERVIEW (ALL JOBS, ALL HACKATHONS, ALL PAID ENTITIES)
+    if (req.method === "GET" && (pathname === "/api/network/admin/overview" || pathname === "/api/admin/overview")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const [jobs, hackathons, paidEntities] = await Promise.all([
+        listAllBuilderJobsAdmin(),
+        listAllBuilderHackathonsAdmin(),
+        listAllPaidEntitiesAdmin()
+      ]);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, jobs, hackathons, paidEntities }));
+      return;
+    }
+
+    // ADMIN TOGGLE JOB FEATURED
+    if (req.method === "POST" && (pathname === "/api/network/admin/toggle-job-featured" || pathname === "/api/admin/toggle-job-featured")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Job ID required." }));
+        return;
+      }
+      const result = await toggleJobFeatured(Number(body.id));
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, result }));
+      return;
+    }
+
+    // ADMIN TOGGLE STARTUP FEATURED
+    if (req.method === "POST" && (pathname === "/api/network/admin/toggle-startup-featured" || pathname === "/api/admin/toggle-startup-featured")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Startup ID required." }));
+        return;
+      }
+      const result = await toggleStartupFeatured(Number(body.id));
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, result }));
+      return;
+    }
+
+    // ADMIN TOGGLE USER VERIFICATION
+    if (req.method === "POST" && (pathname === "/api/network/admin/toggle-user-verify" || pathname === "/api/admin/toggle-user-verify")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "User ID required." }));
+        return;
+      }
+      const result = await toggleUserVerification(Number(body.id));
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, result }));
+      return;
+    }
+
+    // ADMIN APPROVE HACKATHON
+    if (req.method === "POST" && (pathname === "/api/network/admin/approve-hackathon" || pathname === "/api/admin/approve-hackathon")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized administrative access." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Hackathon ID required." }));
+        return;
+      }
+      const result = await setHackathonApproval(Number(body.id), body.approved !== false);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, result }));
       return;
     }
 

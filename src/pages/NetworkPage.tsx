@@ -1415,6 +1415,12 @@ export function NetworkPage() {
                     <span className="font-bold text-zinc-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-[#FA5D00]">
                       {selectedStartup.founder_name}
                     </span>
+                    {(selectedStartup.is_featured || (selectedStartup as any).is_verified) && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 text-[#FA5D00] text-[10px] font-bold">
+                        <ShieldCheck className="w-3 h-3 text-[#FA5D00]" />
+                        <span>Verified Founder</span>
+                      </span>
+                    )}
                   </Link>
                 </div>
 

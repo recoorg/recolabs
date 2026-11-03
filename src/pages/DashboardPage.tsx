@@ -42,8 +42,9 @@ import {
 } from "lucide-react"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { networkApi, type UserProfile, type BuilderJob, type BuilderHackathon } from "@/services/networkApi"
+import { AdminDashboardView } from "@/components/AdminDashboardView"
 
-type DashboardSection = "overview" | "jobs" | "post-job" | "hackathons" | "post-hackathon" | "startups" | "settings"
+type DashboardSection = "overview" | "jobs" | "post-job" | "hackathons" | "post-hackathon" | "startups" | "settings" | "admin"
 
 export function DashboardPage() {
   usePageMeta({
@@ -109,7 +110,7 @@ export function DashboardPage() {
   // Sync section with URL query
   React.useEffect(() => {
     const tabParam = searchParams.get("tab") as DashboardSection
-    if (tabParam && ["overview", "jobs", "post-job", "hackathons", "post-hackathon", "startups", "settings"].includes(tabParam)) {
+    if (tabParam && ["overview", "jobs", "post-job", "hackathons", "post-hackathon", "startups", "settings", "admin"].includes(tabParam)) {
       setActiveSection(tabParam)
     }
   }, [searchParams])
@@ -538,6 +539,7 @@ export function DashboardPage() {
               {activeSection === "jobs" && "Your Career Postings."}
               {activeSection === "post-job" && "Publish Opportunity."}
               {activeSection === "hackathons" && "Your Hosted Hackathons."}
+              {activeSection === "admin" && "Admin Master Console."}
               {activeSection === "post-hackathon" && "Schedule Hackathon."}
             </h1>
             <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -1584,6 +1586,10 @@ export function DashboardPage() {
           </div>
         )}
 
+          {/* 6. ADMIN MASTER CONSOLE */}
+        {activeSection === "admin" && (
+          <AdminDashboardView currentUser={currentUser} />
+        )}
       </main>
     </div>
   )
