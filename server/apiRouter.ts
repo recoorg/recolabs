@@ -1611,7 +1611,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
 
         if (req.method === "POST" && (pathname === "/api/network/webhooks/razorpay" || pathname === "/api/webhooks/razorpay")) {
       const body = await parseBody();
-      const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+      const secret = process.env.RAZORPAY_WEBHOOK_SECRET || "Tanisha@1060";
       const signature = req.headers["x-razorpay-signature"] as string | undefined;
 
       if (secret && signature) {
@@ -1645,6 +1645,21 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       if (event === "payment.captured" || event === "order.paid" || event === "qr_code.credited") {
         const client = await pool.connect();
         try {
+          if (notes.user_id || notes.username) {
+            const plan = (notes.plan || 'pro').toString().toLowerCase();
+            if (notes.user_id) {
+              await client.query(
+                "UPDATE users SET is_verified = true, is_pro = true, plan = $1, updated_at = NOW() WHERE id = $2",
+                [plan, Number(notes.user_id)]
+              );
+            } else if (notes.username) {
+              await client.query(
+                "UPDATE users SET is_verified = true, is_pro = true, plan = $1, updated_at = NOW() WHERE LOWER(username) = LOWER($2)",
+                [plan, notes.username]
+              );
+            }
+            console.log(`[Webhook] Auto-verified user @${notes.username || notes.user_id} (${plan})`);
+          }
           if (notes.startup_id) {
             await client.query("UPDATE startups SET is_featured = true WHERE id = $1", [Number(notes.startup_id)]);
             console.log(`[Webhook] Boosted startup ID ${notes.startup_id}`);
