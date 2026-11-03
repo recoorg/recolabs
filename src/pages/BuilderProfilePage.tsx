@@ -25,6 +25,7 @@ import {
 import { GithubIcon, TwitterIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
+import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
 import { usePageMeta } from "@/hooks/usePageMeta"
 
 export function BuilderProfilePage() {
@@ -39,6 +40,7 @@ export function BuilderProfilePage() {
   })
   const [startups, setStartups] = React.useState<StartupItem[]>([])
   const [screenshotStartup, setScreenshotStartup] = React.useState<StartupItem | null>(null)
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState("")
   const [copiedLink, setCopiedLink] = React.useState(false)
@@ -460,6 +462,15 @@ export function BuilderProfilePage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* PROFILE UPGRADE MODAL */}
+      {showUpgradeModal && profile && (
+        <ProfileUpgradeModal
+          username={profile.username}
+          name={profile.name}
+          onClose={() => setShowUpgradeModal(false)}
+        />
       )}
 
       {/* SCREENSHOT MODAL */}
