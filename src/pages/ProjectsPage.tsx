@@ -102,6 +102,7 @@ export function ProjectsPage() {
   })
 
   const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(null)
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false)
   
   // Database Projects state (fetched live from Supabase)
   const [dbProjects, setDbProjects] = React.useState<CatalogProject[]>([])

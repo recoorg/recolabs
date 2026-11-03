@@ -27,6 +27,7 @@ import { GithubIcon, TwitterIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
 import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
+import { VerifiedBadge } from "@/components/VerifiedBadge"
 import { usePageMeta } from "@/hooks/usePageMeta"
 
 export function BuilderProfilePage() {
@@ -199,12 +200,11 @@ export function BuilderProfilePage() {
                     @{profile.username}
                   </span>
                   {(profile.is_verified || profile.is_pro || profile.username === "rawenergon" || profile.username === "b127" || profile.username === "adibxr") && (
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold border border-blue-500/30 shadow-2xs">
-                      <svg className="w-3.5 h-3.5 fill-blue-500" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                      </svg>
-                      <span>{profile.plan === "founder" ? "Pro Founder" : "Verified Pro"}</span>
-                    </span>
+                    <VerifiedBadge
+                      size="sm"
+                      showText
+                      label={profile.plan === "founder" ? "Pro Founder" : "Verified Pro"}
+                    />
                   )}
                 </div>
 

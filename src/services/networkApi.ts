@@ -357,6 +357,15 @@ export const networkApi = {
     return { order: json.order, keyId: json.keyId }
   },
 
+    async boostStartup(startupId: number): Promise<boolean> {
+    const json = await safeJsonFetch<{ success: boolean }>("/api/network/boost-startup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: startupId }),
+    })
+    return json.success || true
+  },
+
     async getBuilderProfile(username: string): Promise<{ user: UserProfile; startups: StartupItem[] }> {
     const json = await safeJsonFetch<{ success: boolean; user: UserProfile; startups: StartupItem[] }>(
       `/api/network/builder/${encodeURIComponent(username)}`

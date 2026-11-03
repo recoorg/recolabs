@@ -45,6 +45,8 @@ import { networkApi, type UserProfile, type StartupItem } from "@/services/netwo
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
 import { StartupPromoteModal } from "@/components/StartupPromoteModal"
+import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
+import { VerifiedBadge } from "@/components/VerifiedBadge"
 import { NetworkAvatarCloud } from "@/components/NetworkAvatarCloud"
 
 const CATEGORIES = ["ALL", "Software", "Hardware", "Security", "AI", "Education & Tooling"]
@@ -71,6 +73,7 @@ export function NetworkPage() {
   const [showProfileModal, setShowProfileModal] = React.useState(false)
   const [screenshotStartup, setScreenshotStartup] = React.useState<StartupItem | null>(null)
   const [promoteStartup, setPromoteStartup] = React.useState<StartupItem | null>(null)
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false)
 
   // Selected Startup for Peerlist Launchpad Detail Modal
   const [selectedStartup, setSelectedStartup] = React.useState<StartupItem | null>(null)
@@ -528,7 +531,7 @@ export function NetworkPage() {
             <div className="mt-8">
               <NetworkAvatarCloud
                 realUsers={networkStats.builders}
-                onSelectUsername={(u) => handleClaimUsername(u)}
+                onSelectUsername={(u) => navigate(`/builder/${u}`)}
               />
             </div>
 
@@ -826,11 +829,7 @@ export function NetworkPage() {
                           <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-tr from-[#FA5D00] to-amber-400 flex-none border border-black/10 dark:border-white/10 shadow-2xs"><img src={(item as any).avatar_url || (item as any).author_avatar || "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(founderUser)} alt={item.founder_name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(founderUser); }} /></div>
                           <span className="truncate hover:underline underline-offset-4 decoration-[#FA5D00]">{item.founder_name}</span>
                           {((item as any).is_verified || (item as any).is_pro || founderUser === "rawenergon" || founderUser === "b127" || founderUser === "adibxr") && (
-                            <span className="inline-flex items-center text-blue-500 flex-none" title="Verified Pro Builder (Blue Tick)">
-                              <svg className="w-3.5 h-3.5 fill-blue-500" viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                              </svg>
-                            </span>
+                            <VerifiedBadge size="sm" />
                           )}
                         </Link>
                       </div>

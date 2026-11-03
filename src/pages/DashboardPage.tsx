@@ -44,6 +44,7 @@ import {
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { networkApi, type UserProfile, type BuilderJob, type BuilderHackathon } from "@/services/networkApi"
 import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
+import { VerifiedBadge } from "@/components/VerifiedBadge"
 
 type DashboardSection = "overview" | "jobs" | "post-job" | "hackathons" | "post-hackathon" | "startups" | "settings"
 
@@ -485,7 +486,7 @@ export function DashboardPage() {
               className="w-11 h-11 rounded-2xl flex items-center justify-center text-blue-500 hover:text-white hover:bg-blue-600 transition-all group relative cursor-pointer"
               title="Get Blue Tick / Verified Pro"
             >
-              <ShieldCheck className="w-5 h-5 text-blue-500 group-hover:text-white" />
+              <VerifiedBadge size="md" />
               <span className="hidden group-hover:block absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-black text-white dark:bg-zinc-800 text-[11px] font-mono whitespace-nowrap z-50 shadow-md">
                 ⚡ Get Blue Tick Pass
               </span>
@@ -569,7 +570,7 @@ export function DashboardPage() {
                 onClick={() => setShowUpgradeModal(true)}
                 className="px-4 py-2 rounded-full font-mono text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <ShieldCheck className="w-3.5 h-3.5" />
+                <VerifiedBadge size="xs" />
                 <span>Get Blue Tick</span>
               </button>
             )}
@@ -685,7 +686,7 @@ export function DashboardPage() {
                     </h3>
                     {currentUser?.is_verified || currentUser?.is_pro ? (
                       <span className="inline-flex items-center gap-1 font-mono text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold border border-blue-500/20">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                        <VerifiedBadge size="sm" />
                         <span>Active Blue Tick</span>
                       </span>
                     ) : (

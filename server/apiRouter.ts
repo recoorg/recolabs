@@ -1702,7 +1702,33 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       return;
     }
 
-    // ADMIN TOGGLE STARTUP FEATURED
+    // BOOST / PIN STARTUP TO TOP OF FEED
+    if (req.method === "POST" && (pathname === "/api/network/boost-startup" || pathname === "/api/boost-startup")) {
+      const body = await parseBody();
+      if (!body.id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Startup ID required." }));
+        return;
+      }
+      const client = await pool.connect();
+      try {
+        const resDb = await client.query(
+          "UPDATE startups SET is_featured = true WHERE id = $1 RETURNING id, name, is_featured",
+          [Number(body.id)]
+        );
+        console.log(`[Boost] Pinned startup ID ${body.id} to #1 on feed`);
+        res.statusCode = 200;
+        res.end(JSON.stringify({ success: true, startup: resDb.rows[0] }));
+      } catch (err: any) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: err.message || "Failed to pin startup." }));
+      } finally {
+        client.release();
+      }
+      return;
+    }
+
+        // ADMIN TOGGLE STARTUP FEATURED
     if (req.method === "POST" && (pathname === "/api/network/admin/toggle-startup-featured" || pathname === "/api/admin/toggle-startup-featured")) {
       if (!checkAdminAuth(req)) {
         res.statusCode = 401;
