@@ -2542,6 +2542,50 @@ async function handleNetworkRequest(req, res) {
       res.end(JSON.stringify({ success: deleted }));
       return;
     }
+    if (req.method === "POST" && (pathname === "/api/network/webhooks/razorpay" || pathname === "/api/webhooks/razorpay")) {
+      const body = await parseBody();
+      const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+      const signature = req.headers["x-razorpay-signature"];
+      if (secret && signature) {
+        try {
+          const crypto = await import("crypto");
+          const rawString = typeof req.rawBody === "string" ? req.rawBody : JSON.stringify(body);
+          const expectedSignature = crypto.createHmac("sha256", secret).update(rawString).digest("hex");
+          if (expectedSignature !== signature) {
+            console.warn("Razorpay webhook: signature mismatch");
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: "Invalid signature" }));
+            return;
+          }
+        } catch (sigErr) {
+          console.error("Signature verification error:", sigErr);
+        }
+      }
+      const event = body?.event;
+      const payment = body?.payload?.payment?.entity;
+      const notes = payment?.notes || body?.payload?.order?.entity?.notes || {};
+      console.log(`Razorpay webhook event: ${event}`, { paymentId: payment?.id, notes });
+      if (event === "payment.captured" || event === "order.paid") {
+        const client = await pool.connect();
+        try {
+          if (notes.startup_id) {
+            await client.query("UPDATE startups SET is_featured = true WHERE id = $1", [Number(notes.startup_id)]);
+            console.log(`[Webhook] Boosted startup ID ${notes.startup_id}`);
+          }
+          if (notes.job_id) {
+            await client.query("UPDATE builder_jobs SET is_featured = true WHERE id = $1", [Number(notes.job_id)]);
+            console.log(`[Webhook] Featured job ID ${notes.job_id}`);
+          }
+        } catch (dbErr) {
+          console.error("Webhook DB update failed:", dbErr);
+        } finally {
+          client.release();
+        }
+      }
+      res.statusCode = 200;
+      res.end(JSON.stringify({ status: "ok", received: true }));
+      return;
+    }
     res.statusCode = 404;
     res.end(JSON.stringify({ error: `API endpoint not found: ${req.method} ${pathname}` }));
   } catch (err) {
