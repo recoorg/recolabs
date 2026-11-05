@@ -50,6 +50,8 @@ export interface BuilderJob {
   apply_url: string
   is_active: boolean
   is_featured?: boolean
+  featured_until?: string | null
+  boosted_at?: string | null
   created_at: string
 }
 
@@ -396,7 +398,11 @@ export const networkApi = {
     return { order: json.order, keyId: json.keyId }
   },
 
-    async boostStartup(startupId: number): Promise<boolean> {
+  async getBoostQuota(): Promise<{ activeCount: number; limit: number; startups: any[] }> {
+    return await safeJsonFetch<{ activeCount: number; limit: number; startups: any[] }>("/api/network/boost-quota")
+  },
+
+  async boostStartup(startupId: number): Promise<boolean> {
     const token = this.getToken()
     const headers: Record<string, string> = { "Content-Type": "application/json" }
     if (token) headers["Authorization"] = `Bearer ${token}`

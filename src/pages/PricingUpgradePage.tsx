@@ -67,14 +67,13 @@ export function PricingUpgradePage() {
   // Pricing Matrix
   const pricing = {
     pro: {
-      name: "Verified Pro Builder",
-      badgeLabel: "Verified Pro",
+      name: "Verified Builder Pass",
+      badgeLabel: "Verified",
       monthly: { amountNum: 199, display: "₹199", period: "/month", savings: null },
       yearly: { amountNum: 1999, display: "₹1,999", period: "/year", savings: "Save ₹389 (16% OFF)" },
       features: [
         "Official 12-Scalloped Seal Blue Tick on your profile",
-        "1 Free Startup / Project Spotlight Pin to #1 Feed monthly",
-        "Highlighted ranking in Founder Network 3D avatar cloud",
+                "Highlighted ranking in Founder Network 3D avatar cloud",
         "Verified badge on all your project showcase cards",
         "Direct verified builder messaging badge",
         "Access to Verified Founders Directory",
@@ -87,8 +86,7 @@ export function PricingUpgradePage() {
       yearly: { amountNum: 4999, display: "₹4,999", period: "/year", savings: "Save ₹989 (17% OFF)" },
       features: [
         "Exclusive Pro Founder Seal (Gold/Blue badge)",
-        "Unlimited Startup & Project Pinning to #1 on Feed",
-        "Top Priority Listing for your open Jobs & Bounties",
+                "Top Priority Listing for your open Jobs & Bounties",
         "Direct Investor & Mentor Introductions",
         "Private VIP Discord Guild role & alpha channel",
         "Hardware Lab grant and compute credit priority",
@@ -191,6 +189,10 @@ export function PricingUpgradePage() {
     }
     setLoadingPay(true)
     setPayError("")
+    if (finalPriceNum <= 0) {
+      await handleConfirmZeroCostUpgrade()
+      return
+    }
     try {
       const scriptLoaded = await loadRazorpayScript()
       if (!scriptLoaded) {
@@ -264,6 +266,33 @@ export function PricingUpgradePage() {
     }
   }
 
+  // Handle 100% Free Coupon Activation
+  const handleConfirmZeroCostUpgrade = async () => {
+    if (!currentUser) {
+      navigate(`/network?auth=login&redirect=${encodeURIComponent(window.location.pathname)}`)
+      return
+    }
+    setLoadingPay(true)
+    setPayError("")
+    try {
+      await networkApi.upgradeProfile(
+        selectedPlan,
+        billing,
+        couponResult?.valid ? couponResult.coupon?.code : undefined,
+        { method: "coupon_free", coupon_code: couponResult?.coupon?.code, amount: 0 }
+      )
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } })
+      setPaySuccess(true)
+      setTimeout(() => {
+        navigate(`/builder/${currentUser.username}`)
+      }, 2200)
+    } catch (err: any) {
+      setPayError(err.message || "Failed to activate zero-cost upgrade.")
+    } finally {
+      setLoadingPay(false)
+    }
+  }
+
   // Handle UPI Confirmation
   const handleConfirmUpiPaid = async () => {
     if (!currentUser) {
@@ -302,57 +331,10 @@ export function PricingUpgradePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-[#08080a] text-zinc-900 dark:text-zinc-100 font-sans selection:bg-[#FA5D00] selection:text-black">
       {/* Top Navbar */}
-      <nav className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/80 dark:bg-[#08080a]/80 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group">
-            <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors">
-              Reco Labs
-            </span>
-            <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-              Pricing
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-4 sm:gap-6 font-mono text-xs">
-            <Link to="/projects" className="hidden sm:inline text-zinc-600 dark:text-zinc-400 hover:text-[#FA5D00] transition-colors">
-              Projects
-            </Link>
-            <Link to="/network" className="hidden sm:inline text-zinc-600 dark:text-zinc-400 hover:text-[#FA5D00] transition-colors">
-              Founder Network
-            </Link>
-            <Link to="/jobs" className="hidden sm:inline text-zinc-600 dark:text-zinc-400 hover:text-[#FA5D00] transition-colors">
-              Jobs
-            </Link>
-
-            {currentUser ? (
-              <Link
-                to={`/builder/${currentUser.username}`}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-              >
-                {currentUser.avatar_url ? (
-                  <img src={currentUser.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover" />
-                ) : (
-                  <div className="w-5 h-5 rounded-full bg-[#FA5D00] text-black font-bold flex items-center justify-center text-[10px]">
-                    {currentUser.name?.charAt(0) || "B"}
-                  </div>
-                )}
-                <span className="font-bold">@{currentUser.username}</span>
-                {currentUser.is_verified && <VerifiedBadge size="xs" />}
-              </Link>
-            ) : (
-              <Link
-                to="/network"
-                className="px-3.5 py-1.5 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black font-bold hover:opacity-90 transition-opacity"
-              >
-                Sign In
-              </Link>
-            )}
-          </div>
-        </div>
-      </nav>
+      
 
       {/* Main Content Container */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-16 sm:pt-32 sm:pb-24">
         {/* Already Verified Banner */}
         {isAlreadyVerified && (
           <div className="mb-10 p-5 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -647,27 +629,52 @@ export function PricingUpgradePage() {
 
               {/* Modal Body (Scrollable if small phone) */}
               <div className="p-5 overflow-y-auto space-y-4">
-          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-5">
-            <div>
-              <span className="font-mono text-xs text-zinc-400 uppercase tracking-wider">
-                Step 2 · Confirm & Checkout
-              </span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-zinc-950 dark:text-zinc-50 mt-1">
-                {activePlan.name} ({billing})
-              </h2>
-            </div>
-            <div className="text-right font-mono">
-              <div className="text-xs text-zinc-400">Total payable</div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#FA5D00]">
-                ₹{finalPriceNum}
-              </div>
-              {discountNum > 0 && (
-                <div className="text-[10px] text-emerald-500 font-bold line-through">
-                  ₹{basePriceNum}
+                {/* Billing Switcher in Modal */}
+                <div className="flex items-center gap-2 p-1 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 font-mono text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setBilling("monthly")}
+                    className={`flex-1 py-2 px-3 rounded-xl transition-all cursor-pointer ${
+                      billing === "monthly" ? "bg-white dark:bg-zinc-800 text-black dark:text-white shadow-xs" : "text-zinc-500"
+                    }`}
+                  >
+                    Monthly (₹{activePlan.monthly.amountNum})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBilling("yearly")}
+                    className={`flex-1 py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      billing === "yearly" ? "bg-[#FA5D00] text-black shadow-xs font-bold" : "text-zinc-500"
+                    }`}
+                  >
+                    <span>Yearly (₹{activePlan.yearly.amountNum})</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-black text-[#FA5D00] text-[9px] font-black uppercase">
+                      SAVE 16%
+                    </span>
+                  </button>
                 </div>
-              )}
-            </div>
-          </div>
+
+                <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
+                  <div>
+                    <div className="font-serif text-xl font-bold text-zinc-950 dark:text-zinc-50">
+                      {activePlan.name}
+                    </div>
+                    <div className="font-mono text-[11px] text-zinc-500">
+                      {billing === "yearly" ? "Billed annually (₹166/month equivalent)" : "Billed monthly"}
+                    </div>
+                  </div>
+                  <div className="text-right font-mono">
+                    <div className="text-[11px] text-zinc-400 uppercase tracking-wider">Total payable</div>
+                    <div className="text-2xl font-extrabold text-[#FA5D00]">
+                      ₹{finalPriceNum}
+                    </div>
+                    {discountNum > 0 && (
+                      <div className="text-[10px] text-emerald-500 font-bold line-through">
+                        ₹{basePriceNum}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
           {/* Coupon Code Section */}
           <div className="my-6 p-4 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800">
@@ -724,6 +731,46 @@ export function PricingUpgradePage() {
             )}
           </div>
 
+          {/* Free Coupon 100% Zero-Cost Activation */}
+          {finalPriceNum <= 0 ? (
+            <div className="space-y-4 my-2">
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-xs space-y-1">
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  <Check className="w-4 h-4" />
+                  <span>100% Promo Code Applied!</span>
+                </div>
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
+                  Your coupon covered the entire cost. Total payable is ₹0. No payment or bank card required!
+                </p>
+              </div>
+
+              {payError && (
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-mono flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-none" />
+                  <span>{payError}</span>
+                </div>
+              )}
+
+              {paySuccess ? (
+                <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center font-mono space-y-2">
+                  <Check className="w-8 h-8 text-emerald-500 mx-auto" />
+                  <div className="text-base font-bold text-emerald-500">Verified Badge Activated!</div>
+                  <div className="text-xs text-zinc-400">Redirecting to your builder profile...</div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleConfirmZeroCostUpgrade}
+                  disabled={loadingPay}
+                  className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-black font-mono text-sm font-bold uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles className="w-4 h-4 fill-black" />
+                  <span>{loadingPay ? "Activating Verified Badge..." : "Claim Verified Badge (₹0 Free)"}</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
           {/* Payment Method Selector */}
           <div className="grid grid-cols-2 gap-3 mb-6 font-mono text-xs font-bold">
             <button
@@ -871,6 +918,8 @@ export function PricingUpgradePage() {
                 </button>
               )}
             </div>
+          )}
+            </>
           )}
               </div>
             </div>

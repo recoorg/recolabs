@@ -6,18 +6,13 @@ import {
   Flame,
   Check,
   X,
-  ArrowUpRight,
-  Sparkles,
-  ShieldCheck,
-  Mail,
-  Copy,
   CreditCard,
   QrCode,
-  Smartphone,
-  Lock,
   Loader2,
   CheckCircle2,
-  Crown,
+  AlertCircle,
+  Clock,
+  Sparkles,
 } from "lucide-react"
 import confetti from "canvas-confetti"
 import QRCode from "qrcode"
@@ -31,50 +26,47 @@ interface StartupPromoteModalProps {
 }
 
 export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: StartupPromoteModalProps) {
-  const [selectedTier, setSelectedTier] = React.useState<"spotlight" | "surge">("surge")
-  const [paymentMode, setPaymentMode] = React.useState<"upi" | "card" | "instant">("instant")
+  const [paymentMode, setPaymentMode] = React.useState<"instant" | "upi">("instant")
   const [copiedUpi, setCopiedUpi] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
   const [pinned, setPinned] = React.useState(false)
+  const [boostError, setBoostError] = React.useState("")
+  const [quota, setQuota] = React.useState<{ activeCount: number; limit: number; startups: any[] } | null>(null)
+  const [loadingQuota, setLoadingQuota] = React.useState(true)
 
   if (!startup) return null
 
   const upiId = "devadibxr@okaxis"
-  const adminEmail = "devadibxr@gmail.com"
+  const priceInr = "₹199"
+  const amountNum = 199
 
-  const tiers = {
-    spotlight: {
-      name: "Spotlight Pin",
-      price: "$3",
-      inr: "₹199",
-      amountNum: 199,
-      duration: "7 Days Pinned #1",
-      features: [
-        "Pinned to #1 spot on Founder Network feed",
-        "Vibrant orange halo border",
-        "Direct link to your live product",
-      ],
-    },
-    surge: {
-      name: "Launch Surge Pin",
-      price: "$5",
-      inr: "₹399",
-      amountNum: 399,
-      duration: "14 Days Pinned #1",
-      features: [
-        "Top #1 priority placement above all other listings",
-        "Featured spotlight glow and badge",
-        "Permanent Founder Network index priority",
-        "Social shoutout on @adibxr Twitter/X",
-      ],
-    },
-  }
+  // Fetch Quota on mount
+  React.useEffect(() => {
+    let active = true
+    networkApi
+      .getBoostQuota()
+      .then((data) => {
+        if (active) {
+          setQuota(data)
+          setLoadingQuota(false)
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch boost quota:", err)
+        if (active) setLoadingQuota(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
-  const activeTier = tiers[selectedTier]
-  const currentUser = networkApi.getCurrentUser()
-  const isUserPro = Boolean(currentUser?.is_verified || currentUser?.is_pro)
+  const activeCount = quota?.activeCount ?? 0
+  const limit = quota?.limit ?? 3
+  const isCurrentlyBoosted = Boolean(startup.is_featured)
+  const isQuotaFull = !isCurrentlyBoosted && activeCount >= limit
+  const slotsRemaining = Math.max(0, limit - activeCount)
 
-  const upiPaymentUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Reco Labs")}&am=${activeTier.amountNum}&cu=INR&tn=${encodeURIComponent(`Boost_${startup.name.replace(/[^a-zA-Z0-9]/g, "")}`)}`
+  const upiPaymentUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Reco Labs")}&am=${amountNum}&cu=INR&tn=${encodeURIComponent(`Boost_${startup.name.replace(/[^a-zA-Z0-9]/g, "")}`)}`
   const [qrCodeUrl, setQrCodeUrl] = React.useState<string>("")
 
   React.useEffect(() => {
@@ -82,14 +74,21 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
     QRCode.toDataURL(upiPaymentUri, {
       width: 220,
       margin: 2,
-      color: { dark: "#000000", light: "#ffffff" }
-    }).then(url => {
-      if (active) setQrCodeUrl(url)
-    }).catch(err => {
-      console.error("QR render error:", err)
-      if (active) setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentUri)}`)
+      color: { dark: "#000000", light: "#ffffff" },
     })
-    return () => { active = false }
+      .then((url) => {
+        if (active) setQrCodeUrl(url)
+      })
+      .catch((err) => {
+        console.error("QR render error:", err)
+        if (active)
+          setQrCodeUrl(
+            `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentUri)}`
+          )
+      })
+    return () => {
+      active = false
+    }
   }, [upiPaymentUri])
 
   const handleCopyUpi = () => {
@@ -99,17 +98,19 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
   }
 
   const handleExecutePin = async () => {
+    if (isQuotaFull) {
+      setBoostError("Weekly boost quota is full (3/3 active). Please wait for a slot to expire.")
+      return
+    }
     setLoading(true)
+    setBoostError("")
     try {
       await networkApi.boostStartup(startup.id)
       confetti({ particleCount: 90, spread: 80, origin: { y: 0.55 } })
       setPinned(true)
       if (onBoostSuccess) onBoostSuccess(startup.id)
-    } catch (e) {
-      // Optimistic pin
-      confetti({ particleCount: 80, spread: 75, origin: { y: 0.55 } })
-      setPinned(true)
-      if (onBoostSuccess) onBoostSuccess(startup.id)
+    } catch (e: any) {
+      setBoostError(e?.message || "Failed to boost startup. Quota may be full.")
     } finally {
       setLoading(false)
     }
@@ -127,12 +128,12 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
         {/* Header */}
         <div className="p-5 pb-3 border-b editorial-hairline flex items-start justify-between gap-3 flex-none">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/40 text-[#FA5D00] border border-orange-200 dark:border-orange-900/60 font-mono text-[10px] font-bold uppercase tracking-wider mb-1">
-              <Zap className="w-3 h-3 fill-[#FA5D00]" />
-              <span>STARTUP SPOTLIGHT PIN</span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ccff00] text-black border border-black/20 font-mono text-[10px] font-black uppercase tracking-wider mb-1">
+              <Flame className="w-3.5 h-3.5 fill-black text-black" />
+              <span>1-WEEK SPOTLIGHT PIN</span>
             </div>
             <h2 className="font-serif text-2xl sm:text-3xl text-zinc-950 dark:text-zinc-50 font-normal">
-              Pin <span className="font-bold underline decoration-[#FA5D00]">{startup.name}</span> to #1
+              Boost <span className="font-bold underline decoration-[#ccff00]">{startup.name}</span> to #1
             </h2>
           </div>
 
@@ -148,20 +149,20 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
         <div className="flex-1 overflow-y-auto p-5 space-y-4 text-left">
           {pinned ? (
             <div className="py-8 text-center font-mono space-y-3">
-              <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-500">
-                <CheckCircle2 className="w-8 h-8" />
+              <div className="w-14 h-14 mx-auto rounded-full bg-[#ccff00]/20 border border-[#ccff00] flex items-center justify-center text-black dark:text-[#ccff00]">
+                <CheckCircle2 className="w-8 h-8 text-[#a3cc00]" />
               </div>
               <h3 className="font-serif text-2xl sm:text-3xl text-zinc-950 dark:text-zinc-50 font-normal">
-                {startup.name} Pinned to Top!
+                {startup.name} Boosted to #1!
               </h3>
               <p className="font-sans text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto leading-relaxed">
-                Your startup now holds the #1 featured placement across the Founder Network directory.
+                Your startup holds the <strong>Lime Yellow Spotlight Pin</strong> at the top of the Founder Network feed for 7 days.
               </p>
 
               <div className="pt-2">
                 <button
                   onClick={onClose}
-                  className="px-6 py-2.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 shadow-md cursor-pointer"
+                  className="px-6 py-2.5 rounded-full bg-[#ccff00] text-black font-mono text-xs font-black uppercase tracking-wider hover:opacity-90 shadow-md cursor-pointer border border-black/20"
                 >
                   View Feed
                 </button>
@@ -169,81 +170,79 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
             </div>
           ) : (
             <>
-              {/* Pro Founder Complimentary Pin Banner */}
-              {isUserPro && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-500/30 flex items-center justify-between gap-3 animate-in fade-in">
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500 font-mono">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>PRO BUILDER BENEFIT ACTIVE</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-sans mt-0.5">
-                      Complimentary startup pinning is included with your Verified Pro membership!
-                    </p>
+              {/* Quota Tracker Banner */}
+              <div
+                className={`p-4 rounded-2xl border font-mono text-xs space-y-1 ${
+                  isQuotaFull
+                    ? "bg-rose-500/10 border-rose-500/30 text-rose-500"
+                    : "bg-[#ccff00]/10 border-[#ccff00]/40 text-zinc-900 dark:text-zinc-100"
+                }`}
+              >
+                <div className="flex items-center justify-between font-bold">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>WEEKLY PIN QUOTA</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleExecutePin}
-                    disabled={loading}
-                    className="px-4 py-2 rounded-xl bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-md flex-none disabled:opacity-50"
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      isQuotaFull ? "bg-rose-500 text-white" : "bg-[#ccff00] text-black"
+                    }`}
                   >
-                    <Zap className="w-3.5 h-3.5 fill-black" />
-                    <span>{loading ? "Pinning..." : "Pin Free"}</span>
-                  </button>
+                    {loadingQuota ? "Checking..." : `${activeCount} / ${limit} ACTIVE`}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
+                  {isQuotaFull
+                    ? "All 3 weekly spotlight slots are currently taken. To prevent feed spam, new boosts are locked until an active slot expires."
+                    : `Strict limit of 3 boosted startups simultaneously across the platform. ${slotsRemaining} slot${slotsRemaining === 1 ? "" : "s"} open this week.`}
+                </p>
+              </div>
+
+              {/* Error banner */}
+              {boostError && (
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-mono flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-none" />
+                  <span>{boostError}</span>
                 </div>
               )}
 
-              {/* Tier Selection */}
-              <div className="grid grid-cols-2 gap-2.5 font-mono">
-                {(["spotlight", "surge"] as const).map((t) => {
-                  const item = tiers[t]
-                  const isSelected = selectedTier === t
-                  return (
-                    <div
-                      key={t}
-                      onClick={() => setSelectedTier(t)}
-                      className={`p-3 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
-                        isSelected
-                          ? "border-[#FA5D00] bg-orange-500/[0.05] dark:bg-orange-500/[0.08] shadow-sm"
-                          : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40"
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-[11px] text-zinc-900 dark:text-zinc-100">{item.name}</span>
-                          <div
-                            className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                              isSelected ? "border-[#FA5D00] bg-[#FA5D00]" : "border-zinc-400"
-                            }`}
-                          >
-                            {isSelected && <Check className="w-2 h-2 text-black" />}
-                          </div>
-                        </div>
+              {/* Tier Details Card */}
+              <div className="p-4 rounded-2xl border-2 border-[#ccff00] bg-lime-400/[0.04] dark:bg-lime-950/20 font-mono space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-black uppercase text-zinc-900 dark:text-zinc-100 tracking-wider">
+                      1-Week Spotlight Boost
+                    </span>
+                    <div className="text-[10px] text-zinc-500">Pinned at #1 position for 7 days</div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-black text-zinc-950 dark:text-zinc-50">{priceInr}</span>
+                    <span className="text-[10px] text-zinc-400 block font-sans">($3.00 USD)</span>
+                  </div>
+                </div>
 
-                        <div className="mt-1 flex items-baseline gap-1">
-                          <span className="text-xl font-black text-zinc-950 dark:text-zinc-50">{item.inr}</span>
-                          <span className="text-[10px] text-zinc-400 font-bold">({item.price})</span>
-                        </div>
-                        <div className="text-[9px] text-[#FA5D00] font-bold">{item.duration}</div>
-
-                        <ul className="mt-2 space-y-1 text-[10px] font-sans text-zinc-600 dark:text-zinc-400">
-                          {item.features.slice(0, 2).map((feat, idx) => (
-                            <li key={idx} className="flex items-start gap-1 leading-tight">
-                              <Check className="w-3 h-3 text-[#FA5D00] flex-none mt-0.5" />
-                              <span>{feat}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )
-                })}
+                <ul className="space-y-1.5 text-[11px] font-sans text-zinc-700 dark:text-zinc-300">
+                  <li className="flex items-center gap-2">
+                    <Check className="w-3.5 h-3.5 text-lime-500 flex-none" />
+                    <span>
+                      High-visibility <strong>Lime Yellow (#ccff00)</strong> glowing border &amp; badge
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-3.5 h-3.5 text-lime-500 flex-none" />
+                    <span>Fixed #1 placement on the Founder Network directory feed</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-3.5 h-3.5 text-lime-500 flex-none" />
+                    <span>Automatic expiration after 7 full days (168 hours)</span>
+                  </li>
+                </ul>
               </div>
 
               {/* Action Tabs: Instant Pin / UPI QR */}
               <div className="space-y-2 font-mono">
                 <span className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">
-                  Select Action
+                  Payment Method
                 </span>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -252,12 +251,12 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                     onClick={() => setPaymentMode("instant")}
                     className={`py-2 px-1 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
                       paymentMode === "instant"
-                        ? "border-[#FA5D00] bg-orange-50 dark:bg-orange-950/40 text-[#FA5D00]"
+                        ? "border-[#ccff00] bg-lime-400/10 text-zinc-900 dark:text-[#ccff00]"
                         : "editorial-hairline text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
                     <Zap className="w-3 h-3" />
-                    <span>Instant Pin #1</span>
+                    <span>Instant Gateway</span>
                   </button>
 
                   <button
@@ -265,7 +264,7 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                     onClick={() => setPaymentMode("upi")}
                     className={`py-2 px-1 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
                       paymentMode === "upi"
-                        ? "border-[#FA5D00] bg-orange-50 dark:bg-orange-950/40 text-[#FA5D00]"
+                        ? "border-[#ccff00] bg-lime-400/10 text-zinc-900 dark:text-[#ccff00]"
                         : "editorial-hairline text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
@@ -275,18 +274,18 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                 </div>
 
                 {paymentMode === "instant" && (
-                  <div className="p-3.5 rounded-2xl bg-orange-500/[0.04] dark:bg-orange-500/[0.08] border border-orange-500/20 text-xs text-zinc-700 dark:text-zinc-300 space-y-2">
+                  <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border editorial-hairline text-xs text-zinc-700 dark:text-zinc-300 space-y-2">
                     <p className="leading-relaxed">
-                      Pin <strong>{startup.name}</strong> to the top position on the feed immediately. Your card will gain priority backlink indexing and top visibility.
+                      Instant activation via payment gateway. Your startup <strong>{startup.name}</strong> will immediately claim the #1 spotlight slot for 7 days.
                     </p>
                     <button
                       type="button"
-                      disabled={loading}
+                      disabled={loading || isQuotaFull}
                       onClick={handleExecutePin}
-                      className="w-full py-2.5 rounded-full bg-[#FA5D00] hover:bg-[#e05300] text-black font-mono text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                      className="w-full py-2.5 rounded-full bg-[#ccff00] hover:bg-[#b8e600] text-black font-mono text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed border border-black/20"
                     >
-                      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flame className="w-3.5 h-3.5" />}
-                      <span>Pin to Top of Feed Now ({activeTier.inr})</span>
+                      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flame className="w-3.5 h-3.5 fill-black" />}
+                      <span>{isQuotaFull ? "Quota Full (3/3 Active)" : `Pin for 1 Week (${priceInr})`}</span>
                     </button>
                   </div>
                 )}
@@ -303,13 +302,13 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                           <button
                             type="button"
                             onClick={handleCopyUpi}
-                            className="px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-[10px] font-bold"
+                            className="px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-[10px] font-bold cursor-pointer"
                           >
                             {copiedUpi ? "Copied" : "Copy UPI"}
                           </button>
                           <a
                             href={upiPaymentUri}
-                            className="px-2 py-0.5 rounded-full bg-[#FA5D00]/20 text-[#FA5D00] text-[10px] font-bold"
+                            className="px-2 py-0.5 rounded-full bg-[#ccff00]/30 text-black dark:text-[#ccff00] text-[10px] font-bold"
                           >
                             Open App
                           </a>
@@ -318,11 +317,11 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                     </div>
                     <button
                       type="button"
-                      disabled={loading}
+                      disabled={loading || isQuotaFull}
                       onClick={handleExecutePin}
-                      className="w-full mt-2 py-2 rounded-xl bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider"
+                      className="w-full mt-2 py-2 rounded-xl bg-[#ccff00] text-black font-mono text-xs font-black uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed border border-black/20"
                     >
-                      Confirm Payment &amp; Pin #1
+                      {loading ? "Activating..." : "Confirm UPI & Pin #1"}
                     </button>
                   </div>
                 )}
@@ -335,16 +334,16 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
         {!pinned && (
           <div className="p-3.5 sm:px-5 bg-zinc-50/90 dark:bg-zinc-900/90 border-t editorial-hairline flex items-center justify-between font-mono flex-none">
             <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-              Total: {activeTier.inr} <span className="text-[10px] text-zinc-400 font-normal">({activeTier.price})</span>
+              Total: {priceInr} <span className="text-[10px] text-zinc-400 font-normal">($3.00 USD)</span>
             </span>
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || isQuotaFull}
               onClick={handleExecutePin}
-              className="px-5 py-2 rounded-full bg-[#FA5D00] hover:bg-[#e05300] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-sm active:scale-95 inline-flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2 rounded-full bg-[#ccff00] hover:bg-[#b8e600] text-black font-black text-xs uppercase tracking-wider transition-all shadow-sm active:scale-95 inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border border-black/20"
             >
-              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-              <span>Pin to #1 Feed</span>
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flame className="w-3.5 h-3.5 fill-black" />}
+              <span>{isQuotaFull ? "Quota Full" : "Pin to #1"}</span>
             </button>
           </div>
         )}

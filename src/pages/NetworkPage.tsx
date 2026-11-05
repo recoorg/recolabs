@@ -22,6 +22,7 @@ import {
   RefreshCw,
   Sparkles,
   Zap,
+  Flame,
   ArrowUpRight,
   ArrowRight,
   ShieldCheck,
@@ -751,10 +752,16 @@ export function NetworkPage() {
                     onClick={() => selectStartupWithUrl(item)}
                     className={`group relative p-6 sm:p-7 rounded-3xl border-2 transition-all flex flex-col justify-between shadow-sm hover:shadow-md cursor-pointer ${
                       item.is_featured
-                        ? "border-[#FA5D00] dark:border-[#FA5D00] bg-orange-500/[0.04] dark:bg-orange-500/[0.06] shadow-lg shadow-[#FA5D00]/10"
+                        ? "border-[#ccff00] dark:border-[#ccff00] bg-lime-400/[0.04] dark:bg-lime-950/20 shadow-xl shadow-lime-400/10 ring-2 ring-lime-400/20"
                         : "border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00]"
                     }`}
                   >
+                    {item.is_featured && (
+                      <div className="absolute -top-3.5 left-6 px-3 py-0.5 rounded-full bg-[#ccff00] text-black font-mono text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 border border-black/20">
+                        <Flame className="w-3.5 h-3.5 fill-black text-black" />
+                        <span>BOOSTED · 1 WEEK PIN</span>
+                      </div>
+                    )}
                     <div>
                       {/* Top Bar: Category, Stage, Screenshot Snap & External Link */}
                       <div className="flex items-center justify-between gap-2 mb-3">
@@ -783,11 +790,15 @@ export function NetworkPage() {
                               e.stopPropagation();
                               setPromoteStartup(item);
                             }}
-                            title="Boost this startup to #1"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-orange-300 dark:border-orange-800/80 bg-orange-100/80 dark:bg-orange-950/60 text-[#FA5D00] hover:bg-[#FA5D00] hover:text-black font-mono text-[10px] font-bold uppercase transition-all shadow-2xs active:scale-95"
+                            title="Boost this startup for 1 week"
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border font-mono text-[10px] font-bold uppercase transition-all shadow-2xs active:scale-95 ${
+                              item.is_featured
+                                ? "border-lime-400 bg-[#ccff00] text-black font-black"
+                                : "border-orange-300 dark:border-orange-800/80 bg-orange-100/80 dark:bg-orange-950/60 text-[#FA5D00] hover:bg-[#FA5D00] hover:text-black"
+                            }`}
                           >
                             <Zap className="w-3 h-3" />
-                            <span>Boost</span>
+                            <span>{item.is_featured ? "Boosted" : "Boost"}</span>
                           </button>
                           <button onClick={(e) => { e.stopPropagation(); setScreenshotStartup(item); }} title="Snap Screenshot Card" className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] active:scale-95 transition-all cursor-pointer shadow-2xs"><Camera className="w-3.5 h-3.5 text-[#FA5D00]" /></button>
 
@@ -1436,9 +1447,9 @@ export function NetworkPage() {
                       {selectedStartup.founder_name}
                     </span>
                     {(selectedStartup.is_featured || (selectedStartup as any).is_verified) && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 text-[#FA5D00] text-[10px] font-bold">
-                        <ShieldCheck className="w-3 h-3 text-[#FA5D00]" />
-                        <span>Verified Founder</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                        <ShieldCheck className="w-3 h-3 text-blue-500" />
+                        <span>Verified</span>
                       </span>
                     )}
                   </Link>

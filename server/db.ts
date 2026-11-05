@@ -557,7 +557,8 @@ export async function listStartups({
   try {
     let query = `
       SELECT s.id, s.name, s.url, s.problem_solving, s.category, s.stage, s.created_at,
-             COALESCE(s.is_featured, false) as is_featured,
+             (COALESCE(s.is_featured, false) AND (s.featured_until IS NULL OR s.featured_until > NOW())) as is_featured,
+             s.featured_until, s.boosted_at,
              s.founder_name, s.founder_username, s.founder_email, s.founder_phone, s.founder_website, s.founder_discord,
              s.user_id,
              u.name as author_name, u.username as author_username, u.phone as author_phone, u.website as author_website, u.avatar_url as author_avatar, u.avatar_url,
@@ -583,7 +584,7 @@ export async function listStartups({
       query += ` AND (LOWER(s.name) LIKE $${params.length} OR LOWER(s.problem_solving) LIKE $${params.length} OR LOWER(s.founder_name) LIKE $${params.length} OR LOWER(s.founder_username) LIKE $${params.length})`
     }
 
-    query += ` ORDER BY COALESCE(s.is_featured, false) DESC, s.created_at DESC`
+    query += ` ORDER BY (COALESCE(s.is_featured, false) AND (s.featured_until IS NULL OR s.featured_until > NOW())) DESC, s.created_at DESC`
     const res = await client.query(query, params)
     return res.rows
   } finally {

@@ -1593,8 +1593,18 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         }
       }
 
-      // If user submits manual UPI without Razorpay confirmation and not admin
-      if (!isAdmin && !isRazorpayVerified) {
+      const couponCode = body?.coupon_code ? body.coupon_code.toString().trim().toUpperCase() : null;
+      let isCouponFree = false;
+      if (couponCode) {
+        const baseAmount = (body?.billing || body?.plan_billing) === "yearly" ? 1999 : 199;
+        const couponCheck = await validateCoupon(couponCode, baseAmount);
+        if (couponCheck.valid && couponCheck.finalAmount === 0) {
+          isCouponFree = true;
+        }
+      }
+
+      // If user submits manual UPI without Razorpay confirmation and not admin and not free coupon
+      if (!isAdmin && !isRazorpayVerified && !isCouponFree) {
         res.statusCode = 400;
         res.end(JSON.stringify({
           error: "Verification requires confirmed payment. If you paid via UPI, verification activates automatically once verified by Razorpay webhook.",
@@ -1605,7 +1615,6 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
 
       const plan = (body?.plan || "pro").toString().toLowerCase();
       const billing = (body?.billing || body?.plan_billing || "monthly").toString().toLowerCase();
-      const couponCode = body?.coupon_code ? body.coupon_code.toString().trim().toUpperCase() : null;
       const durationInterval = billing === "yearly" ? "365 days" : "30 days";
 
       const client = await pool.connect();
@@ -1696,7 +1705,12 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
     // CREATE RAZORPAY PAYMENT ORDER
     if (req.method === "POST" && (pathname === "/api/network/create-razorpay-order" || pathname === "/api/create-razorpay-order")) {
       const body = await parseBody();
-      const amount = Number(body?.amount) || 99900;
+      const amount = (body?.amount !== undefined && !isNaN(Number(body.amount))) ? Number(body.amount) : 19900;
+      if (amount <= 0) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Amount must be greater than 0 for Razorpay checkout. Use free coupon activation." }));
+        return;
+      }
       const currency = body?.currency || "INR";
       const notes = body?.notes || {};
 
@@ -1872,7 +1886,29 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       return;
     }
 
-    // BOOST / PIN STARTUP TO TOP OF FEED (Pro verified builders pin for free)
+    // BOOST QUOTA CHECK
+    if (req.method === "GET" && (pathname === "/api/network/boost-quota" || pathname === "/api/boost-quota")) {
+      const client = await pool.connect();
+      try {
+        const resDb = await client.query(
+          "SELECT id, name, featured_until FROM startups WHERE is_featured = true AND (featured_until IS NULL OR featured_until > NOW())"
+        );
+        res.statusCode = 200;
+        res.end(JSON.stringify({
+          activeCount: resDb.rows.length,
+          limit: 3,
+          startups: resDb.rows
+        }));
+      } catch (err: any) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: err.message || "Failed to get boost quota." }));
+      } finally {
+        client.release();
+      }
+      return;
+    }
+
+    // BOOST / PIN STARTUP TO TOP OF FEED (Max 3 active per week, 7 days duration)
     if (req.method === "POST" && (pathname === "/api/network/boost-startup" || pathname === "/api/boost-startup")) {
       const body = await parseBody();
       if (!body.id) {
@@ -1880,28 +1916,62 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         res.end(JSON.stringify({ error: "Startup ID required." }));
         return;
       }
+      const startupId = Number(body.id);
       const client = await pool.connect();
       try {
-        // Toggle or set featured
-        const check = await client.query("SELECT id, name, is_featured, user_id, founder_username FROM startups WHERE id = $1", [Number(body.id)]);
-        if (check.rows.length === 0) {
+        const activeBoosted = await client.query(
+          "SELECT id, name, featured_until FROM startups WHERE is_featured = true AND (featured_until IS NULL OR featured_until > NOW())"
+        );
+        const isAlreadyBoosted = activeBoosted.rows.some((s: any) => s.id === startupId);
+
+        if (body.toggle && isAlreadyBoosted) {
+          const resDb = await client.query(
+            "UPDATE startups SET is_featured = false, featured_until = NULL, boosted_at = NULL WHERE id = $1 RETURNING id, name, is_featured",
+            [startupId]
+          );
+          res.statusCode = 200;
+          res.end(JSON.stringify({ success: true, startup: resDb.rows[0], message: "Boost removed." }));
+          return;
+        }
+
+        if (!isAlreadyBoosted && activeBoosted.rows.length >= 3) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({
+            error: "Weekly boost quota full. Only 3 startups can be boosted simultaneously for 1 week. Please wait for an active spotlight slot to expire.",
+            activeCount: activeBoosted.rows.length,
+            limit: 3
+          }));
+          return;
+        }
+
+        const resDb = await client.query(
+          `UPDATE startups SET 
+            is_featured = true, 
+            boosted_at = NOW(), 
+            featured_until = (NOW() + INTERVAL '7 days') 
+           WHERE id = $1 
+           RETURNING id, name, is_featured, featured_until, boosted_at`,
+          [startupId]
+        );
+        if (resDb.rows.length === 0) {
           res.statusCode = 404;
           res.end(JSON.stringify({ error: "Startup not found." }));
           return;
         }
-        const current = check.rows[0];
-        const newStatus = body.toggle ? !current.is_featured : true;
 
-        const resDb = await client.query(
-          "UPDATE startups SET is_featured = $1 WHERE id = $2 RETURNING id, name, is_featured",
-          [newStatus, Number(body.id)]
-        );
-        console.log(`[Boost] Pinned startup ID ${body.id} (featured: ${newStatus})`);
+        const updated = resDb.rows[0];
+        console.log(`[Boost] Startup ${updated.name} (ID: ${startupId}) boosted for 7 days until ${updated.featured_until}`);
         res.statusCode = 200;
-        res.end(JSON.stringify({ success: true, startup: resDb.rows[0], message: "Startup pinned to feed successfully!" }));
+        res.end(JSON.stringify({
+          success: true,
+          startup: updated,
+          activeCount: isAlreadyBoosted ? activeBoosted.rows.length : activeBoosted.rows.length + 1,
+          limit: 3,
+          message: "Startup boosted for 1 week and pinned to top with Lime Spotlight!"
+        }));
       } catch (err: any) {
         res.statusCode = 500;
-        res.end(JSON.stringify({ error: err.message || "Failed to pin startup." }));
+        res.end(JSON.stringify({ error: err.message || "Failed to boost startup." }));
       } finally {
         client.release();
       }

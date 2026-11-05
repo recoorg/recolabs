@@ -2,17 +2,29 @@
 
 import * as React from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Menu, X, ArrowUpRight, MessageSquare, Terminal } from "lucide-react"
+import { Menu, X, ArrowUpRight, MessageSquare, Terminal, User, LogOut } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
+import { networkApi, type UserProfile } from "@/services/networkApi"
+import { VerifiedBadge } from "@/components/VerifiedBadge"
 
 export function Navbar() {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = React.useState(false)
+  const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(() => networkApi.getCurrentUser())
 
   // Close mobile menu whenever route changes
   React.useEffect(() => {
     setMobileOpen(false)
   }, [location.pathname])
+
+  // Sync auth state
+  React.useEffect(() => {
+    const handleAuth = () => {
+      setCurrentUser(networkApi.getCurrentUser())
+    }
+    window.addEventListener("reco_auth_changed", handleAuth)
+    return () => window.removeEventListener("reco_auth_changed", handleAuth)
+  }, [])
 
   // Prevent background scroll when mobile drawer is open
   React.useEffect(() => {
@@ -27,7 +39,6 @@ export function Navbar() {
   }, [mobileOpen])
 
   // Project & Dashboard pages have their own dedicated sidebar/dock - hide global floating navbar
-  // Keep check after all hooks so React hook execution order is always stable
   if (
     location.pathname.startsWith("/projects") ||
     location.pathname.startsWith("/project") ||
@@ -54,7 +65,7 @@ export function Navbar() {
   ]
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full px-5 sm:px-6 py-4 sm:py-5 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full px-4 sm:px-6 py-3.5 sm:py-5 pointer-events-none">
       <div className="relative mx-auto max-w-7xl flex items-center justify-between">
         
         {/* Left: Raw Logo Mark */}
@@ -77,7 +88,7 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Center: Desktop Vibrant Orange Pill Navigation - Pinned Mathematically to Exact Center on ALL pages */}
+        {/* Center: Desktop Vibrant Orange Pill Navigation */}
         <div className="pointer-events-none hidden sm:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <nav
             className="pointer-events-auto flex items-center gap-6 md:gap-8 px-7 py-2 rounded-full bg-[#FA5D00] border-2 border-black text-black font-mono text-[13px] font-bold tracking-wider uppercase shadow-sm"
@@ -109,32 +120,76 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Right: Discord Button / Spacer & Mobile Hamburger */}
-        <div className="flex items-center justify-end flex-1 pointer-events-auto">
-          {isHomePage && (
-            <div className="hidden sm:flex items-center gap-3">
+        {/* Right: User Avatar in Circle / Sign In & Discord Button & Mobile Hamburger */}
+        <div className="flex items-center justify-end flex-1 gap-2.5 pointer-events-auto">
+          {currentUser ? (
+            <Link
+              to={`/builder/${currentUser.username}`}
+              className="hidden sm:flex items-center gap-2 p-1 pl-1 pr-3 rounded-full bg-white/95 dark:bg-[#121216]/95 border-2 border-black dark:border-zinc-700 hover:border-[#FA5D00] shadow-sm transition-all group"
+              title={`View @${currentUser.username} Profile`}
+            >
+              <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[#FA5D00]/15 flex items-center justify-center font-serif font-bold text-xs text-[#FA5D00] border border-black/10 dark:border-white/10 flex-none">
+                {currentUser.avatar_url ? (
+                  <img
+                    src={currentUser.avatar_url}
+                    alt={currentUser.name || currentUser.username}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(currentUser.username)}`;
+                    }}
+                  />
+                ) : (
+                  (currentUser.name || currentUser.username).charAt(0).toUpperCase()
+                )}
+              </div>
+              <span className="font-mono text-xs font-bold text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors truncate max-w-[110px]">
+                @{currentUser.username}
+              </span>
+              {currentUser.is_verified && <VerifiedBadge size="xs" />}
+            </Link>
+          ) : (
+            <Link
+              to="/network?auth=login"
+              className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-full border-2 border-black dark:border-white bg-black dark:bg-white text-white dark:text-black font-mono text-xs font-bold hover:bg-[#FA5D00] hover:border-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:border-[#FA5D00] dark:hover:text-black transition-all shadow-xs"
+            >
+              Sign In
+            </Link>
+          )}
+
+          {isHomePage && !currentUser && (
+            <div className="hidden md:flex items-center gap-3">
               <a
                 href="https://discord.com/invite/7dk4w37BhP"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-2 rounded-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-sans text-xs sm:text-sm font-semibold tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center"
+                className="px-4 py-1.5 rounded-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-sans text-xs font-semibold tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center"
               >
                 Discord
               </a>
             </div>
           )}
 
-          {/* Right Mobile: 3-line Hamburger Button */}
+          {/* Right Mobile: User circle avatar & 3-line Hamburger Button */}
           <div className="flex sm:hidden items-center gap-2">
-            {isHomePage && (
-              <a
-                href="https://discord.com/invite/7dk4w37BhP"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3.5 py-1.5 rounded-full bg-[#5865F2] text-white font-mono text-[11px] font-bold tracking-wider uppercase shadow-sm"
+            {currentUser && (
+              <Link
+                to={`/builder/${currentUser.username}`}
+                className="w-8 h-8 rounded-full overflow-hidden border-2 border-black dark:border-zinc-700 flex items-center justify-center font-serif font-bold text-xs bg-[#FA5D00]/10 text-[#FA5D00]"
+                title={`@${currentUser.username}`}
               >
-                Discord
-              </a>
+                {currentUser.avatar_url ? (
+                  <img
+                    src={currentUser.avatar_url}
+                    alt={currentUser.username}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(currentUser.username)}`;
+                    }}
+                  />
+                ) : (
+                  (currentUser.name || currentUser.username).charAt(0).toUpperCase()
+                )}
+              </Link>
             )}
 
             <button
@@ -160,25 +215,60 @@ export function Navbar() {
 
       {/* Mobile Drawer Overlay */}
       {mobileOpen && (
-        <div className="sm:hidden fixed inset-0 top-[68px] z-40 bg-black/60 backdrop-blur-md pointer-events-auto animate-in fade-in duration-200">
-          <div className="mx-4 mt-2 p-6 rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#09090b] shadow-2xl flex flex-col justify-between max-h-[calc(100vh-90px)] overflow-y-auto">
+        <div className="sm:hidden fixed inset-0 top-[60px] z-40 bg-black/60 backdrop-blur-md pointer-events-auto animate-in fade-in duration-200">
+          <div className="mx-4 mt-2 p-5 rounded-3xl border-2 border-black dark:border-zinc-700 bg-white dark:bg-[#09090b] shadow-2xl flex flex-col justify-between max-h-[calc(100vh-80px)] overflow-y-auto">
             
-            {/* Header info */}
-            <div className="flex items-center justify-between pb-4 border-b editorial-hairline">
-              <span className="font-mono text-xs uppercase tracking-widest text-[#FA5D00] font-bold">
-                RECO LABS · NAVIGATION
-              </span>
-              <span className="font-mono text-[11px] text-zinc-400">
-                Menu
-              </span>
-            </div>
+            {/* User Profile Card on Mobile */}
+            {currentUser ? (
+              <div className="p-3.5 rounded-2xl border-2 border-black dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex items-center justify-between gap-3 mb-2">
+                <Link
+                  to={`/builder/${currentUser.username}`}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2.5 min-w-0"
+                >
+                  <div className="w-9 h-9 rounded-full overflow-hidden border border-black/20 flex items-center justify-center font-bold text-xs bg-orange-100 text-[#FA5D00] flex-none">
+                    {currentUser.avatar_url ? (
+                      <img src={currentUser.avatar_url} alt={currentUser.username} className="w-full h-full object-cover" />
+                    ) : (
+                      (currentUser.name || currentUser.username).charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-serif text-xs font-bold text-zinc-950 dark:text-zinc-50 flex items-center gap-1 truncate">
+                      <span>{currentUser.name || currentUser.username}</span>
+                      {currentUser.is_verified && <VerifiedBadge size="xs" />}
+                    </div>
+                    <div className="font-mono text-[10px] text-zinc-500 truncate">
+                      @{currentUser.username}
+                    </div>
+                  </div>
+                </Link>
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className="px-3 py-1.5 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-bold uppercase tracking-wider flex-none"
+                >
+                  Console
+                </Link>
+              </div>
+            ) : (
+              <div className="pb-3 border-b editorial-hairline mb-2">
+                <Link
+                  to="/network?auth=login"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full py-2.5 rounded-full bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center"
+                >
+                  Sign In to Reco Guild
+                </Link>
+              </div>
+            )}
 
             {/* Nav list */}
-            <nav className="flex flex-col py-6 space-y-3 font-mono">
+            <nav className="flex flex-col py-4 space-y-2.5 font-mono">
               <Link
                 to="/"
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center justify-between py-2 text-base font-bold tracking-wider transition-colors ${
+                className={`flex items-center justify-between py-2 text-sm font-bold tracking-wider transition-colors ${
                   isActive("/") ? "text-[#FA5D00]" : "text-zinc-900 dark:text-zinc-100 hover:text-[#FA5D00]"
                 }`}
               >
@@ -194,7 +284,7 @@ export function Navbar() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-between py-2 text-base font-bold tracking-wider transition-colors border-t editorial-hairline text-zinc-900 dark:text-zinc-100 hover:text-[#FA5D00]"
+                    className="flex items-center justify-between py-2 text-sm font-bold tracking-wider transition-colors border-t editorial-hairline text-zinc-900 dark:text-zinc-100 hover:text-[#FA5D00]"
                   >
                     <span>0{idx + 2}. {link.label}</span>
                     <ArrowUpRight className="w-4 h-4 text-[#FA5D00]" />
@@ -204,7 +294,7 @@ export function Navbar() {
                     key={link.path}
                     to={link.path}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center justify-between py-2 text-base font-bold tracking-wider transition-colors border-t editorial-hairline ${
+                    className={`flex items-center justify-between py-2 text-sm font-bold tracking-wider transition-colors border-t editorial-hairline ${
                       isActive(link.path) ? "text-[#FA5D00]" : "text-zinc-900 dark:text-zinc-100 hover:text-[#FA5D00]"
                     }`}
                   >
@@ -216,27 +306,23 @@ export function Navbar() {
             </nav>
 
             {/* Bottom Actions */}
-            <div className="pt-4 border-t editorial-hairline flex flex-col gap-3">
-              {isHomePage && (
-                <a
-                  href="https://discord.com/invite/7dk4w37BhP"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-[#5865F2] text-white font-mono text-xs font-bold uppercase tracking-wider shadow-sm"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Join Discord Guild</span>
-                </a>
-              )}
+            <div className="pt-3 border-t editorial-hairline flex flex-col gap-2 font-mono text-xs">
+              <Link
+                to="/pricing"
+                onClick={() => setMobileOpen(false)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full border border-black dark:border-white font-bold uppercase tracking-wider text-black dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <span>Verified Pass & Pricing</span>
+              </Link>
 
               <a
-                href="https://github.com/recoorg"
+                href="https://discord.com/invite/7dk4w37BhP"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-full border border-zinc-300 dark:border-zinc-700 bg-transparent text-zinc-800 dark:text-zinc-200 font-mono text-xs font-bold uppercase tracking-wider hover:border-[#FA5D00]"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-[#5865F2] text-white font-bold uppercase tracking-wider shadow-sm"
               >
-                <GithubIcon className="w-4 h-4" />
-                <span>recoorg on GitHub</span>
+                <MessageSquare className="w-4 h-4" />
+                <span>Discord Guild</span>
               </a>
             </div>
 
