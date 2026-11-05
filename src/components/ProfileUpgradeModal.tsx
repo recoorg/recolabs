@@ -199,23 +199,22 @@ export function ProfileUpgradeModal({
     setLoading(true)
     setErrorMsg("")
     try {
-      await networkApi.upgradeProfile(selectedPlan, {
-        method: paymentMethod,
-        ref: upiRef || "verified_client",
-        ...paymentMeta,
-      })
+      await networkApi.upgradeProfile(
+        selectedPlan,
+        "monthly",
+        undefined,
+        {
+          method: paymentMethod,
+          ref: upiRef || "verified_client",
+          ...paymentMeta,
+        }
+      )
       confetti({ particleCount: 80, spread: 75, origin: { y: 0.5 } })
       setSubmitted(true)
       if (onUpgradeSuccess) onUpgradeSuccess()
     } catch (err: any) {
-      const currentUser = networkApi.getCurrentUser()
-      if (currentUser) {
-        const optimistic = { ...currentUser, is_verified: true, is_pro: true, plan: selectedPlan }
-        localStorage.setItem("recolabs_user", JSON.stringify(optimistic))
-      }
-      confetti({ particleCount: 70, spread: 70, origin: { y: 0.5 } })
-      setSubmitted(true)
-      if (onUpgradeSuccess) onUpgradeSuccess()
+      console.warn("Upgrade verification error:", err)
+      setErrorMsg(err.message || "Payment verification failed. Please complete transfer first.")
     } finally {
       setLoading(false)
     }

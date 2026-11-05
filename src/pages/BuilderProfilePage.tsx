@@ -199,7 +199,7 @@ export function BuilderProfilePage() {
                   <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-[#FA5D00] font-bold">
                     @{profile.username}
                   </span>
-                  {(profile.is_verified || profile.is_pro || profile.username === "rawenergon" || profile.username === "b127" || profile.username === "adibxr") && (
+                  {(profile.is_verified || profile.is_pro) && (
                     <VerifiedBadge
                       size="sm"
                       showText

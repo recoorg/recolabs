@@ -247,10 +247,7 @@ export function PricingUpgradePage() {
             }, 2500)
           } catch (upgradeErr: any) {
             console.error("Post-payment upgrade sync error:", upgradeErr)
-            setPaySuccess(true)
-            setTimeout(() => {
-              navigate(`/builder/${currentUser.username}`)
-            }, 3000)
+            setPayError(upgradeErr.message || "Failed to verify payment with server. Please try again.")
           }
         },
       }

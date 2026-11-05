@@ -842,7 +842,7 @@ export function NetworkPage() {
                         >
                           <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-tr from-[#FA5D00] to-amber-400 flex-none border border-black/10 dark:border-white/10 shadow-2xs"><img src={(item as any).avatar_url || (item as any).author_avatar || "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(founderUser)} alt={item.founder_name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(founderUser); }} /></div>
                           <span className="truncate hover:underline underline-offset-4 decoration-[#FA5D00]">{item.founder_name}</span>
-                          {((item as any).is_verified || (item as any).is_pro || founderUser === "rawenergon" || founderUser === "b127" || founderUser === "adibxr") && (
+                          {((item as any).is_verified || (item as any).is_pro) && (
                             <VerifiedBadge size="sm" />
                           )}
                         </Link>

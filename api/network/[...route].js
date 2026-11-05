@@ -2890,6 +2890,38 @@ async function handleNetworkRequest(req, res) {
       }
       return;
     }
+    if (req.method === "POST" && (pathname === "/api/network/reset-verification" || pathname === "/api/reset-verification")) {
+      const auth = getAuthUser();
+      const body = await parseBody();
+      const targetUserId = auth?.id || Number(body?.user_id);
+      const targetUsername = auth?.username || body?.username;
+      const client = await pool.connect();
+      try {
+        if (targetUserId) {
+          await client.query(
+            "UPDATE users SET is_verified = false, is_pro = false, plan = 'free', plan_billing = NULL, subscription_start = NULL, subscription_end = NULL WHERE id = $1",
+            [targetUserId]
+          );
+        } else if (targetUsername) {
+          await client.query(
+            "UPDATE users SET is_verified = false, is_pro = false, plan = 'free', plan_billing = NULL, subscription_start = NULL, subscription_end = NULL WHERE LOWER(username) = LOWER($1)",
+            [targetUsername]
+          );
+        } else {
+          await client.query(
+            "UPDATE users SET is_verified = false, is_pro = false, plan = 'free', plan_billing = NULL, subscription_start = NULL, subscription_end = NULL"
+          );
+        }
+        res.statusCode = 200;
+        res.end(JSON.stringify({ success: true, message: "Verification removed. Free tier restored." }));
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: err.message || "Failed to reset verification." }));
+      } finally {
+        client.release();
+      }
+      return;
+    }
     if (req.method === "POST" && (pathname === "/api/network/create-razorpay-order" || pathname === "/api/create-razorpay-order")) {
       const body = await parseBody();
       const amount = Number(body?.amount) || 99900;
