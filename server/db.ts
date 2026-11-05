@@ -920,33 +920,59 @@ export async function deleteStartup(id: number) {
   }
 }
 
-export async function updateStartup(id: number, data: {
-  name?: string;
-  url?: string;
-  problem_solving?: string;
-  category?: string;
-  stage?: string;
-}) {
+export async function updateStartup(
+  id: number,
+  data: {
+    name?: string;
+    url?: string;
+    problem_solving?: string;
+    category?: string;
+    stage?: string;
+    founder_name?: string;
+    founder_website?: string;
+    founder_discord?: string;
+  },
+  userId?: number,
+  username?: string,
+  isAdmin?: boolean
+) {
   const client = await pool.connect();
   try {
     const fields: string[] = [];
     const values: any[] = [];
     let idx = 1;
 
-    if (data.name !== undefined) { fields.push(`name = $${idx++}`); values.push(data.name); }
-    if (data.url !== undefined) { fields.push(`url = $${idx++}`); values.push(data.url); }
-    if (data.problem_solving !== undefined) { fields.push(`problem_solving = $${idx++}`); values.push(data.problem_solving); }
+    if (data.name !== undefined) { fields.push(`name = $${idx++}`); values.push(data.name.trim()); }
+    if (data.url !== undefined) { fields.push(`url = $${idx++}`); values.push(data.url.trim()); }
+    if (data.problem_solving !== undefined) { fields.push(`problem_solving = $${idx++}`); values.push(data.problem_solving.trim()); }
     if (data.category !== undefined) { fields.push(`category = $${idx++}`); values.push(data.category); }
     if (data.stage !== undefined) { fields.push(`stage = $${idx++}`); values.push(data.stage); }
+    if (data.founder_name !== undefined) { fields.push(`founder_name = $${idx++}`); values.push(data.founder_name.trim()); }
+    if (data.founder_website !== undefined) { fields.push(`founder_website = $${idx++}`); values.push(data.founder_website.trim() || null); }
+    if (data.founder_discord !== undefined) { fields.push(`founder_discord = $${idx++}`); values.push(data.founder_discord.trim() || null); }
 
     if (fields.length === 0) return null;
 
+    let queryStr = `UPDATE startups SET ${fields.join(", ")} WHERE id = $${idx++}`;
     values.push(id);
-    const res = await client.query(
-      `UPDATE startups SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
-      values
-    );
-    return res.rows[0];
+
+    if (!isAdmin) {
+      if (userId && username) {
+        queryStr += ` AND (user_id = $${idx} OR LOWER(founder_username) = LOWER($${idx + 1}))`;
+        values.push(userId, username);
+        idx += 2;
+      } else if (userId) {
+        queryStr += ` AND user_id = $${idx++}`;
+        values.push(userId);
+      } else if (username) {
+        queryStr += ` AND LOWER(founder_username) = LOWER($${idx++})`;
+        values.push(username);
+      }
+    }
+
+    queryStr += " RETURNING *";
+    const res = await client.query(queryStr, values);
+    return res.rows[0] || null;
   } finally {
     client.release();
   }
@@ -1419,6 +1445,59 @@ export async function createBuilderJob(data: {
       ]
     );
     return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateBuilderJob(
+  id: number,
+  userId: number,
+  data: {
+    title?: string;
+    company_name?: string;
+    company_logo?: string;
+    location?: string;
+    is_remote?: boolean;
+    job_type?: string;
+    salary_range?: string;
+    skills?: string[];
+    description?: string;
+    apply_url?: string;
+  },
+  isAdmin?: boolean
+) {
+  const client = await pool.connect();
+  try {
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (data.title !== undefined) { fields.push(`title = $${idx++}`); values.push(data.title.trim()); }
+    if (data.company_name !== undefined) { fields.push(`company_name = $${idx++}`); values.push(data.company_name.trim()); }
+    if (data.company_logo !== undefined) { fields.push(`company_logo = $${idx++}`); values.push(data.company_logo?.trim() || null); }
+    if (data.location !== undefined) { fields.push(`location = $${idx++}`); values.push(data.location?.trim() || null); }
+    if (data.is_remote !== undefined) { fields.push(`is_remote = $${idx++}`); values.push(Boolean(data.is_remote)); }
+    if (data.job_type !== undefined) { fields.push(`job_type = $${idx++}`); values.push(data.job_type); }
+    if (data.salary_range !== undefined) { fields.push(`salary_range = $${idx++}`); values.push(data.salary_range?.trim() || null); }
+    if (data.skills !== undefined) { fields.push(`skills = $${idx++}`); values.push(data.skills); }
+    if (data.description !== undefined) { fields.push(`description = $${idx++}`); values.push(data.description.trim()); }
+    if (data.apply_url !== undefined) { fields.push(`apply_url = $${idx++}`); values.push(data.apply_url.trim()); }
+
+    if (fields.length === 0) return null;
+    fields.push(`updated_at = NOW()`);
+
+    let queryStr = `UPDATE builder_jobs SET ${fields.join(", ")} WHERE id = $${idx++}`;
+    values.push(id);
+
+    if (!isAdmin) {
+      queryStr += ` AND user_id = $${idx++}`;
+      values.push(userId);
+    }
+
+    queryStr += " RETURNING *";
+    const res = await client.query(queryStr, values);
+    return res.rows[0] || null;
   } finally {
     client.release();
   }

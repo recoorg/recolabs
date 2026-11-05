@@ -5,6 +5,8 @@ import { Link, useSearchParams, useNavigate } from "react-router-dom"
 import confetti from "canvas-confetti"
 import {
   Briefcase,
+  Flame,
+  Edit3,
   Calendar,
   Plus,
   Trash2,
@@ -42,8 +44,9 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { usePageMeta } from "@/hooks/usePageMeta"
-import { networkApi, type UserProfile, type BuilderJob, type BuilderHackathon } from "@/services/networkApi"
+import { networkApi, type UserProfile, type BuilderJob, type BuilderHackathon, type StartupItem } from "@/services/networkApi"
 import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
+import { StartupPromoteModal } from "@/components/StartupPromoteModal"
 import { VerifiedBadge } from "@/components/VerifiedBadge"
 
 type DashboardSection = "overview" | "jobs" | "post-job" | "hackathons" | "post-hackathon" | "startups" | "settings"
@@ -70,7 +73,43 @@ export function DashboardPage() {
   // Data States
   const [myJobs, setMyJobs] = React.useState<BuilderJob[]>([])
   const [myHackathons, setMyHackathons] = React.useState<BuilderHackathon[]>([])
+  const [myStartups, setMyStartups] = React.useState<StartupItem[]>([])
   const [loadingData, setLoadingData] = React.useState(false)
+
+  // Edit Startup Modal State
+  const [editingStartup, setEditingStartup] = React.useState<StartupItem | null>(null)
+  const [startupEditForm, setStartupEditForm] = React.useState({
+    name: "",
+    url: "",
+    problem_solving: "",
+    category: "Software",
+    stage: "Prototype",
+    founder_name: "",
+    founder_website: "",
+    founder_discord: "",
+  })
+  const [savingStartup, setSavingStartup] = React.useState(false)
+  const [startupEditError, setStartupEditError] = React.useState<string | null>(null)
+  const [startupEditSuccess, setStartupEditSuccess] = React.useState(false)
+  const [promotingStartup, setPromotingStartup] = React.useState<StartupItem | null>(null)
+
+  // Edit Job Modal State
+  const [editingJob, setEditingJob] = React.useState<BuilderJob | null>(null)
+  const [jobEditForm, setJobEditForm] = React.useState({
+    title: "",
+    company_name: "",
+    company_logo: "",
+    location: "Remote",
+    is_remote: true,
+    job_type: "Full-time",
+    salary_range: "",
+    skills: "",
+    description: "",
+    apply_url: "",
+  })
+  const [savingJob, setSavingJob] = React.useState(false)
+  const [jobEditError, setJobEditError] = React.useState<string | null>(null)
+  const [jobEditSuccess, setJobEditSuccess] = React.useState(false)
 
   // Post Job Form State
   const [jobForm, setJobForm] = React.useState({
@@ -133,12 +172,14 @@ export function DashboardPage() {
     if (user) {
       setLoadingData(true)
       try {
-        const [jobs, hackathons] = await Promise.all([
+        const [jobs, hackathons, startups] = await Promise.all([
           networkApi.getMyJobs(),
           networkApi.getMyHackathons(),
+          user.username ? networkApi.getStartups({ username: user.username }) : Promise.resolve([]),
         ])
         setMyJobs(jobs)
         setMyHackathons(hackathons)
+        setMyStartups(startups)
       } catch (err) {
         console.error("Error loading user dashboard data:", err)
       } finally {
@@ -198,6 +239,96 @@ export function DashboardPage() {
       setJobError(err.message || "An unexpected error occurred.")
     } finally {
       setSubmittingJob(false)
+    }
+  }
+
+  // Handle Open Edit Startup
+  const handleOpenEditStartup = (startup: StartupItem) => {
+    setEditingStartup(startup)
+    setStartupEditForm({
+      name: startup.name || "",
+      url: startup.url || "",
+      problem_solving: startup.problem_solving || "",
+      category: startup.category || "Software",
+      stage: startup.stage || "Prototype",
+      founder_name: startup.founder_name || currentUser?.name || "",
+      founder_website: startup.founder_website || "",
+      founder_discord: startup.founder_discord || "",
+    })
+    setStartupEditError(null)
+    setStartupEditSuccess(false)
+  }
+
+  // Handle Save Startup
+  const handleSaveStartup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingStartup) return
+    setSavingStartup(true)
+    setStartupEditError(null)
+    try {
+      const updated = await networkApi.updateStartup(editingStartup.id, startupEditForm)
+      setMyStartups((prev) =>
+        prev.map((item) => (item.id === editingStartup.id ? { ...item, ...updated } : item))
+      )
+      setStartupEditSuccess(true)
+      confetti({ particleCount: 60, spread: 60, origin: { y: 0.5 } })
+      setTimeout(() => {
+        setEditingStartup(null)
+        setStartupEditSuccess(false)
+      }, 1200)
+    } catch (err: any) {
+      setStartupEditError(err.message || "Failed to update startup.")
+    } finally {
+      setSavingStartup(false)
+    }
+  }
+
+  // Handle Open Edit Job
+  const handleOpenEditJob = (job: BuilderJob) => {
+    setEditingJob(job)
+    setJobEditForm({
+      title: job.title || "",
+      company_name: job.company_name || "",
+      company_logo: job.company_logo || "",
+      location: job.location || "Remote",
+      is_remote: Boolean(job.is_remote),
+      job_type: job.job_type || "Full-time",
+      salary_range: job.salary_range || "",
+      skills: Array.isArray(job.skills) ? job.skills.join(", ") : "",
+      description: job.description || "",
+      apply_url: job.apply_url || "",
+    })
+    setJobEditError(null)
+    setJobEditSuccess(false)
+  }
+
+  // Handle Save Job
+  const handleSaveJob = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingJob) return
+    setSavingJob(true)
+    setJobEditError(null)
+    try {
+      const res = await networkApi.updateJob(editingJob.id, {
+        ...jobEditForm,
+        skills: jobEditForm.skills
+          ? jobEditForm.skills.split(",").map((s) => s.trim()).filter(Boolean)
+          : [],
+      })
+      if (!res.success) throw new Error(res.error || "Failed to update job")
+      if (res.job) {
+        setMyJobs((prev) => prev.map((j) => (j.id === editingJob.id ? res.job! : j)))
+      }
+      setJobEditSuccess(true)
+      confetti({ particleCount: 60, spread: 60, origin: { y: 0.5 } })
+      setTimeout(() => {
+        setEditingJob(null)
+        setJobEditSuccess(false)
+      }, 1200)
+    } catch (err: any) {
+      setJobEditError(err.message || "Failed to update job.")
+    } finally {
+      setSavingJob(false)
     }
   }
 
@@ -381,16 +512,20 @@ export function DashboardPage() {
               </span>
             </button>
 
-            {/* 2. Building / Startups Directory */}
+            {/* 2. My Startups & Builds */}
             <button
               type="button"
-              onClick={() => navigate("/network")}
-              className="w-11 h-11 rounded-2xl flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group relative cursor-pointer"
-              title="Founders Directory"
+              onClick={() => setSection("startups")}
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all group relative cursor-pointer ${
+                activeSection === "startups"
+                  ? "bg-zinc-200/80 dark:bg-zinc-800 text-[#FA5D00] shadow-inner font-bold"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              }`}
+              title="My Startups"
             >
               <Building2 className="w-5 h-5" />
               <span className="hidden group-hover:block absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-black text-white dark:bg-zinc-800 text-[11px] font-mono whitespace-nowrap z-50 shadow-md">
-                Founders Directory
+                My Startups ({myStartups.length})
               </span>
             </button>
 
@@ -553,13 +688,24 @@ export function DashboardPage() {
             <button
               type="button"
               onClick={() => setSection("overview")}
-              className={`px-3 py-1.5 rounded-full transition-colors ${
+              className={`px-3 py-1.5 rounded-full transition-colors whitespace-nowrap ${
                 activeSection === "overview"
                   ? "bg-[#FA5D00] text-black font-bold"
                   : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
               }`}
             >
               Overview
+            </button>
+            <button
+              type="button"
+              onClick={() => setSection("startups")}
+              className={`px-3 py-1.5 rounded-full transition-colors whitespace-nowrap ${
+                activeSection === "startups"
+                  ? "bg-[#FA5D00] text-black font-bold"
+                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+              }`}
+            >
+              Startups ({myStartups.length})
             </button>
             <button
               type="button"
@@ -601,6 +747,7 @@ export function DashboardPage() {
             </div>
             <h1 className="font-serif text-4xl sm:text-5xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight">
               {activeSection === "overview" && "Console Overview."}
+              {activeSection === "startups" && "Your Startups & Projects."}
               {activeSection === "jobs" && "Your Career Postings."}
               {activeSection === "post-job" && "Publish Opportunity."}
               {activeSection === "hackathons" && "Your Hosted Hackathons."}
@@ -778,8 +925,88 @@ export function DashboardPage() {
               </div>
             </div>
 
-            {/* Split Grids: Recent Postings & Sprints */}
+            {/* Split Grids: Startups, Jobs & Sprints */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Startups Card */}
+              <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl border editorial-hairline bg-white dark:bg-zinc-900/40 md:col-span-2">
+                <div className="flex items-center justify-between pb-4 border-b editorial-hairline mb-4 font-mono">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-[#FA5D00]" />
+                    <span className="text-xs font-bold text-zinc-950 dark:text-white uppercase tracking-wider">
+                      Your Startups ({myStartups.length})
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setSection("startups")}
+                    className="text-[11px] font-bold text-[#FA5D00] hover:underline cursor-pointer"
+                  >
+                    Manage &amp; Edit All ↗
+                  </button>
+                </div>
+
+                {myStartups.length === 0 ? (
+                  <div className="py-6 text-center font-mono text-xs text-zinc-400">
+                    No startups listed yet.
+                    <a
+                      href="/network"
+                      className="block mx-auto mt-2 text-[#FA5D00] font-bold hover:underline"
+                    >
+                      + Launch startup prototype
+                    </a>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {myStartups.slice(0, 3).map((s) => (
+                      <div
+                        key={s.id}
+                        className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between font-mono ${
+                          s.is_featured
+                            ? "border-[#ccff00] bg-lime-400/[0.04] dark:bg-lime-950/20"
+                            : "editorial-hairline hover:border-[#FA5D00]"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1.5">
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-[#FA5D00] uppercase">
+                              {s.category}
+                            </span>
+                            {s.is_featured && (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-[#ccff00] text-black">
+                                BOOSTED
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                            {s.name}
+                          </div>
+                          <p className="text-[11px] font-sans text-zinc-500 line-clamp-2 mt-1">
+                            {s.problem_solving}
+                          </p>
+                        </div>
+                        <div className="mt-3 pt-2 border-t editorial-hairline flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditStartup(s)}
+                            className="px-2.5 py-1 rounded-full border editorial-hairline text-[10px] font-bold text-zinc-700 dark:text-zinc-200 hover:border-[#FA5D00] hover:text-[#FA5D00] inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <Edit3 className="w-3 h-3 text-[#FA5D00]" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPromotingStartup(s)}
+                            className="text-[10px] text-[#FA5D00] font-bold hover:underline cursor-pointer inline-flex items-center gap-0.5"
+                          >
+                            <Flame className="w-3 h-3" />
+                            <span>Boost</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               
               {/* Jobs Card */}
               <div className="p-6 rounded-3xl border editorial-hairline bg-white dark:bg-zinc-900/40">
@@ -1061,6 +1288,133 @@ export function DashboardPage() {
         )}
 
         {/* ------------------------------------------------------------- */}
+        {/* SECTION: MY STARTUPS                                          */}
+        {/* ------------------------------------------------------------- */}
+        {activeSection === "startups" && (
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl border editorial-hairline bg-white dark:bg-zinc-900/40">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
+              <div>
+                <h2 className="font-serif text-2xl sm:text-3xl text-zinc-950 dark:text-zinc-50">
+                  Your Startups &amp; Builds
+                </h2>
+                <p className="font-mono text-xs text-zinc-500 mt-1">
+                  Manage your launched prototypes, edit details, or spotlight pin to #1 on the feed.
+                </p>
+              </div>
+
+              <a
+                href="/network"
+                className="px-5 py-2 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-1.5 cursor-pointer w-fit"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Launch New Build</span>
+              </a>
+            </div>
+
+            {loadingData ? (
+              <div className="py-16 text-center font-mono text-xs text-zinc-500 flex items-center justify-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-[#FA5D00]" />
+                <span>Loading your startups...</span>
+              </div>
+            ) : myStartups.length === 0 ? (
+              <div className="py-16 text-center">
+                <Building2 className="w-8 h-8 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
+                <h3 className="font-serif text-2xl text-zinc-800 dark:text-zinc-200">
+                  No startups listed yet
+                </h3>
+                <p className="font-mono text-xs text-zinc-500 max-w-sm mx-auto mt-1">
+                  Launch your prototype or project on the Founder Network to gain early traction and developer reviews.
+                </p>
+                <a
+                  href="/network"
+                  className="mt-4 px-6 py-2.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Launch First Startup</span>
+                </a>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                {myStartups.map((startup) => (
+                  <div
+                    key={startup.id}
+                    className={`p-4 sm:p-5 rounded-2xl border-2 transition-all flex flex-col justify-between font-mono relative ${
+                      startup.is_featured
+                        ? "border-[#ccff00] bg-lime-400/[0.04] dark:bg-lime-950/20 shadow-md shadow-lime-400/5 ring-1 ring-lime-400/20"
+                        : "border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#FA5D00]"
+                    }`}
+                  >
+                    {startup.is_featured && (
+                      <div className="absolute -top-3 left-4 px-2.5 py-0.5 rounded-full bg-[#ccff00] text-black font-mono text-[9px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 border border-black/20">
+                        <Flame className="w-3 h-3 fill-black text-black" />
+                        <span>BOOSTED · 1 WEEK PIN</span>
+                      </div>
+                    )}
+
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-[#FA5D00] text-[10px] font-bold uppercase">
+                            {startup.category}
+                          </span>
+                          <span className="text-[10px] text-zinc-500 font-semibold uppercase">
+                            · {startup.stage}
+                          </span>
+                        </div>
+                      </div>
+
+                      <h3 className="font-serif text-xl font-bold text-zinc-950 dark:text-zinc-50 truncate">
+                        {startup.name}
+                      </h3>
+
+                      <p className="mt-2 text-xs font-sans text-zinc-600 dark:text-zinc-300 line-clamp-3 leading-relaxed">
+                        {startup.problem_solving}
+                      </p>
+                    </div>
+
+                    <div className="mt-5 pt-3 border-t editorial-hairline flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditStartup(startup)}
+                          className="px-3 py-1.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200 hover:border-[#FA5D00] hover:text-[#FA5D00] transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs active:scale-95"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-[#FA5D00]" />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPromotingStartup(startup)}
+                          className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 ${
+                            startup.is_featured
+                              ? "border-lime-400 bg-[#ccff00] text-black font-black"
+                              : "border-orange-300 dark:border-orange-800/80 bg-orange-100/80 dark:bg-orange-950/60 text-[#FA5D00] hover:bg-[#FA5D00] hover:text-black"
+                          }`}
+                        >
+                          <Flame className="w-3.5 h-3.5" />
+                          <span>{startup.is_featured ? "Boosted" : "Boost Pin"}</span>
+                        </button>
+                      </div>
+
+                      <a
+                        href={startup.url.startsWith("http") ? startup.url : `https://${startup.url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded-full border editorial-hairline text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
+                        title="Visit product"
+                      >
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
         {/* SECTION: MY JOBS                                              */}
         {/* ------------------------------------------------------------- */}
         {activeSection === "jobs" && (
@@ -1170,6 +1524,15 @@ export function DashboardPage() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-none">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditJob(job)}
+                        className="px-3 py-1.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:border-[#FA5D00] hover:text-[#FA5D00] transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs active:scale-95"
+                      >
+                        <Edit3 className="w-3 h-3 text-[#FA5D00]" />
+                        <span>Edit</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleToggleJob(job)}
@@ -1891,6 +2254,364 @@ export function DashboardPage() {
             </div>
           </div>
         )}
+        {/* EDIT STARTUP MODAL */}
+        {editingStartup && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+            onClick={() => setEditingStartup(null)}
+          >
+            <div
+              className="relative max-w-lg w-full max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden font-sans"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-5 pb-3 border-b editorial-hairline flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#FA5D00] tracking-wider block">
+                    EDIT PROJECT
+                  </span>
+                  <h3 className="font-serif text-2xl text-zinc-950 dark:text-zinc-50 font-normal">
+                    {editingStartup.name}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingStartup(null)}
+                  className="p-1.5 rounded-full text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveStartup} className="flex-1 overflow-y-auto p-5 space-y-4 font-mono text-xs">
+                {startupEditSuccess && (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    <span>Startup updated successfully!</span>
+                  </div>
+                )}
+
+                {startupEditError && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{startupEditError}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                    Startup / Project Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={startupEditForm.name}
+                    onChange={(e) => setStartupEditForm({ ...startupEditForm, name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                    Product URL / Repo *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={startupEditForm.url}
+                    onChange={(e) => setStartupEditForm({ ...startupEditForm, url: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                    Problem Solved / Description *
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={startupEditForm.problem_solving}
+                    onChange={(e) => setStartupEditForm({ ...startupEditForm, problem_solving: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                      Category
+                    </label>
+                    <select
+                      value={startupEditForm.category}
+                      onChange={(e) => setStartupEditForm({ ...startupEditForm, category: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                    >
+                      <option value="Software">Software</option>
+                      <option value="AI / ML">AI / ML</option>
+                      <option value="Developer Tools">Developer Tools</option>
+                      <option value="Web3">Web3</option>
+                      <option value="Hardware">Hardware</option>
+                      <option value="Mobile">Mobile</option>
+                      <option value="Open Source">Open Source</option>
+                      <option value="Fintech">Fintech</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                      Stage
+                    </label>
+                    <select
+                      value={startupEditForm.stage}
+                      onChange={(e) => setStartupEditForm({ ...startupEditForm, stage: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                    >
+                      <option value="Prototype">Prototype</option>
+                      <option value="Beta">Beta</option>
+                      <option value="Live">Live</option>
+                      <option value="Stealth">Stealth</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                      Website / Bio Link
+                    </label>
+                    <input
+                      type="text"
+                      value={startupEditForm.founder_website}
+                      onChange={(e) => setStartupEditForm({ ...startupEditForm, founder_website: e.target.value })}
+                      placeholder="https://..."
+                      className="w-full px-3.5 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                      Discord Handle
+                    </label>
+                    <input
+                      type="text"
+                      value={startupEditForm.founder_discord}
+                      onChange={(e) => setStartupEditForm({ ...startupEditForm, founder_discord: e.target.value })}
+                      placeholder="@handle"
+                      className="w-full px-3.5 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t editorial-hairline flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingStartup(null)}
+                    className="px-4 py-2 rounded-full border editorial-hairline hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingStartup}
+                    className="px-6 py-2 rounded-full bg-[#FA5D00] text-black font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-50 cursor-pointer transition-all shadow-md"
+                  >
+                    {savingStartup ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* EDIT JOB MODAL */}
+        {editingJob && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+            onClick={() => setEditingJob(null)}
+          >
+            <div
+              className="relative max-w-lg w-full max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden font-sans"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-5 pb-3 border-b editorial-hairline flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#FA5D00] tracking-wider block">
+                    EDIT JOB OPENING
+                  </span>
+                  <h3 className="font-serif text-2xl text-zinc-950 dark:text-zinc-50 font-normal">
+                    {editingJob.title}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingJob(null)}
+                  className="p-1.5 rounded-full text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveJob} className="flex-1 overflow-y-auto p-5 space-y-4 font-mono text-xs">
+                {jobEditSuccess && (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    <span>Job posting updated successfully!</span>
+                  </div>
+                )}
+
+                {jobEditError && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{jobEditError}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                    Role / Job Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={jobEditForm.title}
+                    onChange={(e) => setJobEditForm({ ...jobEditForm, title: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                      Company Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={jobEditForm.company_name}
+                      onChange={(e) => setJobEditForm({ ...jobEditForm, company_name: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                      Location *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={jobEditForm.location}
+                      onChange={(e) => setJobEditForm({ ...jobEditForm, location: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                      Job Type
+                    </label>
+                    <select
+                      value={jobEditForm.job_type}
+                      onChange={(e) => setJobEditForm({ ...jobEditForm, job_type: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                    >
+                      <option value="Full-time">Full-time</option>
+                      <option value="Part-time">Part-time</option>
+                      <option value="Contract">Contract</option>
+                      <option value="Internship">Internship</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                      Salary Range (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="$120k - $160k or Competitive"
+                      value={jobEditForm.salary_range}
+                      onChange={(e) => setJobEditForm({ ...jobEditForm, salary_range: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                    Direct Apply Link / Email *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={jobEditForm.apply_url}
+                    onChange={(e) => setJobEditForm({ ...jobEditForm, apply_url: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                    Skills (Comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={jobEditForm.skills}
+                    onChange={(e) => setJobEditForm({ ...jobEditForm, skills: e.target.value })}
+                    placeholder="React, TypeScript, Rust, Python"
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-500 uppercase tracking-wider mb-1 font-bold text-[10px]">
+                    Role Description *
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={jobEditForm.description}
+                    onChange={(e) => setJobEditForm({ ...jobEditForm, description: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
+                  />
+                </div>
+
+                <div className="pt-3 border-t editorial-hairline flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingJob(null)}
+                    className="px-4 py-2 rounded-full border editorial-hairline hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingJob}
+                    className="px-6 py-2 rounded-full bg-[#FA5D00] text-black font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-50 cursor-pointer transition-all shadow-md"
+                  >
+                    {savingJob ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* STARTUP PROMOTE MODAL */}
+        {promotingStartup && (
+          <StartupPromoteModal
+            startup={promotingStartup}
+            onClose={() => setPromotingStartup(null)}
+            onBoostSuccess={(id) => {
+              setMyStartups((prev) =>
+                prev.map((s) => (s.id === id ? { ...s, is_featured: true } : s))
+              )
+              setPromotingStartup(null)
+            }}
+          />
+        )}
+
         {showUpgradeModal && currentUser && (
           <ProfileUpgradeModal
             username={currentUser.username}

@@ -463,6 +463,21 @@ export const networkApi = {
     return json.startup
   },
 
+  async updateStartup(id: number, data: Partial<StartupItem>): Promise<StartupItem> {
+    const token = this.getToken()
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (token) headers["Authorization"] = `Bearer ${token}`
+    const json = await safeJsonFetch<{ success: boolean; startup: StartupItem }>(
+      `/api/network/startups/${id}`,
+      {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data),
+      }
+    )
+    return json.startup
+  },
+
   async getNetworkStats(): Promise<{
     totalBuilders: number
     totalStartups: number
@@ -723,6 +738,27 @@ export const networkApi = {
       return { success: true, job: res.job }
     } catch (err: any) {
       return { success: false, error: err.message || "Failed to post job." }
+    }
+  },
+
+  async updateJob(id: number, data: Partial<BuilderJob>): Promise<{ success: boolean; job?: BuilderJob; error?: string }> {
+    try {
+      const token = this.getToken()
+      if (!token) return { success: false, error: "Authentication required." }
+      const res = await safeJsonFetch<{ success: boolean; job: BuilderJob }>(
+        `/api/network/jobs/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(data),
+        }
+      )
+      return { success: true, job: res.job }
+    } catch (err: any) {
+      return { success: false, error: err.message || "Failed to update job." }
     }
   },
 

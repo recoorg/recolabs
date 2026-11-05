@@ -51,6 +51,7 @@ import {
   listBuilderJobs,
   listUserJobs,
   createBuilderJob,
+  updateBuilderJob,
   updateBuilderJobStatus,
   deleteBuilderJob,
   listBuilderHackathons,
@@ -714,14 +715,16 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       return;
     }
 
-    // 13B. UPDATE STARTUP (Admin Protected): PUT /api/network/startups/:id or POST /api/network/startups/update
+    // 13B. UPDATE STARTUP (Owner or Admin): PUT /api/network/startups/:id or POST /api/network/startups/update
     if (
       (req.method === "PUT" && (pathname.startsWith("/api/network/startups/") || pathname.startsWith("/api/startups/"))) ||
       (req.method === "POST" && (pathname === "/api/network/startups/update" || pathname === "/api/startups/update"))
     ) {
-      if (!checkAdminAuth(req)) {
+      const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
+      if (!user && !isAdmin) {
         res.statusCode = 401;
-        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to update startups." }));
+        res.end(JSON.stringify({ error: "Authentication required to update startups." }));
         return;
       }
       const body = await parseBody();
@@ -732,7 +735,12 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         res.end(JSON.stringify({ error: "Valid startup ID is required." }));
         return;
       }
-      const updated = await updateStartup(id, body);
+      const updated = await updateStartup(id, body, user?.id, user?.username, isAdmin);
+      if (!updated) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ error: "Startup not found or you are not authorized to edit this startup." }));
+        return;
+      }
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, startup: updated }));
       return;
@@ -1375,6 +1383,37 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
 
       res.statusCode = 201;
       res.end(JSON.stringify({ success: true, job }));
+      return;
+    }
+
+    // UPDATE JOB DETAILS (Owner or Admin): POST /api/network/jobs/update or PUT /api/network/jobs/:id
+    if (
+      (req.method === "POST" && (pathname === "/api/network/jobs/update" || pathname === "/api/jobs/update" || pathname === "/api/network/builder-jobs/update")) ||
+      (req.method === "PUT" && ((pathname.startsWith("/api/network/jobs/") || pathname.startsWith("/api/network/builder-jobs/")) && !pathname.endsWith("/status")))
+    ) {
+      const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
+      if (!user && !isAdmin) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to update a job." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid job ID is required." }));
+        return;
+      }
+      const updated = await updateBuilderJob(id, user?.id || 0, body, isAdmin);
+      if (!updated) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ error: "Job not found or you are not authorized to edit this job." }));
+        return;
+      }
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, job: updated }));
       return;
     }
 

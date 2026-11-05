@@ -823,7 +823,7 @@ async function deleteStartup(id) {
     client.release();
   }
 }
-async function updateStartup(id, data) {
+async function updateStartup(id, data, userId, username, isAdmin) {
   const client = await pool.connect();
   try {
     const fields = [];
@@ -831,15 +831,15 @@ async function updateStartup(id, data) {
     let idx = 1;
     if (data.name !== void 0) {
       fields.push(`name = $${idx++}`);
-      values.push(data.name);
+      values.push(data.name.trim());
     }
     if (data.url !== void 0) {
       fields.push(`url = $${idx++}`);
-      values.push(data.url);
+      values.push(data.url.trim());
     }
     if (data.problem_solving !== void 0) {
       fields.push(`problem_solving = $${idx++}`);
-      values.push(data.problem_solving);
+      values.push(data.problem_solving.trim());
     }
     if (data.category !== void 0) {
       fields.push(`category = $${idx++}`);
@@ -849,13 +849,37 @@ async function updateStartup(id, data) {
       fields.push(`stage = $${idx++}`);
       values.push(data.stage);
     }
+    if (data.founder_name !== void 0) {
+      fields.push(`founder_name = $${idx++}`);
+      values.push(data.founder_name.trim());
+    }
+    if (data.founder_website !== void 0) {
+      fields.push(`founder_website = $${idx++}`);
+      values.push(data.founder_website.trim() || null);
+    }
+    if (data.founder_discord !== void 0) {
+      fields.push(`founder_discord = $${idx++}`);
+      values.push(data.founder_discord.trim() || null);
+    }
     if (fields.length === 0) return null;
+    let queryStr = `UPDATE startups SET ${fields.join(", ")} WHERE id = $${idx++}`;
     values.push(id);
-    const res = await client.query(
-      `UPDATE startups SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
-      values
-    );
-    return res.rows[0];
+    if (!isAdmin) {
+      if (userId && username) {
+        queryStr += ` AND (user_id = $${idx} OR LOWER(founder_username) = LOWER($${idx + 1}))`;
+        values.push(userId, username);
+        idx += 2;
+      } else if (userId) {
+        queryStr += ` AND user_id = $${idx++}`;
+        values.push(userId);
+      } else if (username) {
+        queryStr += ` AND LOWER(founder_username) = LOWER($${idx++})`;
+        values.push(username);
+      }
+    }
+    queryStr += " RETURNING *";
+    const res = await client.query(queryStr, values);
+    return res.rows[0] || null;
   } finally {
     client.release();
   }
@@ -1261,6 +1285,67 @@ async function createBuilderJob(data) {
       ]
     );
     return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function updateBuilderJob(id, userId, data, isAdmin) {
+  const client = await pool.connect();
+  try {
+    const fields = [];
+    const values = [];
+    let idx = 1;
+    if (data.title !== void 0) {
+      fields.push(`title = $${idx++}`);
+      values.push(data.title.trim());
+    }
+    if (data.company_name !== void 0) {
+      fields.push(`company_name = $${idx++}`);
+      values.push(data.company_name.trim());
+    }
+    if (data.company_logo !== void 0) {
+      fields.push(`company_logo = $${idx++}`);
+      values.push(data.company_logo?.trim() || null);
+    }
+    if (data.location !== void 0) {
+      fields.push(`location = $${idx++}`);
+      values.push(data.location?.trim() || null);
+    }
+    if (data.is_remote !== void 0) {
+      fields.push(`is_remote = $${idx++}`);
+      values.push(Boolean(data.is_remote));
+    }
+    if (data.job_type !== void 0) {
+      fields.push(`job_type = $${idx++}`);
+      values.push(data.job_type);
+    }
+    if (data.salary_range !== void 0) {
+      fields.push(`salary_range = $${idx++}`);
+      values.push(data.salary_range?.trim() || null);
+    }
+    if (data.skills !== void 0) {
+      fields.push(`skills = $${idx++}`);
+      values.push(data.skills);
+    }
+    if (data.description !== void 0) {
+      fields.push(`description = $${idx++}`);
+      values.push(data.description.trim());
+    }
+    if (data.apply_url !== void 0) {
+      fields.push(`apply_url = $${idx++}`);
+      values.push(data.apply_url.trim());
+    }
+    if (fields.length === 0) return null;
+    fields.push(`updated_at = NOW()`);
+    let queryStr = `UPDATE builder_jobs SET ${fields.join(", ")} WHERE id = $${idx++}`;
+    values.push(id);
+    if (!isAdmin) {
+      queryStr += ` AND user_id = $${idx++}`;
+      values.push(userId);
+    }
+    queryStr += " RETURNING *";
+    const res = await client.query(queryStr, values);
+    return res.rows[0] || null;
   } finally {
     client.release();
   }
@@ -2124,9 +2209,11 @@ async function handleNetworkRequest(req, res) {
       return;
     }
     if (req.method === "PUT" && (pathname.startsWith("/api/network/startups/") || pathname.startsWith("/api/startups/")) || req.method === "POST" && (pathname === "/api/network/startups/update" || pathname === "/api/startups/update")) {
-      if (!checkAdminAuth(req)) {
+      const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
+      if (!user && !isAdmin) {
         res.statusCode = 401;
-        res.end(JSON.stringify({ error: "Unauthorized: Administrative key required to update startups." }));
+        res.end(JSON.stringify({ error: "Authentication required to update startups." }));
         return;
       }
       const body = await parseBody();
@@ -2137,7 +2224,12 @@ async function handleNetworkRequest(req, res) {
         res.end(JSON.stringify({ error: "Valid startup ID is required." }));
         return;
       }
-      const updated = await updateStartup(id, body);
+      const updated = await updateStartup(id, body, user?.id, user?.username, isAdmin);
+      if (!updated) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ error: "Startup not found or you are not authorized to edit this startup." }));
+        return;
+      }
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, startup: updated }));
       return;
@@ -2655,6 +2747,32 @@ async function handleNetworkRequest(req, res) {
       });
       res.statusCode = 201;
       res.end(JSON.stringify({ success: true, job }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/jobs/update" || pathname === "/api/jobs/update" || pathname === "/api/network/builder-jobs/update") || req.method === "PUT" && ((pathname.startsWith("/api/network/jobs/") || pathname.startsWith("/api/network/builder-jobs/")) && !pathname.endsWith("/status"))) {
+      const user = getAuthUser();
+      const isAdmin = checkAdminAuth(req);
+      if (!user && !isAdmin) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to update a job." }));
+        return;
+      }
+      const body = await parseBody();
+      const idStr = pathname.split("/").pop();
+      const id = Number(body.id || idStr);
+      if (!id || isNaN(id)) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid job ID is required." }));
+        return;
+      }
+      const updated = await updateBuilderJob(id, user?.id || 0, body, isAdmin);
+      if (!updated) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ error: "Job not found or you are not authorized to edit this job." }));
+        return;
+      }
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, job: updated }));
       return;
     }
     if (req.method === "POST" && (pathname === "/api/network/jobs/status" || pathname === "/api/jobs/status") || req.method === "PATCH" && (pathname.includes("/jobs/") && pathname.endsWith("/status"))) {
