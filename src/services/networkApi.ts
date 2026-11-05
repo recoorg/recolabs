@@ -398,6 +398,31 @@ export const networkApi = {
     return { order: json.order, keyId: json.keyId }
   },
 
+  async createRazorpayQr(data: {
+    amount: number
+    name?: string
+    description?: string
+    notes?: any
+  }): Promise<{ qr_id: string; image_url: string; payment_amount: number }> {
+    const json = await safeJsonFetch<{
+      success: boolean
+      qr_id: string
+      image_url: string
+      payment_amount: number
+    }>("/api/network/create-razorpay-qr", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+    return json
+  },
+
+  async checkRazorpayQr(qrId: string): Promise<{ paid: boolean; payment?: any; count?: number }> {
+    return await safeJsonFetch<{ paid: boolean; payment?: any; count?: number }>(
+      `/api/network/check-razorpay-qr?qr_id=${encodeURIComponent(qrId)}`
+    )
+  },
+
   async getBoostQuota(): Promise<{ activeCount: number; limit: number; startups: any[] }> {
     return await safeJsonFetch<{ activeCount: number; limit: number; startups: any[] }>("/api/network/boost-quota")
   },

@@ -3097,6 +3097,126 @@ async function handleNetworkRequest(req, res) {
       }));
       return;
     }
+    if (req.method === "POST" && (pathname === "/api/network/create-razorpay-qr" || pathname === "/api/create-razorpay-qr")) {
+      const body = await parseBody();
+      let amount = Number(body?.amount);
+      if (!amount || isNaN(amount) || amount <= 0) {
+        amount = 199;
+      }
+      const payment_amount = amount < 1e4 ? Math.round(amount * 100) : Math.round(amount);
+      const name = body?.name || "Reco Labs";
+      const description = (body?.description || "Reco Labs Payment").toString().slice(0, 30);
+      const notes = body?.notes || {};
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+      try {
+        const qrRes = await fetch("https://api.razorpay.com/v1/payments/qr_codes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Basic ${auth}`
+          },
+          body: JSON.stringify({
+            type: "upi_qr",
+            name,
+            usage: "single_use",
+            fixed_amount: true,
+            payment_amount,
+            description,
+            notes
+          })
+        });
+        const qrData = await qrRes.json();
+        if (qrRes.status >= 400 || !qrData.image_url) {
+          res.statusCode = qrRes.status || 400;
+          res.end(JSON.stringify({ error: qrData.error?.description || "Failed to generate dynamic Razorpay QR." }));
+          return;
+        }
+        res.statusCode = 200;
+        res.end(JSON.stringify({
+          success: true,
+          qr_id: qrData.id,
+          image_url: qrData.image_url,
+          payment_amount: qrData.payment_amount,
+          status: qrData.status
+        }));
+        return;
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: err.message || "Failed to generate Razorpay QR code." }));
+        return;
+      }
+    }
+    if (req.method === "GET" && (pathname === "/api/network/check-razorpay-qr" || pathname === "/api/check-razorpay-qr")) {
+      const qrId = searchParams.get("qr_id") || searchParams.get("id");
+      if (!qrId) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "qr_id query param is required." }));
+        return;
+      }
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+      try {
+        const checkRes = await fetch(`https://api.razorpay.com/v1/payments/qr_codes/${encodeURIComponent(qrId)}/payments`, {
+          method: "GET",
+          headers: {
+            Authorization: `Basic ${auth}`
+          }
+        });
+        const checkData = await checkRes.json();
+        const items = checkData.items || [];
+        const capturedPayment = items.find((p) => p.status === "captured" || p.status === "authorized");
+        const paid = Boolean(capturedPayment);
+        if (paid && capturedPayment) {
+          const notes = capturedPayment.notes || {};
+          const client = await pool.connect();
+          try {
+            if (notes.purpose === "startup_boost" && notes.startup_id) {
+              await client.query(
+                `UPDATE startups SET 
+                   is_featured = true, 
+                   boosted_at = NOW(), 
+                   featured_until = (NOW() + INTERVAL '7 days') 
+                 WHERE id = $1`,
+                [Number(notes.startup_id)]
+              );
+            } else if (notes.user_id) {
+              const billing = notes.billing === "yearly" ? "yearly" : "monthly";
+              const durationInterval = billing === "yearly" ? "365 days" : "30 days";
+              await client.query(
+                `UPDATE users SET 
+                   is_verified = true, 
+                   is_pro = true, 
+                   plan = $1, 
+                   plan_billing = $2,
+                   subscription_start = NOW(), 
+                   subscription_end = (NOW() + INTERVAL '${durationInterval}')
+                 WHERE id = $3`,
+                [notes.plan || "pro", billing, Number(notes.user_id)]
+              );
+            }
+          } catch (dbErr) {
+            console.error("Auto fulfill error from QR check:", dbErr);
+          } finally {
+            client.release();
+          }
+        }
+        res.statusCode = 200;
+        res.end(JSON.stringify({
+          success: true,
+          paid,
+          payment: capturedPayment || null,
+          count: checkData.count || 0
+        }));
+        return;
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: err.message || "Failed to check QR payment." }));
+        return;
+      }
+    }
     if (req.method === "POST" && (pathname === "/api/network/webhooks/razorpay" || pathname === "/api/webhooks/razorpay")) {
       const body = await parseBody();
       const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";

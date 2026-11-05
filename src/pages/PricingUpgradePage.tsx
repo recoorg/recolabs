@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Tag,
   AlertCircle,
+  Loader2,
   Clock,
   Layers,
   ChevronRight,
@@ -44,9 +45,10 @@ export function PricingUpgradePage() {
   const [payError, setPayError] = React.useState("")
   const [paySuccess, setPaySuccess] = React.useState(false)
   const [copiedUpi, setCopiedUpi] = React.useState(false)
-  const [qrDataUrl, setQrDataUrl] = React.useState<string>("")
-
-  const upiId = "devadibxr@okaxis"
+  const [rzpQrId, setRzpQrId] = React.useState<string>("")
+  const [rzpQrImage, setRzpQrImage] = React.useState<string>("")
+  const [loadingQr, setLoadingQr] = React.useState(false)
+  const [checkingPayment, setCheckingPayment] = React.useState(false)
 
   usePageMeta({
     title: "Pricing & Verified Pro Upgrade | Reco Labs",
@@ -109,33 +111,63 @@ export function PricingUpgradePage() {
   }
   const finalPriceNum = Math.max(0, basePriceNum - discountNum)
 
-  // Generate UPI URI & QR Code client-side
-  const usernameForNote = currentUser?.username || "builder"
-  const upiPaymentUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Reco Labs")}&am=${finalPriceNum}&cu=INR&tn=${encodeURIComponent(`Reco_${selectedPlan}_${usernameForNote}`)}`
-
+  // Create dynamic Razorpay QR via API
   React.useEffect(() => {
+    if (finalPriceNum <= 0) return
     let isMounted = true
-    QRCode.toDataURL(upiPaymentUri, {
-      width: 260,
-      margin: 2,
-      color: {
-        dark: "#000000",
-        light: "#ffffff",
-      },
-    })
-      .then((url) => {
-        if (isMounted) setQrDataUrl(url)
+    setLoadingQr(true)
+    networkApi
+      .createRazorpayQr({
+        amount: finalPriceNum,
+        name: "Reco Labs",
+        description: `${activePlan.name} (${billing})`,
+        notes: {
+          purpose: "upgrade",
+          user_id: currentUser?.id,
+          username: currentUser?.username,
+          plan: selectedPlan,
+          billing,
+        },
       })
-      .catch((err) => {
-        console.error("QR render error:", err)
-        if (isMounted) {
-          setQrDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=4&data=${encodeURIComponent(upiPaymentUri)}`)
+      .then((res) => {
+        if (isMounted && res.image_url) {
+          setRzpQrImage(res.image_url)
+          setRzpQrId(res.qr_id)
         }
       })
+      .catch((err) => {
+        console.error("Razorpay QR generation error:", err)
+      })
+      .finally(() => {
+        if (isMounted) setLoadingQr(false)
+      })
+
     return () => {
       isMounted = false
     }
-  }, [upiPaymentUri])
+  }, [finalPriceNum, selectedPlan, billing, currentUser?.id])
+
+  // Polling check for Razorpay QR Payment
+  React.useEffect(() => {
+    if (!rzpQrId || paySuccess || paymentMethod !== "upi") return
+    const interval = setInterval(async () => {
+      try {
+        const check = await networkApi.checkRazorpayQr(rzpQrId)
+        if (check.paid) {
+          clearInterval(interval)
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } })
+          setPaySuccess(true)
+          setTimeout(() => {
+            navigate(`/builder/${currentUser?.username || "profile"}`)
+          }, 2500)
+        }
+      } catch (err) {
+        // silent polling catch
+      }
+    }, 3500)
+
+    return () => clearInterval(interval)
+  }, [rzpQrId, paySuccess, paymentMethod, currentUser?.username, navigate])
 
   // Handle Coupon Validation
   const handleApplyCoupon = async (e: React.FormEvent) => {
@@ -293,37 +325,27 @@ export function PricingUpgradePage() {
     }
   }
 
-  // Handle UPI Confirmation
-  const handleConfirmUpiPaid = async () => {
-    if (!currentUser) {
-      navigate(`/network?auth=login&redirect=${encodeURIComponent(window.location.pathname)}`)
-      return
-    }
-    setLoadingPay(true)
+  // Handle manual Check Razorpay QR Payment
+  const handleCheckQrPaid = async () => {
+    if (!rzpQrId) return
+    setCheckingPayment(true)
     setPayError("")
     try {
-      await networkApi.upgradeProfile(
-        selectedPlan,
-        billing,
-        couponResult?.valid ? couponResult.coupon?.code : undefined,
-        { method: "upi_qr", upiId, amount: finalPriceNum }
-      )
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } })
-      setPaySuccess(true)
-      setTimeout(() => {
-        navigate(`/builder/${currentUser.username}`)
-      }, 2500)
+      const check = await networkApi.checkRazorpayQr(rzpQrId)
+      if (check.paid) {
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } })
+        setPaySuccess(true)
+        setTimeout(() => {
+          navigate(`/builder/${currentUser?.username || "profile"}`)
+        }, 2200)
+      } else {
+        setPayError("Payment not detected yet. Please scan the Razorpay QR code and complete payment in your UPI app.")
+      }
     } catch (err: any) {
-      setPayError(err.message || "Failed to confirm upgrade. Please reach out to @adibxr on Twitter/X.")
+      setPayError(err.message || "Failed to verify Razorpay QR payment.")
     } finally {
-      setLoadingPay(false)
+      setCheckingPayment(false)
     }
-  }
-
-  const handleCopyUpi = () => {
-    navigator.clipboard.writeText(upiId)
-    setCopiedUpi(true)
-    setTimeout(() => setCopiedUpi(false), 2000)
   }
 
   const isAlreadyVerified = currentUser?.is_verified || currentUser?.is_pro
@@ -851,46 +873,47 @@ export function PricingUpgradePage() {
             </div>
           )}
 
-          {/* Checkout Screen 2: Direct Dynamic UPI QR */}
+          {/* Checkout Screen 2: Official Razorpay Dynamic QR via API */}
           {paymentMethod === "upi" && (
-            <div className="space-y-4 text-center">
+            <div className="space-y-4 text-center font-mono">
               <div className="p-6 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 flex flex-col items-center">
-                <div className="font-mono text-xs text-zinc-400 mb-3">
-                  Scan with GPay, PhonePe, Paytm, or CRED
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[11px] font-bold mb-3">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Official Razorpay Dynamic QR API</span>
                 </div>
 
-                {/* Instant QR Image rendered client-side */}
-                <div className="p-3 rounded-2xl bg-white shadow-md border border-zinc-200">
-                  {qrDataUrl ? (
-                    <img src={qrDataUrl} alt="UPI Payment QR" className="w-52 h-52 object-contain" />
+                {/* Razorpay Dynamic QR Image */}
+                <div className="p-3.5 rounded-2xl bg-white shadow-md border border-zinc-200 relative min-w-[220px] min-h-[220px] flex items-center justify-center">
+                  {loadingQr ? (
+                    <div className="flex flex-col items-center gap-2 text-zinc-400 text-xs py-10">
+                      <Loader2 className="w-6 h-6 animate-spin text-[#FA5D00]" />
+                      <span>Generating Razorpay QR...</span>
+                    </div>
+                  ) : rzpQrImage ? (
+                    <img
+                      src={rzpQrImage}
+                      alt="Razorpay Dynamic UPI QR"
+                      className="w-56 h-56 object-contain rounded-xl"
+                    />
                   ) : (
-                    <div className="w-52 h-52 flex items-center justify-center font-mono text-xs text-zinc-400">
-                      Generating QR...
+                    <div className="text-xs text-rose-500 py-10">
+                      Failed to load dynamic QR. Please use Instant Online gateway.
                     </div>
                   )}
                 </div>
 
-                <div className="mt-4 font-mono text-xs text-zinc-500 flex items-center gap-2">
-                  <span>UPI ID:</span>
-                  <code className="text-[#FA5D00] font-bold">{upiId}</code>
-                  <button
-                    type="button"
-                    onClick={handleCopyUpi}
-                    className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
-                  {copiedUpi && <span className="text-[10px] text-emerald-500 font-bold">Copied!</span>}
+                <div className="mt-4 text-xs text-zinc-700 dark:text-zinc-300">
+                  <div className="font-bold text-sm text-[#FA5D00]">₹{finalPriceNum}</div>
+                  <div className="text-[11px] text-zinc-400 mt-0.5">
+                    Scan with Google Pay, PhonePe, Paytm, CRED or any UPI app
+                  </div>
                 </div>
 
-                {/* Mobile Direct Pay Deep Link */}
-                <a
-                  href={upiPaymentUri}
-                  className="mt-3 sm:hidden inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black font-mono text-xs font-bold"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open in UPI App</span>
-                </a>
+                {/* Live verification status indicator */}
+                <div className="mt-3 flex items-center gap-2 text-[11px] text-zinc-500 font-mono bg-zinc-100 dark:bg-zinc-800/60 px-3 py-1.5 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span>Listening for Razorpay payment... Auto-activates on transfer</span>
+                </div>
               </div>
 
               {payError && (
@@ -903,18 +926,27 @@ export function PricingUpgradePage() {
               {paySuccess ? (
                 <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center font-mono space-y-2">
                   <Check className="w-8 h-8 text-emerald-500 mx-auto" />
-                  <div className="text-base font-bold text-emerald-500">Verified Pro Activated!</div>
+                  <div className="text-base font-bold text-emerald-500">Payment Confirmed &amp; Blue Tick Activated!</div>
                   <div className="text-xs text-zinc-400">Redirecting to your builder profile...</div>
                 </div>
               ) : (
                 <button
                   type="button"
-                  onClick={handleConfirmUpiPaid}
-                  disabled={loadingPay}
+                  onClick={handleCheckQrPaid}
+                  disabled={checkingPayment || !rzpQrId}
                   className="w-full py-4 rounded-2xl bg-[#FA5D00] text-black font-mono text-sm font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>{loadingPay ? "Activating Profile..." : "I Have Paid / Activate My Blue Tick"}</span>
+                  {checkingPayment ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Checking with Razorpay...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Check Payment Status</span>
+                    </>
+                  )}
                 </button>
               )}
             </div>

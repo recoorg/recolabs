@@ -14,6 +14,7 @@ import {
   Lock,
   Smartphone,
   Loader2,
+  Sparkles,
 } from "lucide-react"
 import confetti from "canvas-confetti"
 import QRCode from "qrcode"
@@ -48,7 +49,6 @@ export function ProfileUpgradeModal({
   const [submitted, setSubmitted] = React.useState(false)
   const [errorMsg, setErrorMsg] = React.useState("")
 
-  const upiId = "devadibxr@okaxis"
   const adminEmail = "devadibxr@gmail.com"
 
   const plans = [
@@ -89,29 +89,80 @@ export function ProfileUpgradeModal({
   ]
 
   const activePlanObj = plans.find((p) => p.id === selectedPlan)!
+  const [rzpQrId, setRzpQrId] = React.useState<string>("")
+  const [rzpQrImage, setRzpQrImage] = React.useState<string>("")
+  const [loadingQr, setLoadingQr] = React.useState(false)
+  const [checkingPayment, setCheckingPayment] = React.useState(false)
 
-  const upiPaymentUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Reco Labs")}&am=${activePlanObj.amountNum}&cu=INR&tn=${encodeURIComponent(`VerifiedPro_${username}`)}`
-  const [qrCodeUrl, setQrCodeUrl] = React.useState<string>("")
-
+  // Generate dynamic Razorpay QR via API
   React.useEffect(() => {
-    let active = true
-    QRCode.toDataURL(upiPaymentUri, {
-      width: 240,
-      margin: 2,
-      color: { dark: "#000000", light: "#ffffff" }
-    }).then(url => {
-      if (active) setQrCodeUrl(url)
-    }).catch(err => {
-      console.error("QR render error:", err)
-      if (active) setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiPaymentUri)}`)
-    })
-    return () => { active = false }
-  }, [upiPaymentUri])
+    let isMounted = true
+    setLoadingQr(true)
+    const currentUser = networkApi.getCurrentUser()
+    networkApi
+      .createRazorpayQr({
+        amount: activePlanObj.amountNum,
+        name: "Reco Labs",
+        description: activePlanObj.name,
+        notes: {
+          purpose: "upgrade",
+          username,
+          user_id: currentUser?.id,
+          plan: selectedPlan,
+        },
+      })
+      .then((res) => {
+        if (isMounted && res.image_url) {
+          setRzpQrImage(res.image_url)
+          setRzpQrId(res.qr_id)
+        }
+      })
+      .catch((err) => {
+        console.error("Razorpay QR generation error:", err)
+      })
+      .finally(() => {
+        if (isMounted) setLoadingQr(false)
+      })
 
-  const handleCopyUpi = () => {
-    navigator.clipboard.writeText(upiId)
-    setCopiedUpi(true)
-    setTimeout(() => setCopiedUpi(false), 2000)
+    return () => {
+      isMounted = false
+    }
+  }, [selectedPlan, username, activePlanObj.amountNum, activePlanObj.name])
+
+  // Polling check for Razorpay QR Payment
+  React.useEffect(() => {
+    if (!rzpQrId || submitted || paymentMethod !== "upi") return
+    const interval = setInterval(async () => {
+      try {
+        const check = await networkApi.checkRazorpayQr(rzpQrId)
+        if (check.paid) {
+          clearInterval(interval)
+          finalizeActivation({ qr_id: rzpQrId, payment_id: check.payment?.id })
+        }
+      } catch (err) {
+        // silent polling catch
+      }
+    }, 3500)
+
+    return () => clearInterval(interval)
+  }, [rzpQrId, submitted, paymentMethod])
+
+  const handleCheckQrPaid = async () => {
+    if (!rzpQrId) return
+    setCheckingPayment(true)
+    setErrorMsg("")
+    try {
+      const check = await networkApi.checkRazorpayQr(rzpQrId)
+      if (check.paid) {
+        finalizeActivation({ qr_id: rzpQrId, payment_id: check.payment?.id })
+      } else {
+        setErrorMsg("Payment not detected yet. Please scan the Razorpay QR code and complete payment in your UPI app.")
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to verify Razorpay QR payment.")
+    } finally {
+      setCheckingPayment(false)
+    }
   }
 
   // Load Razorpay Script Dynamically
@@ -382,67 +433,62 @@ export function ProfileUpgradeModal({
                   </div>
                 )}
 
-                {/* UPI Box with Compact QR */}
+                {/* UPI Box with Official Razorpay Dynamic QR */}
                 {paymentMethod === "upi" && (
-                  <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border editorial-hairline space-y-2.5">
-                    <div className="flex items-center gap-3">
-                      <div className="p-1.5 rounded-xl bg-white border border-zinc-200 shadow-2xs flex-none">
-                        <img
-                          src={qrCodeUrl}
-                          alt="UPI QR Code"
-                          className="w-24 h-24 object-contain rounded-md"
-                        />
+                  <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border editorial-hairline space-y-3 text-center">
+                    <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[10px] font-bold">
+                      <Sparkles className="w-3 h-3" />
+                      <span>Razorpay Official Dynamic QR</span>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="p-2 rounded-2xl bg-white border border-zinc-200 shadow-sm relative min-w-[150px] min-h-[150px] flex items-center justify-center">
+                        {loadingQr ? (
+                          <div className="flex flex-col items-center gap-1.5 text-zinc-400 text-[10px] py-6">
+                            <Loader2 className="w-4 h-4 animate-spin text-[#FA5D00]" />
+                            <span>Generating QR...</span>
+                          </div>
+                        ) : rzpQrImage ? (
+                          <img
+                            src={rzpQrImage}
+                            alt="Razorpay Dynamic UPI QR"
+                            className="w-36 h-36 object-contain rounded-lg"
+                          />
+                        ) : (
+                          <div className="text-[10px] text-rose-500 py-6">
+                            Failed to generate QR. Please use Cards tab.
+                          </div>
+                        )}
                       </div>
 
-                      <div className="space-y-1.5 text-left flex-1 min-w-0">
-                        <div>
-                          <span className="text-[9px] text-zinc-400 uppercase font-semibold block">Official UPI VPA</span>
-                          <span className="font-bold text-zinc-900 dark:text-zinc-100 text-xs">{upiId}</span>
-                        </div>
+                      <div className="mt-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+                        Scan &amp; pay <strong>{activePlanObj.inr}</strong> with GPay, PhonePe, Paytm or any UPI app.
+                      </div>
 
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={handleCopyUpi}
-                            className="px-2.5 py-1 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-[#FA5D00] hover:text-black font-bold text-[10px] transition-colors cursor-pointer inline-flex items-center gap-1"
-                          >
-                            {copiedUpi ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                            <span>{copiedUpi ? "Copied" : "Copy UPI"}</span>
-                          </button>
-
-                          <a
-                            href={upiPaymentUri}
-                            className="px-2.5 py-1 rounded-full bg-[#FA5D00]/20 text-[#FA5D00] hover:bg-[#FA5D00] hover:text-black font-bold text-[10px] transition-colors inline-flex items-center gap-1"
-                          >
-                            <Smartphone className="w-3 h-3" />
-                            <span>Open App</span>
-                          </a>
-                        </div>
-
-                        <p className="text-[10px] text-zinc-500 leading-tight">
-                          Pay <strong>{activePlanObj.inr}</strong> via GPay, PhonePe, Paytm.
-                        </p>
+                      <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                        <span>Live detection active · Auto-activates on payment</span>
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t editorial-hairline flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder="UPI UTR / Ref (optional)"
-                        value={upiRef}
-                        onChange={(e) => setUpiRef(e.target.value)}
-                        className="flex-1 px-3 py-1.5 rounded-xl border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-[11px]"
-                      />
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => finalizeActivation({ upiRef })}
-                        className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer inline-flex items-center gap-1"
-                      >
-                        {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                        <span>I Paid</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      disabled={checkingPayment || !rzpQrId}
+                      onClick={handleCheckQrPaid}
+                      className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs font-bold uppercase tracking-wider disabled:opacity-40 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                    >
+                      {checkingPayment ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Checking with Razorpay...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Check Payment Status</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 )}
 
