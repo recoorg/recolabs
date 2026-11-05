@@ -207,7 +207,7 @@ export function PricingUpgradePage() {
       })
 
       const options = {
-        key: orderData.keyId || "rzp_live_default",
+        key: orderData.keyId || "rzp_live_TwVFw0ACQFDbKn",
         amount: amountPaise,
         currency: "INR",
         name: "Reco Labs",

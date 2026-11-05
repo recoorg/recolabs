@@ -146,7 +146,7 @@ export function ProfileUpgradeModal({
 
       const currentUser = networkApi.getCurrentUser()
       const options = {
-        key: orderData.keyId || "rzp_live_default",
+        key: orderData.keyId || "rzp_live_TwVFw0ACQFDbKn",
         amount: activePlanObj.amountPaise,
         currency: "INR",
         name: "Reco Labs",

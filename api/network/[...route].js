@@ -2786,21 +2786,48 @@ async function handleNetworkRequest(req, res) {
         return;
       }
       const paymentDetails = body?.paymentDetails;
-      const isRazorpayVerified = Boolean(
-        paymentDetails?.razorpay_payment_id && paymentDetails?.razorpay_order_id && paymentDetails?.razorpay_signature
-      );
-      const rzpSecret = process.env.RAZORPAY_KEY_SECRET;
-      if (isRazorpayVerified && rzpSecret) {
+      const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
+      const rzpSecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      let isRazorpayVerified = false;
+      if (paymentDetails?.razorpay_payment_id && paymentDetails?.razorpay_order_id && paymentDetails?.razorpay_signature) {
         try {
           const crypto = await import("crypto");
           const expectedSig = crypto.createHmac("sha256", rzpSecret).update(`${paymentDetails.razorpay_order_id}|${paymentDetails.razorpay_payment_id}`).digest("hex");
-          if (expectedSig !== paymentDetails.razorpay_signature) {
-            res.statusCode = 400;
-            res.end(JSON.stringify({ error: "Invalid payment cryptographic signature." }));
-            return;
+          if (expectedSig === paymentDetails.razorpay_signature) {
+            isRazorpayVerified = true;
           }
         } catch (sigErr) {
           console.error("Signature verification error:", sigErr);
+        }
+      }
+      if (!isRazorpayVerified && paymentDetails?.razorpay_payment_id) {
+        try {
+          const auth = Buffer.from(`${rzpKeyId}:${rzpSecret}`).toString("base64");
+          const payRes = await fetch(`https://api.razorpay.com/v1/payments/${paymentDetails.razorpay_payment_id}`, {
+            headers: { Authorization: `Basic ${auth}` }
+          });
+          if (payRes.ok) {
+            const payData = await payRes.json();
+            if (payData.status === "captured" || payData.status === "authorized") {
+              isRazorpayVerified = true;
+              if (payData.status === "authorized") {
+                try {
+                  await fetch(`https://api.razorpay.com/v1/payments/${paymentDetails.razorpay_payment_id}/capture`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Basic ${auth}`
+                    },
+                    body: JSON.stringify({ amount: payData.amount, currency: payData.currency || "INR" })
+                  });
+                } catch (capErr) {
+                  console.error("Auto capture error:", capErr);
+                }
+              }
+            }
+          }
+        } catch (apiErr) {
+          console.error("Razorpay API direct verification error:", apiErr);
         }
       }
       if (!isAdmin && !isRazorpayVerified) {
@@ -2868,8 +2895,8 @@ async function handleNetworkRequest(req, res) {
       const amount = Number(body?.amount) || 99900;
       const currency = body?.currency || "INR";
       const notes = body?.notes || {};
-      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_default";
-      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
       if (keySecret) {
         try {
           const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
@@ -2908,7 +2935,7 @@ async function handleNetworkRequest(req, res) {
     }
     if (req.method === "POST" && (pathname === "/api/network/webhooks/razorpay" || pathname === "/api/webhooks/razorpay")) {
       const body = await parseBody();
-      const secret = process.env.RAZORPAY_WEBHOOK_SECRET || "Tanisha@1060";
+      const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
       const signature = req.headers["x-razorpay-signature"];
       if (secret && signature) {
         try {
