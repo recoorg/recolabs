@@ -591,6 +591,31 @@ export function NetworkPage() {
               <p className="font-sans text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                 Explore, vote, and collaborate with early-stage builder startups across the guild.
               </p>
+
+              {/* Circle Avatars & Peer Count Badge */}
+              <div className="flex items-center gap-3 pt-3">
+                <div className="flex items-center -space-x-2.5 overflow-hidden p-1">
+                  {(builders.length > 0 ? builders : networkStats.builders || []).slice(0, 12).map((u) => (
+                    <Link
+                      key={u.id || u.username}
+                      to={`/builder/${u.username}`}
+                      className="relative inline-block w-8 h-8 rounded-full border-2 border-white dark:border-zinc-900 overflow-hidden hover:scale-110 hover:z-20 transition-all shadow-sm flex-none"
+                      title={`${u.name} (@${u.username})`}
+                    >
+                      {u.avatar_url ? (
+                        <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-[#FA5D00] text-black font-mono font-bold text-[10px] flex items-center justify-center">
+                          {u.name.charAt(0)}
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+                <div className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
+                  <span className="font-bold text-zinc-950 dark:text-zinc-50">{builders.length || networkStats.totalBuilders || 19}</span> builders in guild
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">
