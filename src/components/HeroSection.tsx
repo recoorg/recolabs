@@ -51,17 +51,17 @@ export function HeroSection() {
       {/* 2. Top Editorial Header */}
       <div className="relative z-10 mx-auto max-w-5xl px-6 text-center flex flex-col items-center">
         {/* Subtle Guild Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-black/10 dark:border-white/10 bg-zinc-50 dark:bg-zinc-900/80 font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100 shadow-2xs mb-6 animate-in fade-in duration-300">
-          <span className="w-2 h-2 rounded-full bg-[#FA5D00] animate-pulse" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-lime-400/40 bg-[#ccff00]/10 font-mono text-[11px] font-bold uppercase tracking-wider text-lime-400 dark:text-[#ccff00] shadow-2xs mb-6 animate-in fade-in duration-300">
+          <span className="w-2 h-2 rounded-full bg-[#ccff00] animate-pulse" />
           <span>THE SKILL EXCHANGE &amp; OPEN-SOURCE GUILD</span>
-          <span className="text-[#FA5D00] font-bold">· v2.4</span>
+          <span className="text-[#ccff00] font-bold">· v2.4</span>
         </div>
 
         {/* Headline in Signature Instrument Serif */}
         <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-[96px] leading-[1.02] tracking-[-0.025em] text-zinc-950 dark:text-zinc-50 font-normal">
           The Skill Exchange <br />
           <span>
-            for curious Mind<span className="text-[#FA5D00]">.</span>
+            for curious Mind<span className="text-[#ccff00]">.</span>
           </span>
         </h1>
 
@@ -73,7 +73,7 @@ export function HeroSection() {
         <div className="mt-8 sm:mt-10 w-full flex justify-center">
           <form
             onSubmit={handleJoin}
-            className="relative inline-flex items-center justify-between w-full max-w-[360px] sm:max-w-[400px] p-1.5 rounded-full bg-black dark:bg-zinc-900 border-2 border-black dark:border-zinc-700 shadow-md transition-all focus-within:ring-2 focus-within:ring-[#FA5D00]/50"
+            className="relative inline-flex items-center justify-between w-full max-w-[360px] sm:max-w-[400px] p-1.5 rounded-full bg-black dark:bg-zinc-900 border-2 border-black dark:border-zinc-700 shadow-md transition-all focus-within:ring-2 focus-within:ring-[#ccff00]/60"
           >
             <input
               type="email"
@@ -87,7 +87,7 @@ export function HeroSection() {
             <button
               type="submit"
               disabled={loading || joined}
-              className="flex-none px-5 py-2 rounded-full bg-[#FA5D00] hover:bg-[#e05300] text-black font-mono text-xs font-bold uppercase tracking-wider active:scale-95 transition-all cursor-pointer disabled:opacity-75 shadow-xs"
+              className="flex-none px-5 py-2 rounded-full bg-[#ccff00] hover:bg-[#b8e600] text-black font-mono text-xs font-black uppercase tracking-wider active:scale-95 transition-all cursor-pointer disabled:opacity-75 shadow-md shadow-[#ccff00]/25"
             >
               {loading ? "..." : joined ? "Joined!" : "Join Guild"}
             </button>
@@ -96,12 +96,12 @@ export function HeroSection() {
 
         {/* Fast Action Coordinates */}
         <div className="mt-4 flex items-center justify-center gap-4 font-mono text-xs text-zinc-500 dark:text-zinc-400">
-          <Link to="/network" className="hover:text-[#FA5D00] transition-colors flex items-center gap-1">
+          <Link to="/network" className="hover:text-[#ccff00] transition-colors flex items-center gap-1">
             <span>Founder Directory</span>
             <span className="text-[10px]">→</span>
           </Link>
           <span>·</span>
-          <Link to="/projects" className="hover:text-[#FA5D00] transition-colors flex items-center gap-1">
+          <Link to="/projects" className="hover:text-[#ccff00] transition-colors flex items-center gap-1">
             <span>Curated Vault</span>
             <span className="text-[10px]">→</span>
           </Link>
@@ -110,7 +110,7 @@ export function HeroSection() {
             href="https://github.com/recoorg"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-[#FA5D00] transition-colors flex items-center gap-1"
+            className="hover:text-[#ccff00] transition-colors flex items-center gap-1"
           >
             <span>GitHub</span>
             <span className="text-[10px]">↗</span>
@@ -124,7 +124,7 @@ export function HeroSection() {
         <div className="relative rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/40 backdrop-blur-md p-5 sm:p-7 shadow-xs overflow-hidden">
           
           {/* Subtle Grid Accent Line */}
-          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#FA5D00]/50 to-transparent" />
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#ccff00]/60 to-transparent" />
 
           {/* 3 Minimal Ecosystem Pillars with Dark Curved Icons */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -132,17 +132,17 @@ export function HeroSection() {
             {/* Pillar 1: Curated Vault */}
             <Link
               to="/projects"
-              className="p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-[#0c0c0e]/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all group cursor-pointer"
+              className="p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-[#0c0c0e]/60 hover:border-[#ccff00] dark:hover:border-[#ccff00] transition-all group cursor-pointer"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-black flex items-center justify-center font-bold shadow-2xs group-hover:bg-[#FA5D00] group-hover:text-black transition-all">
+                <div className="w-9 h-9 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-black flex items-center justify-center font-bold shadow-2xs group-hover:bg-[#ccff00] group-hover:text-black transition-all">
                   <Layers className="w-4 h-4" />
                 </div>
-                <span className="font-mono text-[10px] font-bold text-zinc-400 group-hover:text-[#FA5D00] transition-colors uppercase">
+                <span className="font-mono text-[10px] font-bold text-black bg-[#ccff00] px-2 py-0.5 rounded-full uppercase shadow-xs">
                   190+ Stacks ↗
                 </span>
               </div>
-              <h3 className="font-serif text-base font-bold text-zinc-950 dark:text-zinc-50">
+              <h3 className="font-serif text-base font-bold text-zinc-950 dark:text-zinc-50 group-hover:text-lime-400 dark:group-hover:text-[#ccff00] transition-colors">
                 Engineering Vault
               </h3>
               <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
@@ -153,18 +153,18 @@ export function HeroSection() {
             {/* Pillar 2: Founder Network */}
             <Link
               to="/network"
-              className="p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-[#0c0c0e]/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all group cursor-pointer"
+              className="p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-[#0c0c0e]/60 hover:border-[#ccff00] dark:hover:border-[#ccff00] transition-all group cursor-pointer"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-black flex items-center justify-center font-bold shadow-2xs group-hover:bg-[#FA5D00] group-hover:text-black transition-all">
+                <div className="w-9 h-9 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-black flex items-center justify-center font-bold shadow-2xs group-hover:bg-[#ccff00] group-hover:text-black transition-all">
                   <Rocket className="w-4 h-4" />
                 </div>
-                <span className="font-mono text-[10px] font-bold text-emerald-500 uppercase flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-mono text-[10px] font-bold text-lime-400 dark:text-[#ccff00] uppercase flex items-center gap-1.5 border border-lime-400/30 bg-[#ccff00]/10 px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00] animate-pulse" />
                   Live Directory
                 </span>
               </div>
-              <h3 className="font-serif text-base font-bold text-zinc-950 dark:text-zinc-50">
+              <h3 className="font-serif text-base font-bold text-zinc-950 dark:text-zinc-50 group-hover:text-lime-400 dark:group-hover:text-[#ccff00] transition-colors">
                 Founder Network
               </h3>
               <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
@@ -177,17 +177,17 @@ export function HeroSection() {
               href="https://github.com/recoorg"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-[#0c0c0e]/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all group cursor-pointer"
+              className="p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-[#0c0c0e]/60 hover:border-[#ccff00] dark:hover:border-[#ccff00] transition-all group cursor-pointer"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-black flex items-center justify-center font-bold shadow-2xs group-hover:bg-[#FA5D00] group-hover:text-black transition-all">
+                <div className="w-9 h-9 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-black flex items-center justify-center font-bold shadow-2xs group-hover:bg-[#ccff00] group-hover:text-black transition-all">
                   <GithubIcon className="w-4 h-4" />
                 </div>
-                <span className="font-mono text-[10px] font-bold text-zinc-400 group-hover:text-[#FA5D00] transition-colors uppercase">
+                <span className="font-mono text-[10px] font-bold text-zinc-400 group-hover:text-[#ccff00] transition-colors uppercase">
                   100% Free ↗
                 </span>
               </div>
-              <h3 className="font-serif text-base font-bold text-zinc-950 dark:text-zinc-50">
+              <h3 className="font-serif text-base font-bold text-zinc-950 dark:text-zinc-50 group-hover:text-lime-400 dark:group-hover:text-[#ccff00] transition-colors">
                 Open Source Collective
               </h3>
               <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
@@ -201,7 +201,7 @@ export function HeroSection() {
           <div className="mt-5 pt-4 border-t border-zinc-200/80 dark:border-zinc-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-mono text-[11px] text-zinc-500 dark:text-zinc-400">
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1.5 text-zinc-900 dark:text-zinc-100 font-bold">
-                <Terminal className="w-3.5 h-3.5 text-[#FA5D00]" />
+                <Terminal className="w-3.5 h-3.5 text-[#ccff00]" />
                 reco.network
               </span>
               <span>·</span>
@@ -210,8 +210,8 @@ export function HeroSection() {
               <span>0% Middleman Cut</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>Guild Nodes Operational</span>
+              <span className="w-2 h-2 rounded-full bg-[#ccff00]" />
+              <span className="text-lime-400 dark:text-[#ccff00] font-semibold">Guild Nodes Operational</span>
             </div>
           </div>
         </div>

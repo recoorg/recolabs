@@ -146,7 +146,9 @@ export async function initDb() {
       );
 
       ALTER TABLE catalog_projects ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT true;
+      ALTER TABLE catalog_projects ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT false;
       CREATE INDEX IF NOT EXISTS idx_catalog_projects_approved ON catalog_projects(is_approved);
+      CREATE INDEX IF NOT EXISTS idx_catalog_projects_pinned ON catalog_projects(is_pinned);
       CREATE INDEX IF NOT EXISTS idx_catalog_projects_category ON catalog_projects(LOWER(category));
 
       CREATE TABLE IF NOT EXISTS project_sections (
@@ -999,7 +1001,7 @@ export async function listCatalogProjects(category?: string) {
       query += " AND LOWER(category) = LOWER($1)";
       params.push(category);
     }
-    query += " ORDER BY is_sponsored DESC, id DESC";
+    query += " ORDER BY COALESCE(is_pinned, false) DESC, is_sponsored DESC, id DESC";
     const res = await client.query(query, params);
     return res.rows;
   } finally {
@@ -1010,8 +1012,24 @@ export async function listCatalogProjects(category?: string) {
 export async function listAllCatalogProjectsAdmin() {
   const client = await pool.connect();
   try {
-    const res = await client.query("SELECT * FROM catalog_projects ORDER BY id DESC");
+    const res = await client.query("SELECT * FROM catalog_projects ORDER BY COALESCE(is_pinned, false) DESC, is_sponsored DESC, id DESC");
     return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function togglePinCatalogProject(id: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `UPDATE catalog_projects 
+       SET is_pinned = NOT COALESCE(is_pinned, false), updated_at = NOW() 
+       WHERE id = $1 
+       RETURNING *`,
+      [id]
+    );
+    return res.rows[0] || null;
   } finally {
     client.release();
   }

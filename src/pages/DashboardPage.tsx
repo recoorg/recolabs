@@ -42,6 +42,7 @@ import {
   Settings,
   Share2,
   ShieldCheck,
+  Pin,
 } from "lucide-react"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { networkApi, type UserProfile, type BuilderJob, type BuilderHackathon, type StartupItem } from "@/services/networkApi"
@@ -49,7 +50,7 @@ import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
 import { StartupPromoteModal } from "@/components/StartupPromoteModal"
 import { VerifiedBadge } from "@/components/VerifiedBadge"
 
-type DashboardSection = "overview" | "jobs" | "post-job" | "hackathons" | "post-hackathon" | "startups" | "settings"
+type DashboardSection = "overview" | "jobs" | "post-job" | "hackathons" | "post-hackathon" | "startups" | "settings" | "projects"
 
 export function DashboardPage() {
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
@@ -152,7 +153,7 @@ export function DashboardPage() {
   // Sync section with URL query
   React.useEffect(() => {
     const tabParam = searchParams.get("tab") as DashboardSection
-    if (tabParam && ["overview", "jobs", "post-job", "hackathons", "post-hackathon", "startups", "settings"].includes(tabParam)) {
+    if (tabParam && ["overview", "jobs", "post-job", "hackathons", "post-hackathon", "startups", "settings", "projects"].includes(tabParam)) {
       setActiveSection(tabParam)
     }
   }, [searchParams])
@@ -160,6 +161,69 @@ export function DashboardPage() {
   const setSection = (sec: DashboardSection) => {
     setActiveSection(sec)
     setSearchParams({ tab: sec })
+  }
+
+  const isAdmin = currentUser?.username === "rawenergon" || currentUser?.email === "devadibxr@gmail.com"
+
+  // Admin Project Pinning State
+  const [adminProjects, setAdminProjects] = React.useState<any[]>([])
+  const [loadingAdminProjects, setLoadingAdminProjects] = React.useState(false)
+  const [projectSearchQuery, setProjectSearchQuery] = React.useState("")
+  const [projectPinFilter, setProjectPinFilter] = React.useState<"all" | "pinned" | "unpinned">("all")
+  const [pinningId, setPinningId] = React.useState<string | null>(null)
+
+  const loadAdminProjects = React.useCallback(async () => {
+    setLoadingAdminProjects(true)
+    try {
+      const res = await fetch("/api/network/projects")
+      const data = await res.json()
+      if (data.projects && Array.isArray(data.projects)) {
+        setAdminProjects(data.projects)
+      }
+    } catch (err) {
+      console.error("Failed to load admin projects:", err)
+    } finally {
+      setLoadingAdminProjects(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (isAdmin && activeSection === "projects") {
+      loadAdminProjects()
+    }
+  }, [isAdmin, activeSection, loadAdminProjects])
+
+  const handleTogglePinInDashboard = async (id: string | number) => {
+    setPinningId(String(id))
+    try {
+      const token = networkApi.getToken()
+      const res = await fetch("/api/network/projects/pin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ id }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setAdminProjects((prev) =>
+          prev.map((p) =>
+            String(p.id) === String(id) ? { ...p, is_pinned: !p.is_pinned } : p
+          )
+        )
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ["#ccff00", "#FA5D00", "#ffffff"],
+        })
+      }
+    } catch (err) {
+      console.error("Error toggling pin in admin dash:", err)
+    } finally {
+      setPinningId(null)
+    }
   }
 
   // Load User and Listings
@@ -650,6 +714,25 @@ export function DashboardPage() {
                 Projects Catalogue
               </span>
             </button>
+
+            {/* 9. Admin Vault Projects Pinning */}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setSection("projects")}
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all group relative cursor-pointer ${
+                  activeSection === "projects"
+                    ? "bg-[#ccff00] text-black shadow-md font-bold"
+                    : "text-lime-500 hover:text-black dark:hover:text-[#ccff00] hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                }`}
+                title="Vault Projects Pinning (Admin)"
+              >
+                <Pin className={`w-5 h-5 ${activeSection === "projects" ? "fill-black rotate-45" : ""}`} />
+                <span className="hidden group-hover:block absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-black text-[#ccff00] dark:bg-zinc-800 text-[11px] font-mono whitespace-nowrap z-50 shadow-md border border-[#ccff00]/40">
+                  📌 Vault Pins (Admin)
+                </span>
+              </button>
+            )}
           </nav>
         </div>
 
@@ -740,6 +823,19 @@ export function DashboardPage() {
             >
               Events
             </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setSection("projects")}
+                className={`px-3 py-1.5 rounded-full transition-colors whitespace-nowrap ${
+                  activeSection === "projects"
+                    ? "bg-[#ccff00] text-black font-bold shadow-xs"
+                    : "bg-lime-950/40 text-lime-400 border border-lime-500/30"
+                }`}
+              >
+                📌 Vault Pins
+              </button>
+            )}
             <Link
               to={`/builder/${currentUser?.username || ""}`}
               className="px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
@@ -763,6 +859,7 @@ export function DashboardPage() {
               {activeSection === "post-job" && "Publish Opportunity."}
               {activeSection === "hackathons" && "Your Hosted Hackathons."}
               {activeSection === "post-hackathon" && "Schedule Hackathon."}
+              {activeSection === "projects" && "Vault Projects Pin Hierarchy."}
             </h1>
             <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-1">
               Signed in as <strong className="text-zinc-900 dark:text-zinc-100">{currentUser?.name}</strong> (@{currentUser?.username}).
@@ -2263,6 +2360,220 @@ export function DashboardPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
+        {/* SECTION: VAULT PROJECTS (ADMIN ONLY PIN CONTROL)              */}
+        {/* ------------------------------------------------------------- */}
+        {activeSection === "projects" && isAdmin && (
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl border editorial-hairline bg-white dark:bg-zinc-900/40">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ccff00] animate-pulse" />
+                  <span className="font-mono text-xs uppercase tracking-wider text-lime-400 dark:text-[#ccff00] font-bold">
+                    Admin Directory Control
+                  </span>
+                </div>
+                <h2 className="font-serif text-2xl sm:text-3xl text-zinc-950 dark:text-zinc-50 font-normal mt-1">
+                  Vault Projects Pinning
+                </h2>
+                <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Pinned projects strictly anchor to the top of /projects with high-contrast yellow-lime priority styling.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link
+                  to="/projects"
+                  target="_blank"
+                  className="px-4 py-2 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-xs font-semibold hover:border-[#ccff00] transition-colors flex items-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>View Live Directory</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => loadAdminProjects()}
+                  className="p-2 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                  title="Reload Projects"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingAdminProjects ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="py-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b editorial-hairline font-mono text-xs">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <input
+                  type="text"
+                  placeholder="Search project by name, tags, or category..."
+                  value={projectSearchQuery}
+                  onChange={(e) => setProjectSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#ccff00]"
+                />
+                {projectSearchQuery && (
+                  <button
+                    onClick={() => setProjectSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-black dark:hover:text-white"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Pin Filter Tabs */}
+              <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setProjectPinFilter("all")}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    projectPinFilter === "all"
+                      ? "bg-white dark:bg-zinc-900 text-black dark:text-white font-bold shadow-xs"
+                      : "text-zinc-500 hover:text-black dark:hover:text-white"
+                  }`}
+                >
+                  All ({adminProjects.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProjectPinFilter("pinned")}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                    projectPinFilter === "pinned"
+                      ? "bg-[#ccff00] text-black font-bold shadow-xs"
+                      : "text-lime-500 hover:text-black dark:hover:text-[#ccff00]"
+                  }`}
+                >
+                  <Pin className="w-3 h-3 fill-current" />
+                  <span>Pinned ({adminProjects.filter((p) => p.is_pinned).length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProjectPinFilter("unpinned")}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    projectPinFilter === "unpinned"
+                      ? "bg-white dark:bg-zinc-900 text-black dark:text-white font-bold shadow-xs"
+                      : "text-zinc-500 hover:text-black dark:hover:text-white"
+                  }`}
+                >
+                  Standard ({adminProjects.filter((p) => !p.is_pinned).length})
+                </button>
+              </div>
+            </div>
+
+            {/* Projects List */}
+            {loadingAdminProjects ? (
+              <div className="py-16 text-center">
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-zinc-400 mb-2" />
+                <p className="font-mono text-xs text-zinc-500">Querying catalog database...</p>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {adminProjects
+                  .filter((p) => {
+                    if (projectPinFilter === "pinned") return Boolean(p.is_pinned)
+                    if (projectPinFilter === "unpinned") return !p.is_pinned
+                    return true
+                  })
+                  .filter((p) => {
+                    if (!projectSearchQuery.trim()) return true
+                    const q = projectSearchQuery.toLowerCase()
+                    return (
+                      p.name?.toLowerCase().includes(q) ||
+                      p.tagline?.toLowerCase().includes(q) ||
+                      p.description?.toLowerCase().includes(q) ||
+                      p.category?.toLowerCase().includes(q) ||
+                      p.tags?.some?.((t: string) => t.toLowerCase().includes(q))
+                    )
+                  })
+                  .map((project) => {
+                    const isPinned = Boolean(project.is_pinned)
+                    const isProcessing = pinningId === String(project.id)
+
+                    return (
+                      <div
+                        key={project.id}
+                        className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                          isPinned
+                            ? "border-lime-400/60 bg-[#ccff00]/5 dark:bg-[#ccff00]/[0.03] shadow-xs"
+                            : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3.5 min-w-0">
+                          {/* Project Icon */}
+                          <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-sm flex-none overflow-hidden border border-zinc-700">
+                            {project.icon_url ? (
+                              <img src={project.icon_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              project.name?.charAt(0) || "P"
+                            )}
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-serif text-lg font-bold text-zinc-950 dark:text-zinc-50 truncate">
+                                {project.name}
+                              </h4>
+                              {project.category && (
+                                <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                                  {project.category}
+                                </span>
+                              )}
+                              {isPinned && (
+                                <span className="font-mono text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#ccff00] text-black border border-lime-400 flex items-center gap-1 shadow-xs">
+                                  <Pin className="w-2.5 h-2.5 fill-black" />
+                                  <span>PINNED TO TOP</span>
+                                </span>
+                              )}
+                            </div>
+                            <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1 mt-0.5">
+                              {project.tagline || project.description || "No description provided."}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2.5 flex-none sm:self-center">
+                          {project.url && (
+                            <a
+                              href={project.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-2 rounded-xl border editorial-hairline text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
+                              title="Visit project website"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          )}
+
+                          <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={() => handleTogglePinInDashboard(project.id)}
+                            className={`px-4 py-2 rounded-xl font-mono text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95 ${
+                              isPinned
+                                ? "bg-zinc-900 text-zinc-300 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/40 border border-zinc-700"
+                                : "bg-[#ccff00] text-black hover:bg-[#b8e600] border border-lime-400 shadow-md shadow-[#ccff00]/30"
+                            }`}
+                          >
+                            <Pin className={`w-3.5 h-3.5 ${isPinned ? "fill-current" : ""}`} />
+                            <span>
+                              {isProcessing
+                                ? "Saving..."
+                                : isPinned
+                                ? "Unpin Project"
+                                : "Pin to Top"}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
           </div>
         )}
         {/* EDIT STARTUP MODAL */}

@@ -37,6 +37,7 @@ import {
   listAllCatalogProjectsAdmin,
   createCatalogProject,
   updateCatalogProject,
+  togglePinCatalogProject,
   deleteCatalogProject,
   listProjectSections,
   createProjectSection,
@@ -98,7 +99,19 @@ function checkAdminAuth(req: IncomingMessage | any): boolean {
     "recolabs2026",
   ].filter(Boolean)
 
-  return validKeys.includes(provided)
+  if (validKeys.includes(provided)) return true
+
+  // Also verify logged in admin session
+  try {
+    if (bearerKey) {
+      const decoded = verifyToken(bearerKey)
+      if (decoded && (decoded.username === "rawenergon" || decoded.email === "devadibxr@gmail.com")) {
+        return true
+      }
+    }
+  } catch {}
+
+  return false
 }
 
 export async function handleNetworkRequest(req: IncomingMessage | any, res: ServerResponse | any): Promise<void> {
@@ -977,6 +990,38 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       }
       const isApproved = body.is_approved !== undefined ? Boolean(body.is_approved) : true;
       const updated = await updateCatalogProject(id, { is_approved: isApproved });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, project: updated }));
+      return;
+    }
+
+    // 14C-3. PIN / UNPIN CATALOG PROJECT TO TOP: POST /api/network/projects/pin
+    if (
+      req.method === "POST" &&
+      (pathname === "/api/network/projects/pin" ||
+       pathname === "/api/projects/pin" ||
+       (pathname.startsWith("/api/network/projects/") && pathname.endsWith("/pin")))
+    ) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Administrative privileges required." }));
+        return;
+      }
+      const body = await parseBody();
+      let projectId = body.id || body.projectId;
+      if (!projectId && pathname.includes("/pin")) {
+        const parts = pathname.split("/");
+        const idIdx = parts.indexOf("projects") + 1;
+        if (idIdx > 0 && idIdx < parts.length) {
+          projectId = parseInt(parts[idIdx], 10);
+        }
+      }
+      if (!projectId) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid project ID is required." }));
+        return;
+      }
+      const updated = await togglePinCatalogProject(Number(projectId));
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, project: updated }));
       return;

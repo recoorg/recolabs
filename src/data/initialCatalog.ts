@@ -12,6 +12,7 @@ export interface CatalogProject {
   preview_image_url?: string
   isSponsored?: boolean
   sponsoredLabel?: string
+  is_pinned?: boolean
   tags: string[]
   stars?: number
   timestamp?: string
