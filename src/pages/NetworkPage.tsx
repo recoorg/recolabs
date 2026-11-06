@@ -254,6 +254,10 @@ export function NetworkPage() {
 
   const handlePostStartupComment = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!currentUser) {
+      setShowAuthModal(true)
+      return
+    }
     if (!selectedStartup?.id || !commentText.trim() || submittingComment) return
     setSubmittingComment(true)
     const authorName = currentUser?.name || "Curious Builder"
@@ -267,7 +271,7 @@ export function NetworkPage() {
       authorAvatar,
     })
     if (res.success && res.comment) {
-      setStartupComments((prev) => [...prev, res.comment])
+      setStartupComments((prev) => [res.comment, ...prev])
       setCommentText("")
       setCommentSuccessMsg("Feedback posted!")
       setTimeout(() => setCommentSuccessMsg(""), 3000)
@@ -564,159 +568,120 @@ export function NetworkPage() {
   }
 
   return (
-    <div className="relative w-full pt-32 sm:pt-36 pb-24 px-5 sm:px-8 bg-transparent overflow-hidden">
+    <div className="relative w-full pt-28 sm:pt-32 pb-24 px-4 sm:px-8 bg-transparent overflow-hidden">
       {/* Seamless ambient blurred glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/3 -left-40 w-[600px] h-[600px] bg-orange-500/[0.02] dark:bg-orange-500/[0.03] rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#ccff00]/[0.025] dark:bg-[#ccff00]/[0.035] rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/3 -left-40 w-[600px] h-[600px] bg-lime-400/[0.02] dark:bg-lime-400/[0.03] rounded-full blur-3xl pointer-events-none" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">
         
         {/* ======================================================== */}
-        {/* 1. GUEST HERO SECTION (Visible ONLY when not logged in)   */}
+        {/* 1. MINIMAL ANIMATED HERO SECTION (Responsive & Clean)    */}
         {/* ======================================================== */}
-        {!currentUser ? (
-          <div className="text-center max-w-4xl mx-auto pb-12 pt-4">
-            {/* Top Pill / Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-mono text-xs font-bold tracking-wide shadow-md mb-6 hover:opacity-90 transition-opacity">
-              <span className="text-amber-400">✨</span>
-              <span>NEW: Introducing Reco Network</span>
-              <ArrowUpRight className="w-3.5 h-3.5 opacity-75" />
+        <div className="relative pt-2 pb-8 sm:pb-10 border-b border-zinc-200/80 dark:border-zinc-800/80">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 sm:gap-8">
+            <div className="max-w-2xl space-y-3">
+              {/* Animated Live Launchpad Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-xs font-mono text-[10px] sm:text-[11px] text-zinc-800 dark:text-zinc-200">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ccff00] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ccff00]" />
+                </span>
+                <span className="font-black uppercase tracking-wider text-[#ccff00]">
+                  LIVE LAUNCHPAD
+                </span>
+                <span className="text-zinc-300 dark:text-zinc-700">|</span>
+                <span className="text-zinc-500 dark:text-zinc-400 font-semibold">
+                  Founder Network
+                </span>
+              </div>
+
+              {/* Minimal Editorial Title */}
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-[1.08]">
+                Ship with pride<span className="text-[#ccff00]">.</span>
+                <br />
+                <span className="italic font-light text-zinc-500 dark:text-zinc-400">
+                  Backed by peer proof.
+                </span>
+              </h1>
+
+              {/* Subtitle */}
+              <p className="font-sans text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-xl">
+                Curated open-source software, indie products, and hardware from verified builders. Discover tools, evaluate on Idea, Execution & Design, and connect directly.
+              </p>
+
+              {/* Guest Claim Strip (Only if not logged in) */}
+              {!currentUser && (
+                <div className="pt-2 flex flex-wrap items-center gap-2.5 font-mono text-xs">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 shadow-xs focus-within:border-[#ccff00] transition-colors">
+                    <span className="text-zinc-400 text-[11px] select-none">recolabs.in/builder/</span>
+                    <input
+                      type="text"
+                      value={claimUsername}
+                      onChange={(e) => setClaimUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleClaimUsername()
+                      }}
+                      placeholder="yourname"
+                      className="w-24 sm:w-28 bg-transparent font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleClaimUsername()}
+                      className="w-5 h-5 rounded-full bg-[#ccff00] text-black flex items-center justify-center hover:bg-[#b8e600] active:scale-95 transition-all cursor-pointer"
+                      title="Claim builder profile"
+                    >
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode("login")
+                      setShowAuthModal(true)
+                    }}
+                    className="px-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 hover:border-[#ccff00] bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-bold transition-all cursor-pointer text-xs"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Headline */}
-            <h1 className="font-serif italic text-4xl sm:text-6xl lg:text-7xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-[1.12]">
-              The Professional Network
-              <br />
-              <span className="not-italic">for builders to show & tell!</span>
-            </h1>
-
-            {/* Subtitle */}
-            <p className="mt-5 font-sans text-base sm:text-lg text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed max-w-xl mx-auto">
-              Showcase your work, launch projects, find jobs, and connect with the most (in)credible people.
-            </p>
-
-            {/* Username Claim Pill Input */}
-            <div className="mt-8 max-w-xl sm:max-w-2xl mx-auto w-full px-2 sm:px-4">
-              <div className="flex items-center gap-2 sm:gap-3 px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-full border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg hover:border-[#FA5D00] focus-within:border-[#FA5D00] transition-all">
-                <div className="w-8 h-8 rounded-full bg-[#FA5D00] p-1.5 flex items-center justify-center flex-none shadow-sm overflow-hidden">
-                  <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0" />
-                </div>
-                <span className="font-mono text-xs sm:text-sm font-semibold text-zinc-500 dark:text-zinc-400 select-none whitespace-nowrap">
-                  recolabs.in/builder/
-                </span>
-                <input
-                  type="text"
-                  value={claimUsername}
-                  onChange={(e) => setClaimUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleClaimUsername()
-                  }}
-                  placeholder="username"
-                  className="flex-grow min-w-0 bg-transparent font-mono text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none"
-                />
+            {/* Directory Switcher Tabs: Projects & Builders (NO NUMBERS!) */}
+            <div className="flex-none self-start lg:self-end">
+              <div className="inline-flex items-center p-1 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-xs font-mono text-xs">
                 <button
-                  onClick={() => handleClaimUsername()}
-                  title="Claim or view builder profile"
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black flex items-center justify-center transition-all shadow-sm active:scale-95 flex-none cursor-pointer"
+                  type="button"
+                  onClick={() => setActiveDirectoryTab("startups")}
+                  className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                    activeDirectoryTab === "startups"
+                      ? "bg-[#ccff00] text-black shadow-sm font-black"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100"
+                  }`}
                 >
-                  <ArrowRight className="w-4 h-4" />
+                  <Rocket className="w-3.5 h-3.5" />
+                  <span>Projects</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveDirectoryTab("builders")}
+                  className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                    activeDirectoryTab === "builders"
+                      ? "bg-[#ccff00] text-black shadow-sm font-black"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100"
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Builders</span>
                 </button>
               </div>
-              <p className="mt-2 text-center font-mono text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400">
-                Claim your username before it's too late!
-              </p>
-            </div>
-
-            {/* Interactive Avatar Honeycomb Cloud */}
-            <div className="mt-8">
-              <NetworkAvatarCloud
-                realUsers={networkStats.builders}
-                onSelectUsername={(u) => navigate(`/builder/${u}`)}
-              />
-            </div>
-
-            {/* Real Peers Counter */}
-            <div className="mt-6 flex flex-col items-center justify-center">
-              <div className="font-serif text-lg sm:text-xl text-zinc-700 dark:text-zinc-300">
-                <span className="font-bold text-zinc-950 dark:text-zinc-50">
-                  {networkStats.totalBuilders || (networkStats.builders?.length || 0)}
-                </span>{" "}
-                <span>peers and counting...</span>
-              </div>
-            </div>
-
-            {/* Guest Action Row */}
-            <div className="mt-10 flex flex-wrap justify-center items-center gap-3 pt-8 border-t editorial-hairline">
-              <button
-                onClick={() => {
-                  setAuthMode("signup")
-                  setShowAuthModal(true)
-                }}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
-              >
-                <Rocket className="w-3.5 h-3.5 fill-black" />
-                <span>List Your Project</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
-
-              <button
-                onClick={() => {
-                  setAuthMode("login")
-                  setShowAuthModal(true)
-                }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-black dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:border-[#FA5D00] transition-colors cursor-pointer"
-              >
-                <LogIn className="w-3.5 h-3.5 text-[#FA5D00]" />
-                <span>Founder Sign In / Register</span>
-              </button>
             </div>
           </div>
-        ) : (
-          /* ======================================================== */
-          /* 2. AUTHENTICATED CLEAN DIRECTORY HEADER                  */
-          /* ======================================================== */
-          <div className="pt-2 pb-6 border-b editorial-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal">
-                Projects &amp; Founder Launchpad<span className="text-[#ccff00]">.</span>
-              </h1>
-              <p className="font-sans text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                Curated peer software, developer tools, and prototypes across the guild.
-              </p>
-            </div>
-
-            {/* Directory Switcher Tabs */}
-            <div className="flex items-center gap-2 font-mono text-xs">
-              <button
-                type="button"
-                onClick={() => setActiveDirectoryTab("startups")}
-                className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                  activeDirectoryTab === "startups"
-                    ? "bg-[#ccff00] text-black shadow-sm font-black"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                }`}
-              >
-                <Rocket className="w-3.5 h-3.5" />
-                <span>Projects ({startups.length})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveDirectoryTab("builders")}
-                className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                  activeDirectoryTab === "builders"
-                    ? "bg-[#ccff00] text-black shadow-sm font-black"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                }`}
-              >
-                <User className="w-3.5 h-3.5" />
-                <span>Builders ({builders.length || networkStats.totalBuilders || 19})</span>
-              </button>
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* ======================================================== */}
         {/* 3. STARTUPS DIRECTORY (Always visible for all builders!)   */}
@@ -1856,37 +1821,57 @@ export function NetworkPage() {
                   </div>
 
                   {/* Community Feedback Input Box */}
-                  <form onSubmit={handlePostStartupComment} className="mt-4">
-                    <div className="flex items-center gap-2 p-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/90 shadow-2xs focus-within:ring-2 focus-within:ring-[#FA5D00]/50 transition-all">
-                      <div className="w-7 h-7 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold flex items-center justify-center flex-none ml-1">
-                        {(currentUser?.name || "B")[0].toUpperCase()}
-                      </div>
-                      <input
-                        type="text"
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        placeholder="Share your feedback or advice for this builder..."
-                        className="flex-grow bg-transparent font-sans text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none px-2"
-                      />
+                  {!currentUser ? (
+                    <div className="mt-4 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 text-xs font-mono">
+                      <span className="text-zinc-600 dark:text-zinc-400">
+                        Sign in to leave verified feedback for this builder.
+                      </span>
                       <button
-                        type="submit"
-                        disabled={submittingComment || !commentText.trim()}
-                        className="w-8 h-8 rounded-full bg-[#FA5D00] text-black hover:opacity-90 active:scale-95 flex items-center justify-center transition-all cursor-pointer flex-none disabled:opacity-40"
+                        type="button"
+                        onClick={() => setShowAuthModal(true)}
+                        className="px-4 py-2 rounded-full bg-[#ccff00] text-black font-bold uppercase tracking-wider hover:bg-[#b8e600] transition-colors cursor-pointer flex-none text-[11px]"
                       >
-                        <Send className="w-3.5 h-3.5" />
+                        Sign In
                       </button>
                     </div>
-                    {commentSuccessMsg && (
-                      <p className="mt-1.5 text-center font-mono text-xs text-emerald-600 dark:text-emerald-400 animate-in fade-in">
-                        {commentSuccessMsg}
-                      </p>
-                    )}
-                  </form>
+                  ) : (
+                    <form onSubmit={handlePostStartupComment} className="mt-4">
+                      <div className="flex items-center gap-2 p-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/90 shadow-2xs focus-within:ring-2 focus-within:ring-[#ccff00]/60 transition-all">
+                        <div className="w-7 h-7 rounded-full bg-[#ccff00] text-black font-mono text-xs font-black flex items-center justify-center flex-none ml-1 overflow-hidden">
+                          {currentUser.avatar_url ? (
+                            <img src={currentUser.avatar_url} alt={currentUser.name} className="w-full h-full object-cover" />
+                          ) : (
+                            (currentUser.name || "B")[0].toUpperCase()
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          placeholder="Share feedback or advice for this builder..."
+                          className="flex-grow bg-transparent font-sans text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none px-2"
+                        />
+                        <button
+                          type="submit"
+                          disabled={submittingComment || !commentText.trim()}
+                          className="w-8 h-8 rounded-full bg-[#ccff00] text-black hover:bg-[#b8e600] active:scale-95 flex items-center justify-center transition-all cursor-pointer flex-none disabled:opacity-40"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      {commentSuccessMsg && (
+                        <p className="mt-1.5 text-center font-mono text-xs text-emerald-600 dark:text-emerald-400 animate-in fade-in">
+                          {commentSuccessMsg}
+                        </p>
+                      )}
+                    </form>
+                  )}
 
-                  {/* Comments Tab (NO UPVOTES TAB) */}
-                  <div className="border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-6 font-mono text-xs font-bold tracking-wider pt-2">
-                    <div className="pb-2 text-[#FA5D00] border-b-2 border-[#FA5D00] uppercase">
-                      Comments · {startupComments.length}
+                  {/* Comments Header */}
+                  <div className="border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between font-mono text-xs font-bold tracking-wider pt-3 pb-2">
+                    <div className="text-zinc-900 dark:text-zinc-100 uppercase flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-[#ccff00]" />
+                      <span>Peer Reviews ({startupComments.length})</span>
                     </div>
                   </div>
 
@@ -1894,7 +1879,7 @@ export function NetworkPage() {
                   <div className="space-y-3 pt-2">
                     {loadingComments ? (
                       <div className="py-6 text-center text-xs font-mono text-zinc-400 flex items-center justify-center gap-2">
-                        <RefreshCw className="w-4 h-4 animate-spin text-[#FA5D00]" />
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#ccff00]" />
                         <span>Loading feedback...</span>
                       </div>
                     ) : startupComments.length === 0 ? (
@@ -1902,21 +1887,52 @@ export function NetworkPage() {
                         No feedback yet. Be the first peer to leave a review!
                       </div>
                     ) : (
-                      startupComments.map((c) => (
-                        <div key={c.id} className="p-4 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-1">
-                          <div className="flex items-center justify-between text-xs font-mono">
-                            <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                              {c.author_name}
-                            </span>
-                            <span className="text-zinc-400 text-[10px]">
-                              {new Date(c.created_at).toLocaleDateString()}
-                            </span>
+                      startupComments.map((c) => {
+                        const avatarUrl =
+                          c.author_avatar ||
+                          `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
+                            c.author_username || c.author_name
+                          )}`
+                        return (
+                          <div
+                            key={c.id}
+                            className="p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/50 border border-zinc-200/90 dark:border-zinc-800/90 space-y-2 hover:border-[#ccff00]/40 transition-colors"
+                          >
+                            <div className="flex items-center justify-between text-xs font-mono">
+                              <div className="flex items-center gap-2">
+                                <img
+                                  src={avatarUrl}
+                                  alt={c.author_name}
+                                  className="w-5 h-5 rounded-full object-cover border border-zinc-200 dark:border-zinc-700"
+                                  onError={(e) => {
+                                    ;(e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
+                                      c.author_name
+                                    )}`
+                                  }}
+                                />
+                                {c.author_username ? (
+                                  <Link
+                                    to={`/builder/${c.author_username}`}
+                                    className="font-bold text-zinc-900 dark:text-zinc-100 hover:text-[#ccff00] transition-colors"
+                                  >
+                                    {c.author_name}
+                                  </Link>
+                                ) : (
+                                  <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                                    {c.author_name}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-zinc-400 text-[10px]">
+                                {new Date(c.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="font-sans text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed pl-7">
+                              {c.content}
+                            </p>
                           </div>
-                          <p className="font-sans text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                            {c.content}
-                          </p>
-                        </div>
-                      ))
+                        )
+                      })
                     )}
                   </div>
                 </div>
@@ -2153,20 +2169,20 @@ export function NetworkPage() {
         />
       )}
 
-      {/* FLOATING ACTION BUTTON: + IN A BOX TO LIST PROJECT */}
+      {/* FLOATING ACTION BUTTON: ONLY + IN A BOX */}
       <button
         type="button"
         onClick={() => {
           if (!currentUser) setShowAuthModal(true)
           else setShowPostModal(true)
         }}
-        title="List Your Project"
-        className="fixed bottom-6 right-6 z-40 group flex items-center gap-2.5 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl bg-[#ccff00] text-black hover:bg-[#b8e600] font-mono text-xs font-black uppercase tracking-wider shadow-2xl shadow-[#ccff00]/40 border-2 border-black dark:border-zinc-800 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+        title="List Project"
+        aria-label="List Project"
+        className="fixed bottom-6 right-6 z-40 group w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#ccff00] text-black hover:bg-[#b8e600] flex items-center justify-center shadow-2xl shadow-[#ccff00]/40 border-2 border-black dark:border-zinc-800 transition-all hover:scale-110 active:scale-95 cursor-pointer"
       >
-        <span className="w-6 h-6 rounded-md bg-black text-[#ccff00] flex items-center justify-center font-mono font-black text-sm border border-black/30 group-hover:rotate-90 transition-transform duration-200">
+        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-black text-[#ccff00] flex items-center justify-center font-mono font-black text-base sm:text-lg border border-black/30 group-hover:rotate-90 transition-transform duration-200">
           +
-        </span>
-        <span className="font-mono font-bold tracking-wider">List Project</span>
+        </div>
       </button>
     </div>
   )
