@@ -266,6 +266,51 @@ async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_builder_hackathons_approved ON builder_hackathons(is_approved);
       CREATE INDEX IF NOT EXISTS idx_builder_hackathons_user ON builder_hackathons(user_id);
       CREATE INDEX IF NOT EXISTS idx_builder_hackathons_start ON builder_hackathons(start_date DESC);
+
+      -- Dedicated Launchpad Products & Upvotes Tables
+      CREATE TABLE IF NOT EXISTS launchpad_products (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        founder_username TEXT,
+        founder_name TEXT NOT NULL,
+        name TEXT NOT NULL,
+        tagline TEXT,
+        problem_solving TEXT NOT NULL,
+        url TEXT NOT NULL,
+        category TEXT DEFAULT 'Software',
+        stage TEXT DEFAULT 'Prototype',
+        logo_url TEXT,
+        media_url TEXT,
+        upvotes_count INTEGER DEFAULT 0,
+        comments_count INTEGER DEFAULT 0,
+        is_featured BOOLEAN DEFAULT false,
+        featured_until TIMESTAMPTZ,
+        boosted_at TIMESTAMPTZ,
+        is_approved BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_launchpad_products_created ON launchpad_products(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_launchpad_products_upvotes ON launchpad_products(upvotes_count DESC);
+      CREATE INDEX IF NOT EXISTS idx_launchpad_products_category ON launchpad_products(LOWER(category));
+
+      CREATE TABLE IF NOT EXISTS launchpad_upvotes (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER REFERENCES launchpad_products(id) ON DELETE CASCADE,
+        user_id INTEGER,
+        ip_address TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(product_id, user_id)
+      );
+
+      -- Auto-seed launchpad_products from startups if empty
+      INSERT INTO launchpad_products (
+        user_id, founder_username, founder_name, name, tagline, problem_solving, url, category, stage, logo_url, media_url, upvotes_count, comments_count, is_featured, is_approved, created_at
+      )
+      SELECT 
+        user_id, founder_username, founder_name, name, tagline, problem_solving, url, category, stage, logo_url, media_url, upvotes_count, comments_count, is_featured, is_approved, created_at
+      FROM startups
+      WHERE NOT EXISTS (SELECT 1 FROM launchpad_products LIMIT 1);
     `);
   } finally {
     client.release();
@@ -1876,6 +1921,142 @@ async function createPostComment({
     client.release();
   }
 }
+async function listLaunchpadProducts({
+  category,
+  search,
+  userId
+} = {}) {
+  const client = await pool.connect();
+  try {
+    let query = `
+      SELECT p.*,
+             COALESCE(u.is_verified, false) as is_verified,
+             COALESCE(u.is_pro, false) as is_pro,
+             COALESCE(u.avatar_url, p.logo_url) as founder_avatar,
+             u.plan,
+             EXISTS(
+               SELECT 1 FROM launchpad_upvotes uv 
+               WHERE uv.product_id = p.id AND uv.user_id = $1
+             ) as has_upvoted
+      FROM launchpad_products p
+      LEFT JOIN users u ON p.user_id = u.id
+      WHERE p.is_approved = true
+    `;
+    const params = [userId || null];
+    let pIdx = 2;
+    if (category && category !== "ALL") {
+      query += ` AND LOWER(p.category) = LOWER($${pIdx})`;
+      params.push(category);
+      pIdx++;
+    }
+    if (search && search.trim()) {
+      const q = `%${search.trim().toLowerCase()}%`;
+      query += ` AND (LOWER(p.name) LIKE $${pIdx} OR LOWER(p.problem_solving) LIKE $${pIdx} OR LOWER(p.tagline) LIKE $${pIdx} OR LOWER(p.founder_name) LIKE $${pIdx} OR LOWER(p.founder_username) LIKE $${pIdx})`;
+      params.push(q);
+      pIdx++;
+    }
+    query += ` ORDER BY p.is_featured DESC, p.upvotes_count DESC, p.created_at DESC LIMIT 100`;
+    const res = await client.query(query, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function createLaunchpadProduct({
+  userId,
+  founderName,
+  founderUsername,
+  name,
+  tagline,
+  problemSolving,
+  url,
+  category = "Software",
+  stage = "Prototype",
+  logoUrl,
+  mediaUrl
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO launchpad_products (
+        user_id, founder_name, founder_username, name, tagline, problem_solving, url, category, stage, logo_url, media_url, upvotes_count, is_approved
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 1, true)
+      RETURNING *`,
+      [
+        userId,
+        founderName,
+        founderUsername || null,
+        name,
+        tagline || null,
+        problemSolving,
+        url,
+        category,
+        stage,
+        logoUrl || null,
+        mediaUrl || null
+      ]
+    );
+    const newProduct = res.rows[0];
+    await client.query(
+      `INSERT INTO launchpad_upvotes (product_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [newProduct.id, userId]
+    );
+    return newProduct;
+  } finally {
+    client.release();
+  }
+}
+async function toggleLaunchpadUpvote({
+  productId,
+  userId,
+  ipAddress
+}) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    let hasUpvoted = false;
+    if (userId) {
+      const existing = await client.query(
+        "SELECT id FROM launchpad_upvotes WHERE product_id = $1 AND user_id = $2",
+        [productId, userId]
+      );
+      if (existing.rows.length > 0) {
+        await client.query("DELETE FROM launchpad_upvotes WHERE product_id = $1 AND user_id = $2", [productId, userId]);
+        await client.query("UPDATE launchpad_products SET upvotes_count = GREATEST(0, upvotes_count - 1) WHERE id = $1", [productId]);
+        hasUpvoted = false;
+      } else {
+        await client.query("INSERT INTO launchpad_upvotes (product_id, user_id, ip_address) VALUES ($1, $2, $3)", [productId, userId, ipAddress || null]);
+        await client.query("UPDATE launchpad_products SET upvotes_count = upvotes_count + 1 WHERE id = $1", [productId]);
+        hasUpvoted = true;
+      }
+    } else {
+      const existing = await client.query(
+        "SELECT id FROM launchpad_upvotes WHERE product_id = $1 AND ip_address = $2",
+        [productId, ipAddress || "unknown"]
+      );
+      if (existing.rows.length > 0) {
+        await client.query("DELETE FROM launchpad_upvotes WHERE product_id = $1 AND ip_address = $2", [productId, ipAddress || "unknown"]);
+        await client.query("UPDATE launchpad_products SET upvotes_count = GREATEST(0, upvotes_count - 1) WHERE id = $1", [productId]);
+        hasUpvoted = false;
+      } else {
+        await client.query("INSERT INTO launchpad_upvotes (product_id, ip_address) VALUES ($1, $2)", [productId, ipAddress || "unknown"]);
+        await client.query("UPDATE launchpad_products SET upvotes_count = upvotes_count + 1 WHERE id = $1", [productId]);
+        hasUpvoted = true;
+      }
+    }
+    const countRes = await client.query("SELECT upvotes_count FROM launchpad_products WHERE id = $1", [productId]);
+    await client.query("COMMIT");
+    return {
+      hasUpvoted,
+      upvotesCount: countRes.rows[0]?.upvotes_count || 0
+    };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
 
 // server/apiRouter.ts
 function escapeHtml(str) {
@@ -2066,6 +2247,67 @@ async function handleNetworkRequest(req, res) {
       const auth = getAuthUser();
       const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim();
       const result = await toggleStartupUpvote(startupId, auth?.id, ip);
+      res.statusCode = 200;
+      res.end(JSON.stringify(result));
+      return;
+    }
+    if (req.method === "GET" && pathname === "/api/network/launchpad") {
+      const category = searchParams.get("category") || void 0;
+      const search = searchParams.get("search") || void 0;
+      const auth = getAuthUser();
+      const products = await listLaunchpadProducts({ category, search, userId: auth?.id });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, launches: products }));
+      return;
+    }
+    if (req.method === "POST" && pathname === "/api/network/launchpad") {
+      const auth = getAuthUser();
+      if (!auth) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Authentication required to launch product." }));
+        return;
+      }
+      const body = await parseBody();
+      if (!body.name || !body.problem_solving && !body.problemSolving || !body.url) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Name, problem solving, and demo URL are required." }));
+        return;
+      }
+      const user = await getUserById(auth.id);
+      const product = await createLaunchpadProduct({
+        userId: auth.id,
+        founderName: user?.name || body.founderName || "Builder",
+        founderUsername: user?.username || body.founderUsername || "",
+        name: String(body.name || "").trim(),
+        tagline: body.tagline || null,
+        problemSolving: String(body.problem_solving || body.problemSolving || "").trim(),
+        url: String(body.url || "").trim(),
+        category: body.category || "Software",
+        stage: body.stage || "Prototype",
+        logoUrl: body.logo_url || body.logoUrl || null,
+        mediaUrl: body.media_url || body.mediaUrl || null
+      });
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, launch: product }));
+      return;
+    }
+    if (req.method === "POST" && (pathname.startsWith("/api/network/launchpad/") && pathname.endsWith("/upvote") || pathname === "/api/network/launchpad/upvote")) {
+      let productId = 0;
+      if (pathname === "/api/network/launchpad/upvote") {
+        const body = await parseBody();
+        productId = parseInt(body.productId || body.id || "0", 10);
+      } else {
+        const match = pathname.match(/\/api\/network\/launchpad\/(\d+)\/upvote/);
+        productId = match ? parseInt(match[1], 10) : 0;
+      }
+      if (!productId) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid product ID required for upvote." }));
+        return;
+      }
+      const auth = getAuthUser();
+      const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim();
+      const result = await toggleLaunchpadUpvote({ productId, userId: auth?.id, ipAddress: ip });
       res.statusCode = 200;
       res.end(JSON.stringify(result));
       return;

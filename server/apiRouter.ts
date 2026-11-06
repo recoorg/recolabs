@@ -80,6 +80,9 @@ import {
   togglePostUpvote,
   listPostComments,
   createPostComment,
+  listLaunchpadProducts,
+  createLaunchpadProduct,
+  toggleLaunchpadUpvote,
 } from "./db.js"
 
 // Anti-misuse security guard: Verifies admin master credentials
@@ -300,6 +303,75 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const auth = getAuthUser()
       const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim()
       const result = await toggleStartupUpvote(startupId, auth?.id, ip)
+      res.statusCode = 200
+      res.end(JSON.stringify(result))
+      return
+    }
+
+    // 6.2B DEDICATED LAUNCHPAD PRODUCTS: GET /api/network/launchpad, POST /api/network/launchpad, POST /api/network/launchpad/:id/upvote
+    if (req.method === "GET" && pathname === "/api/network/launchpad") {
+      const category = searchParams.get("category") || undefined
+      const search = searchParams.get("search") || undefined
+      const auth = getAuthUser()
+      const products = await listLaunchpadProducts({ category, search, userId: auth?.id })
+      res.statusCode = 200
+      res.end(JSON.stringify({ success: true, launches: products }))
+      return
+    }
+
+    if (req.method === "POST" && pathname === "/api/network/launchpad") {
+      const auth = getAuthUser()
+      if (!auth) {
+        res.statusCode = 401
+        res.end(JSON.stringify({ error: "Authentication required to launch product." }))
+        return
+      }
+      const body = await parseBody()
+      if (!body.name || !body.problem_solving && !body.problemSolving || !body.url) {
+        res.statusCode = 400
+        res.end(JSON.stringify({ error: "Name, problem solving, and demo URL are required." }))
+        return
+      }
+      const user = await getUserById(auth.id)
+      const product = await createLaunchpadProduct({
+        userId: auth.id,
+        founderName: user?.name || body.founderName || "Builder",
+        founderUsername: user?.username || body.founderUsername || "",
+        name: String(body.name || "").trim(),
+        tagline: body.tagline || null,
+        problemSolving: String(body.problem_solving || body.problemSolving || "").trim(),
+        url: String(body.url || "").trim(),
+        category: body.category || "Software",
+        stage: body.stage || "Prototype",
+        logoUrl: body.logo_url || body.logoUrl || null,
+        mediaUrl: body.media_url || body.mediaUrl || null,
+      })
+      res.statusCode = 201
+      res.end(JSON.stringify({ success: true, launch: product }))
+      return
+    }
+
+    if (
+      req.method === "POST" &&
+      ((pathname.startsWith("/api/network/launchpad/") && pathname.endsWith("/upvote")) ||
+        pathname === "/api/network/launchpad/upvote")
+    ) {
+      let productId = 0
+      if (pathname === "/api/network/launchpad/upvote") {
+        const body = await parseBody()
+        productId = parseInt(body.productId || body.id || "0", 10)
+      } else {
+        const match = pathname.match(/\/api\/network\/launchpad\/(\d+)\/upvote/)
+        productId = match ? parseInt(match[1], 10) : 0
+      }
+      if (!productId) {
+        res.statusCode = 400
+        res.end(JSON.stringify({ error: "Valid product ID required for upvote." }))
+        return
+      }
+      const auth = getAuthUser()
+      const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim()
+      const result = await toggleLaunchpadUpvote({ productId, userId: auth?.id, ipAddress: ip })
       res.statusCode = 200
       res.end(JSON.stringify(result))
       return
