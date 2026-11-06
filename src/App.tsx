@@ -34,6 +34,26 @@ function GlobalOAuthListener() {
       networkApi.handleOAuthCallback().then((res) => {
         if (res?.user) {
           window.dispatchEvent(new Event("reco_auth_changed"))
+          
+          // Check if user came from Launchpad or external origin
+          const searchParams = new URLSearchParams(window.location.search)
+          const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""))
+          const returnTo = searchParams.get("return_to") || hashParams.get("return_to") || localStorage.getItem("reco_return_to")
+          
+          if (returnTo) {
+            localStorage.removeItem("reco_return_to")
+            const token = networkApi.getToken()
+            try {
+              const targetUrl = new URL(returnTo)
+              if (token) targetUrl.searchParams.set("sso_token", token)
+              window.location.href = targetUrl.toString()
+              return
+            } catch {
+              window.location.href = returnTo
+              return
+            }
+          }
+
           if (window.location.pathname === "/" || window.location.pathname === "") {
             navigate("/network")
           }

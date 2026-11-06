@@ -59,6 +59,7 @@ export function Navbar() {
   const navLinks: NavItem[] = [
     { label: "ABOUT", path: "/about" },
     { label: "JOBS", path: "/jobs" },
+    { label: "PROJECTS", path: "/projects" },
     { label: "LAUNCHPAD", path: "https://recolabslauch.vercel.app", external: true },
     { label: "HACKATHONS", path: "/hackathons" },
     { label: "BUILDERS", path: "/network" },
