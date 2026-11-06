@@ -597,7 +597,8 @@ export async function listStartups({
   search,
   category,
   username,
-}: { search?: string; category?: string; username?: string } = {}) {
+  userId,
+}: { search?: string; category?: string; username?: string; userId?: number } = {}) {
   const client = await pool.connect()
   try {
     let query = `
@@ -614,7 +615,14 @@ export async function listStartups({
     `
     const params: any[] = []
 
-    if (username && username.trim()) {
+    if (userId && username && username.trim()) {
+      params.push(userId)
+      params.push(username.trim().toLowerCase())
+      query += ` AND (s.user_id = $${params.length - 1} OR LOWER(s.founder_username) = $${params.length} OR LOWER(u.username) = $${params.length})`
+    } else if (userId) {
+      params.push(userId)
+      query += ` AND s.user_id = $${params.length}`
+    } else if (username && username.trim()) {
       params.push(username.trim().toLowerCase())
       query += ` AND (LOWER(s.founder_username) = $${params.length} OR LOWER(u.username) = $${params.length})`
     }

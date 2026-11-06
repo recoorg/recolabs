@@ -669,7 +669,8 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const search = searchParams.get("search") || ""
       const category = searchParams.get("category") || "ALL"
       const username = searchParams.get("username") || undefined
-      const startups = await listStartups({ search, category, username })
+      const userIdParam = searchParams.get("userId") ? Number(searchParams.get("userId")) : undefined
+      const startups = await listStartups({ search, category, username, userId: userIdParam })
       res.statusCode = 200
       res.end(JSON.stringify({ success: true, count: startups.length, startups }))
       return

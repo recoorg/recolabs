@@ -496,11 +496,12 @@ export const networkApi = {
     return { user: json.user, startups: json.startups || [] }
   },
 
-  async getStartups(params?: { search?: string; category?: string; username?: string }): Promise<StartupItem[]> {
+  async getStartups(params?: { search?: string; category?: string; username?: string; userId?: number }): Promise<StartupItem[]> {
     const q = new URLSearchParams()
     if (params?.search) q.set("search", params.search)
     if (params?.category && params.category !== "ALL") q.set("category", params.category)
     if (params?.username) q.set("username", params.username)
+    if (params?.userId) q.set("userId", String(params.userId))
 
     const query = q.toString()
     const json = await safeJsonFetch<{ success: boolean; startups: StartupItem[] }>(

@@ -67,7 +67,7 @@ export function NetworkPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [selectedCategory, setSelectedCategory] = React.useState("ALL")
   const [builders, setBuilders] = React.useState<BuilderProfileWithStats[]>([])
-  const [activeDirectoryTab, setActiveDirectoryTab] = React.useState<"builders" | "startups">("builders")
+  const [activeDirectoryTab, setActiveDirectoryTab] = React.useState<"startups" | "builders">("startups")
 
 
   // Modals & Panels
@@ -704,66 +704,40 @@ export function NetworkPage() {
         )}
 
 
-        {/* ======================================================== */}
-        {/* NEW LAUNCHPAD BANNER & DIRECTORY SWITCHER                */}
-        {/* ======================================================== */}
-        <div className="mt-8 mb-6 p-5 rounded-3xl border-2 border-[#FA5D00]/40 bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[#FA5D00] text-black flex items-center justify-center font-bold flex-none shadow-md">
-              <Rocket className="w-5 h-5 fill-black" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-serif text-base sm:text-lg font-bold text-zinc-950 dark:text-zinc-50">
-                  Reco Launchpad is Live!
-                </h3>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#FA5D00] text-black uppercase">
-                  NEW REPO & APP
-                </span>
-              </div>
-              <p className="font-mono text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                Our standalone Peerlist-style discovery engine with live upvoting, community scroll feed, and spotlight pinning.
-              </p>
-            </div>
-          </div>
-          <a
-            href={`https://recolabslauch.vercel.app${networkApi.getToken() ? `?sso_token=${encodeURIComponent(networkApi.getToken()!)}` : ""}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-5 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-all flex items-center gap-1.5 flex-none shadow-sm"
-          >
-            <span>Open Launchpad</span>
-            <ArrowUpRight className="w-4 h-4" />
-          </a>
-        </div>
-
         {/* Directory Switcher Tabs */}
-        <div className="flex items-center gap-2 border-b editorial-hairline pb-4 font-mono text-xs">
-          <button
-            type="button"
-            onClick={() => setActiveDirectoryTab("builders")}
-            className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
-              activeDirectoryTab === "builders"
-                ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            <span>All Guild Builders ({builders.length || networkStats.totalBuilders || 19})</span>
-          </button>
+        <div className="mt-8 flex items-center justify-between border-b editorial-hairline pb-4 font-mono text-xs">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveDirectoryTab("startups")}
+              className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                activeDirectoryTab === "startups"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              }`}
+            >
+              <Rocket className="w-3.5 h-3.5" />
+              <span>Startups &amp; Projects ({startups.length})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveDirectoryTab("startups")}
-            className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
-              activeDirectoryTab === "startups"
-                ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            }`}
-          >
-            <Rocket className="w-3.5 h-3.5" />
-            <span>Startups & Projects ({startups.length})</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveDirectoryTab("builders")}
+              className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                activeDirectoryTab === "builders"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Guild Builders ({builders.length || networkStats.totalBuilders || 19})</span>
+            </button>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-2 font-mono text-[11px] text-zinc-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Live Database Synchronized</span>
+          </div>
         </div>
 
         {/* ======================================================== */}

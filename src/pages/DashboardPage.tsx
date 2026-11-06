@@ -165,7 +165,18 @@ export function DashboardPage() {
   // Load User and Listings
   const loadUserData = React.useCallback(async () => {
     setAuthLoading(true)
-    const user = networkApi.getCurrentUser()
+    let user = networkApi.getCurrentUser()
+    
+    // Auto-hydrate profile if token is present
+    if (networkApi.getToken()) {
+      try {
+        const fresh = await networkApi.getProfile()
+        if (fresh) user = fresh
+      } catch (err) {
+        console.warn("Session profile sync notice:", err)
+      }
+    }
+
     setCurrentUser(user)
     setAuthLoading(false)
 
@@ -175,7 +186,7 @@ export function DashboardPage() {
         const [jobs, hackathons, startups] = await Promise.all([
           networkApi.getMyJobs(),
           networkApi.getMyHackathons(),
-          user.username ? networkApi.getStartups({ username: user.username }) : Promise.resolve([]),
+          networkApi.getStartups({ username: user.username, userId: user.id }),
         ])
         setMyJobs(jobs)
         setMyHackathons(hackathons)
@@ -518,7 +529,7 @@ export function DashboardPage() {
               onClick={() => setSection("startups")}
               className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all group relative cursor-pointer ${
                 activeSection === "startups"
-                  ? "bg-zinc-200/80 dark:bg-zinc-800 text-[#FA5D00] shadow-inner font-bold"
+                  ? "bg-[#FA5D00] text-black shadow-md font-bold"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
               title="My Startups"
@@ -535,7 +546,7 @@ export function DashboardPage() {
               onClick={() => setSection("overview")}
               className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all group relative cursor-pointer ${
                 activeSection === "overview"
-                  ? "bg-zinc-200/80 dark:bg-zinc-800 text-[#FA5D00] shadow-inner font-bold"
+                  ? "bg-[#FA5D00] text-black shadow-md font-bold"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
               title="Overview & Metrics"
@@ -552,7 +563,7 @@ export function DashboardPage() {
               onClick={() => setSection("jobs")}
               className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all group relative cursor-pointer ${
                 activeSection === "jobs"
-                  ? "bg-zinc-200/80 dark:bg-zinc-800 text-[#FA5D00] shadow-inner"
+                  ? "bg-[#FA5D00] text-black shadow-md font-bold"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
               title="My Jobs"
@@ -569,7 +580,7 @@ export function DashboardPage() {
               onClick={() => setSection("post-job")}
               className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all group relative cursor-pointer ${
                 activeSection === "post-job"
-                  ? "bg-[#FA5D00] text-black shadow-md"
+                  ? "bg-[#FA5D00] text-black shadow-md font-bold"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-[#FA5D00] hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
               title="Post a Job"
@@ -586,7 +597,7 @@ export function DashboardPage() {
               onClick={() => setSection("hackathons")}
               className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all group relative cursor-pointer ${
                 activeSection === "hackathons"
-                  ? "bg-zinc-200/80 dark:bg-zinc-800 text-[#FA5D00] shadow-inner"
+                  ? "bg-[#FA5D00] text-black shadow-md font-bold"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
               title="My Hackathons"
@@ -603,7 +614,7 @@ export function DashboardPage() {
               onClick={() => setSection("post-hackathon")}
               className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all group relative cursor-pointer ${
                 activeSection === "post-hackathon"
-                  ? "bg-[#FA5D00] text-black shadow-md"
+                  ? "bg-[#FA5D00] text-black shadow-md font-bold"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-[#FA5D00] hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
               title="Host Hackathon"

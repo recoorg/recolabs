@@ -6,6 +6,7 @@ import confetti from "canvas-confetti"
 import {
   Search,
   Plus,
+  Rocket,
   Heart,
   ExternalLink,
   Flame,
@@ -817,28 +818,29 @@ export function ProjectsPage() {
     }
   }
 
-  // Sidebar Inner Content Component (Exact match to media_1793513281908_c994aba5.png)
+  // Sidebar Inner Content Component with Dark Filled Curved Icons
   const renderSidebarContent = () => (
     <div className="flex flex-col justify-between h-full select-none text-zinc-800 dark:text-zinc-200">
       <div>
-        {/* Top Header: Rounded Reco Labs Logo + Title */}
+        {/* Top Header: Dark Curved Reco Labs Mark + Title */}
         <div className="flex items-center justify-between pb-3">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveCategory("All")
-              setShowFavoritesOnly(false)
-              setMobileSidebarOpen(false)
-            }}
+          <Link
+            to="/"
             className="flex items-center gap-2.5 text-left group cursor-pointer"
+            title="Reco Labs Home"
           >
-            <div className="w-7 h-7 rounded-full bg-[#FA5D00] p-1 flex items-center justify-center flex-none shadow-xs ring-1 ring-zinc-300/80 dark:ring-white/10 group-hover:scale-105 transition-transform overflow-hidden">
-              <img src="/favicon.png" alt="Reco Labs" className="w-full h-full object-contain filter brightness-0 dark:filter-none" />
+            <div className="w-9 h-9 rounded-2xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 p-2 flex items-center justify-center flex-none shadow-sm border border-black/10 dark:border-white/10 group-hover:scale-105 transition-transform overflow-hidden">
+              <img src="/logo-black.png" alt="Reco Labs" className="w-full h-full object-contain filter invert dark:invert-0" />
             </div>
-            <h2 className="font-mono text-[15px] font-bold tracking-tight text-zinc-950 dark:text-zinc-100 group-hover:text-[#FA5D00] dark:group-hover:text-white transition-colors">
-              Reco Labs
-            </h2>
-          </button>
+            <div>
+              <h2 className="font-serif text-base font-bold tracking-tight text-zinc-950 dark:text-zinc-100 group-hover:text-[#FA5D00] transition-colors leading-none">
+                Reco Labs
+              </h2>
+              <span className="font-mono text-[10px] text-[#FA5D00] font-bold tracking-wider uppercase">
+                VAULT
+              </span>
+            </div>
+          </Link>
           {/* Mobile close button */}
           <button
             onClick={() => setMobileSidebarOpen(false)}
@@ -849,25 +851,25 @@ export function ProjectsPage() {
         </div>
 
         {/* Dotted Divider Line */}
-        <div className="border-b border-dotted border-zinc-200 dark:border-zinc-800 my-3" />
+        <div className="border-b border-dotted border-zinc-200 dark:border-zinc-800 my-2.5" />
 
         {/* Curated Collection Description */}
-        <p className="font-sans text-xs sm:text-[13px] text-zinc-600 dark:text-zinc-400 leading-relaxed py-1">
+        <p className="font-sans text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed py-1">
           A curated collection of interface craft, component libraries, AI tools, and resources for builders.
         </p>
 
         {/* Dotted Divider Line */}
-        <div className="border-b border-dotted border-zinc-200 dark:border-zinc-800 my-3" />
+        <div className="border-b border-dotted border-zinc-200 dark:border-zinc-800 my-2.5" />
 
-        {/* Browse Navigation (Finds, Inspiration, Resources, Tools, Portfolios) */}
-        <div className="mt-3">
-          <span className="font-sans text-xs font-medium text-zinc-500 block mb-2.5 px-2">
-            Browse
+        {/* Browse Navigation with Dark Filled Curved Icons */}
+        <div className="mt-2.5">
+          <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-zinc-400 block mb-2 px-1">
+            Browse Vault
           </span>
-          <nav className="space-y-1 text-xs sm:text-[13px]">
+          <nav className="space-y-1">
             {browseList.map((sec) => {
               const Icon = getCategoryIcon(sec.name)
-              const isActive = activeCategory.toLowerCase() === sec.name.toLowerCase()
+              const isActive = activeCategory.toLowerCase() === sec.name.toLowerCase() && !showFavoritesOnly
               return (
                 <button
                   key={sec.name}
@@ -876,77 +878,122 @@ export function ProjectsPage() {
                     setShowFavoritesOnly(false)
                     setMobileSidebarOpen(false)
                   }}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-colors cursor-pointer ${
+                  className={`w-full flex items-center gap-2.5 p-1.5 rounded-2xl font-mono text-xs font-semibold transition-all cursor-pointer group ${
                     isActive
-                      ? "bg-[#18181b] text-white shadow-xs"
-                      : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 font-normal"
+                      ? "bg-[#FA5D00]/10 text-[#FA5D00] font-bold border border-[#FA5D00]/25 shadow-2xs"
+                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-950 dark:hover:text-zinc-100"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 flex-none ${isActive ? "text-white" : "text-zinc-400"}`} strokeWidth={1.8} />
-                  <span>{sec.name}</span>
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-none ${
+                      isActive
+                        ? "bg-[#FA5D00] text-black shadow-xs font-bold"
+                        : "bg-zinc-950 text-white dark:bg-zinc-850 dark:text-zinc-200 group-hover:bg-[#FA5D00] group-hover:text-black shadow-2xs"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" strokeWidth={2} />
+                  </div>
+                  <span className="truncate">{sec.name}</span>
                 </button>
               )
             })}
           </nav>
         </div>
 
-        {/* Collections & Actions */}
-        <div className="mt-6 pt-5 border-t border-zinc-200 dark:border-zinc-800">
-          <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-zinc-400 block mb-2 px-2">
-            Collections
+        {/* Collections with Dark Filled Curved Icons */}
+        <div className="mt-4 pt-3.5 border-t border-zinc-200 dark:border-zinc-800">
+          <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-zinc-400 block mb-2 px-1">
+            Collections &amp; Actions
           </span>
-          <div className="space-y-1 font-mono text-xs">
+          <div className="space-y-1">
             <button
               onClick={() => {
                 setActiveCategory("All")
                 setShowFavoritesOnly(false)
                 setMobileSidebarOpen(false)
               }}
-              className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`w-full flex items-center justify-between p-1.5 rounded-2xl font-mono text-xs font-semibold transition-all cursor-pointer group ${
                 activeCategory === "All" && !showFavoritesOnly
-                  ? "text-[#FA5D00] font-bold"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  ? "bg-[#FA5D00]/10 text-[#FA5D00] font-bold border border-[#FA5D00]/25 shadow-2xs"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-950 dark:hover:text-zinc-100"
               }`}
             >
-              ● All Artifacts ({projects.length})
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-none ${
+                  activeCategory === "All" && !showFavoritesOnly
+                    ? "bg-[#FA5D00] text-black shadow-xs"
+                    : "bg-zinc-950 text-white dark:bg-zinc-850 dark:text-zinc-200 group-hover:bg-[#FA5D00] group-hover:text-black shadow-2xs"
+                }`}>
+                  <Layers className="w-4 h-4" strokeWidth={2} />
+                </div>
+                <span>All Artifacts</span>
+              </div>
+              <span className="text-[10px] opacity-75 font-mono px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                {projects.length}
+              </span>
             </button>
+
             <button
               onClick={() => {
                 setShowFavoritesOnly(!showFavoritesOnly)
                 setMobileSidebarOpen(false)
               }}
-              className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
+              className={`w-full flex items-center justify-between p-1.5 rounded-2xl font-mono text-xs font-semibold transition-all cursor-pointer group ${
                 showFavoritesOnly
-                  ? "bg-[#FA5D00]/10 text-[#FA5D00] font-bold border border-[#FA5D00]/30"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  ? "bg-[#FA5D00]/10 text-[#FA5D00] font-bold border border-[#FA5D00]/25 shadow-2xs"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-950 dark:hover:text-zinc-100"
               }`}
             >
-              <div className="flex items-center gap-2">
-                <Heart className={`w-3.5 h-3.5 ${showFavoritesOnly ? "fill-[#FA5D00] text-[#FA5D00]" : ""}`} />
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-none ${
+                  showFavoritesOnly
+                    ? "bg-[#FA5D00] text-black shadow-xs"
+                    : "bg-zinc-950 text-white dark:bg-zinc-850 dark:text-zinc-200 group-hover:bg-rose-500 group-hover:text-white shadow-2xs"
+                }`}>
+                  <Heart className={`w-4 h-4 ${showFavoritesOnly ? "fill-black" : "fill-current"}`} strokeWidth={2} />
+                </div>
                 <span>Favourites</span>
               </div>
-              <span className="text-[10px] opacity-70 font-mono font-semibold">({favorites.length})</span>
+              <span className="text-[10px] opacity-75 font-mono px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                {favorites.length}
+              </span>
             </button>
+
             <button
               onClick={() => {
                 setMobileSidebarOpen(false)
                 handleOpenSubmit()
               }}
-              className="w-full text-left px-3 py-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] transition-colors cursor-pointer flex items-center gap-1.5"
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-2xl font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-950 dark:hover:text-zinc-100 transition-all cursor-pointer group"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <div className="w-8 h-8 rounded-xl bg-zinc-950 text-white dark:bg-zinc-850 dark:text-zinc-200 flex items-center justify-center flex-none group-hover:bg-[#FA5D00] group-hover:text-black transition-all shadow-2xs">
+                <Plus className="w-4 h-4" strokeWidth={2.5} />
+              </div>
               <span>Submit Website</span>
             </button>
+
             <button
               onClick={() => {
                 setMobileSidebarOpen(false)
                 setShowSponsorModal(true)
               }}
-              className="w-full text-left px-3 py-1.5 rounded-lg text-[#FA5D00] hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1.5 font-bold"
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-2xl font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-950 dark:hover:text-zinc-100 transition-all cursor-pointer group"
             >
-              <Megaphone className="w-3.5 h-3.5" />
-              <span>+ Add Sponsor Slot</span>
+              <div className="w-8 h-8 rounded-xl bg-orange-500/15 text-[#FA5D00] flex items-center justify-center flex-none group-hover:bg-[#FA5D00] group-hover:text-black transition-all shadow-2xs">
+                <Megaphone className="w-4 h-4" strokeWidth={2} />
+              </div>
+              <span className="text-[#FA5D00] font-bold">+ Sponsor Slot</span>
             </button>
+
+            <Link
+              to="/network"
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-2xl font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-950 dark:hover:text-zinc-100 transition-all cursor-pointer group"
+            >
+              <div className="w-8 h-8 rounded-xl bg-zinc-950 text-white dark:bg-zinc-850 dark:text-zinc-200 flex items-center justify-center flex-none group-hover:bg-[#FA5D00] group-hover:text-black transition-all shadow-2xs">
+                <Rocket className="w-4 h-4" strokeWidth={2} />
+              </div>
+              <span>Founder Network ↗</span>
+            </Link>
           </div>
         </div>
       </div>

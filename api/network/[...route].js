@@ -534,7 +534,8 @@ async function updateUserProfile(id, {
 async function listStartups({
   search,
   category,
-  username
+  username,
+  userId
 } = {}) {
   const client = await pool.connect();
   try {
@@ -551,7 +552,14 @@ async function listStartups({
       WHERE 1=1
     `;
     const params = [];
-    if (username && username.trim()) {
+    if (userId && username && username.trim()) {
+      params.push(userId);
+      params.push(username.trim().toLowerCase());
+      query += ` AND (s.user_id = $${params.length - 1} OR LOWER(s.founder_username) = $${params.length} OR LOWER(u.username) = $${params.length})`;
+    } else if (userId) {
+      params.push(userId);
+      query += ` AND s.user_id = $${params.length}`;
+    } else if (username && username.trim()) {
       params.push(username.trim().toLowerCase());
       query += ` AND (LOWER(s.founder_username) = $${params.length} OR LOWER(u.username) = $${params.length})`;
     }
@@ -2578,7 +2586,8 @@ async function handleNetworkRequest(req, res) {
       const search = searchParams.get("search") || "";
       const category = searchParams.get("category") || "ALL";
       const username = searchParams.get("username") || void 0;
-      const startups = await listStartups({ search, category, username });
+      const userIdParam = searchParams.get("userId") ? Number(searchParams.get("userId")) : void 0;
+      const startups = await listStartups({ search, category, username, userId: userIdParam });
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, count: startups.length, startups }));
       return;
