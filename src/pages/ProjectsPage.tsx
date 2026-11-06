@@ -268,10 +268,18 @@ export function ProjectsPage() {
     }
   }, [])
 
-  // Sync user session
+  // Sync user session and re-hydrate fresh server profile
   React.useEffect(() => {
     const syncUser = () => {
-      setCurrentUser(networkApi.getCurrentUser())
+      const cached = networkApi.getCurrentUser()
+      if (cached) setCurrentUser(cached)
+      if (networkApi.getToken()) {
+        networkApi.getProfile()
+          .then((fresh) => {
+            if (fresh) setCurrentUser(fresh)
+          })
+          .catch(() => {})
+      }
     }
     syncUser()
     window.addEventListener("reco_auth_changed", syncUser)
@@ -1186,43 +1194,117 @@ export function ProjectsPage() {
                         </span>
                       )}
                       <span className="max-w-[100px] truncate">@{currentUser.username}</span>
+                      {(currentUser.is_verified || currentUser.is_pro || currentUser.plan === "pro") && (
+                        <VerifiedBadge size="xs" />
+                      )}
                     </button>
 
                     {/* Hover Dropdown Menu */}
                     <div className="absolute right-0 top-full pt-1.5 hidden group-hover:block group-focus-within:block z-50">
-                      <div className="w-44 py-1.5 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 shadow-xl font-mono text-xs text-zinc-700 dark:text-zinc-300 animate-in fade-in duration-150">
-                        <div className="px-3.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 truncate">
-                          Signed in as <strong className="text-zinc-800 dark:text-zinc-200">@{currentUser.username}</strong>
+                      <div className="w-64 p-3 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 shadow-2xl font-mono text-xs text-zinc-700 dark:text-zinc-300 animate-in fade-in duration-150">
+                        {/* Profile Header */}
+                        <div className="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b border-zinc-100 dark:border-zinc-800">
+                          {currentUser.avatar_url ? (
+                            <img src={currentUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-none border border-zinc-200 dark:border-zinc-700" />
+                          ) : (
+                            <span className="w-8 h-8 rounded-full bg-[#FA5D00] text-black text-xs font-bold flex items-center justify-center flex-none">
+                              {(currentUser.name || "B")[0].toUpperCase()}
+                            </span>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1 font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                              <span className="truncate">{currentUser.name || currentUser.username}</span>
+                              {(currentUser.is_verified || currentUser.is_pro || currentUser.plan === "pro") && (
+                                <VerifiedBadge size="xs" />
+                              )}
+                            </div>
+                            <div className="text-[10px] text-zinc-400 truncate">
+                              @{currentUser.username}
+                            </div>
+                          </div>
                         </div>
-                        {currentUser.is_verified || currentUser.is_pro ? (
-                          <div className="px-3.5 py-1.5 flex items-center gap-1.5 text-[11px] text-emerald-500 font-bold border-b border-zinc-100 dark:border-zinc-800 bg-emerald-500/5">
-                            <VerifiedBadge size="xs" />
-                            <span>Verified Pro</span>
+
+                        {/* Paid Verified User Details vs Free User Upgrade */}
+                        {currentUser.is_verified || currentUser.is_pro || currentUser.plan === "pro" ? (
+                          <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/25 mb-2.5">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-1.5 text-[11px] text-emerald-500 font-bold">
+                                <VerifiedBadge size="xs" />
+                                <span>Verified Pro</span>
+                              </div>
+                              <span className="font-mono text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                                {currentUser.plan_billing || "Active"}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-zinc-500 dark:text-zinc-400 space-y-1 mt-1 font-mono">
+                              <div className="flex items-center justify-between">
+                                <span>Status:</span>
+                                <span className="text-emerald-600 dark:text-emerald-400 font-bold">Active Member</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span>Expires:</span>
+                                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                  {currentUser.subscription_end
+                                    ? new Date(currentUser.subscription_end).toLocaleDateString(undefined, {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })
+                                    : "Active (Lifetime)"}
+                                </span>
+                              </div>
+                            </div>
+                            <Link
+                              to="/pricing"
+                              className="mt-2.5 flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-mono text-[10px] font-bold hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-colors"
+                            >
+                              <span>View Plan &amp; Pricing</span>
+                              <span>↗</span>
+                            </Link>
                           </div>
                         ) : (
                           <Link
                             to="/pricing"
-                            className="flex items-center gap-2 px-3.5 py-2 hover:bg-orange-500/10 text-[#FA5D00] font-semibold transition-colors border-b border-zinc-100 dark:border-zinc-800"
+                            className="flex items-center justify-between p-2.5 rounded-xl bg-orange-500/10 border border-[#FA5D00]/30 hover:border-[#FA5D00] text-zinc-900 dark:text-zinc-100 mb-2.5 transition-all group/upgrade"
                           >
-                            <Zap className="w-3.5 h-3.5 fill-[#FA5D00]" />
-                            <span>⚡ Get Blue Tick</span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-lg bg-[#FA5D00] text-black flex items-center justify-center font-bold">
+                                <Zap className="w-3.5 h-3.5 fill-black" />
+                              </div>
+                              <div>
+                                <div className="font-bold text-[11px] text-[#FA5D00]">Get Verified Pro</div>
+                                <div className="text-[9px] text-zinc-400">Claim Blue Tick &amp; Authority</div>
+                              </div>
+                            </div>
+                            <span className="text-xs group-hover/upgrade:translate-x-0.5 transition-transform">→</span>
                           </Link>
                         )}
-                        <Link
-                          to={`/builder/${currentUser.username}`}
-                          className="flex items-center gap-2 px-3.5 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[#FA5D00] transition-colors"
-                        >
-                          <User className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>View profile</span>
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={handleLogout}
-                          className="w-full text-left flex items-center gap-2 px-3.5 py-2 hover:bg-rose-500/10 hover:text-rose-500 text-zinc-600 dark:text-zinc-400 transition-colors cursor-pointer"
-                        >
-                          <LogOut className="w-3.5 h-3.5" />
-                          <span>Logout</span>
-                        </button>
+
+                        {/* Navigation items */}
+                        <div className="space-y-0.5 pt-1 border-t border-zinc-100 dark:border-zinc-800 font-mono text-xs">
+                          <Link
+                            to="/dashboard"
+                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] transition-colors"
+                          >
+                            <Layers className="w-3.5 h-3.5 text-zinc-400" />
+                            <span>Dashboard</span>
+                          </Link>
+                          <Link
+                            to={`/builder/${currentUser.username}`}
+                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-[#FA5D00] transition-colors"
+                          >
+                            <User className="w-3.5 h-3.5 text-zinc-400" />
+                            <span>View profile</span>
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-500/10 hover:text-rose-500 text-zinc-600 dark:text-zinc-400 transition-colors cursor-pointer"
+                          >
+                            <LogOut className="w-3.5 h-3.5" />
+                            <span>Logout</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

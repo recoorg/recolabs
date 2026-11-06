@@ -29,7 +29,6 @@ import {
   Building2,
   Terminal,
   Filter,
-  Camera,
   Briefcase,
   Layers,
   Award,
@@ -559,7 +558,7 @@ export function NetworkPage() {
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
               >
                 <Rocket className="w-3.5 h-3.5 fill-black" />
-                <span>List Your Startup</span>
+                <span>List Your Project</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </button>
 
@@ -697,7 +696,7 @@ export function NetworkPage() {
                 className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
               >
                 <Rocket className="w-3.5 h-3.5 fill-black" />
-                <span>List Your Startup</span>
+                <span>List Your Project</span>
               </button>
             </div>
           </div>
@@ -732,11 +731,6 @@ export function NetworkPage() {
               <User className="w-3.5 h-3.5" />
               <span>Guild Builders ({builders.length || networkStats.totalBuilders || 19})</span>
             </button>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-2 font-mono text-[11px] text-zinc-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Live Database Synchronized</span>
           </div>
         </div>
 
@@ -957,7 +951,7 @@ export function NetworkPage() {
                           </span>
                         </div>
 
-                        {/* Top Right Actions: Screenshot Card Snap & Link */}
+                        {/* Top Right Actions: Boost & Link */}
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={(e) => {
@@ -974,7 +968,6 @@ export function NetworkPage() {
                             <Zap className="w-3 h-3" />
                             <span>{item.is_featured ? "Boosted" : "Boost"}</span>
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); setScreenshotStartup(item); }} title="Snap Screenshot Card" className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] active:scale-95 transition-all cursor-pointer shadow-2xs"><Camera className="w-3.5 h-3.5 text-[#FA5D00]" /></button>
 
                           <a
                             href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
@@ -1264,7 +1257,7 @@ export function NetworkPage() {
               NEW LISTING
             </span>
             <h2 className="mt-1 font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal">
-              List Your Startup<span className="text-[#FA5D00]">.</span>
+              List Your Project<span className="text-[#FA5D00]">.</span>
             </h2>
             <p className="mt-1 font-sans text-xs text-zinc-500">
               Submit your project so fellow builders, hackathon peers, and mentors can find and contact you.
