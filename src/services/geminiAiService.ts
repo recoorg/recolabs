@@ -111,3 +111,114 @@ Format your response strictly as valid JSON with no markdown backticks or commen
     }
   }
 }
+
+export interface StartupSummary {
+  id: number | string
+  name: string
+  problem_solving?: string
+  category?: string
+  url?: string
+}
+
+export interface AiStartupSuggestion {
+  suggested_startup_name: string
+  suggested_startup_id?: number | string
+  reason: string
+  search_keywords: string[]
+  category?: string
+}
+
+export async function askGeminiForStartup(
+  problem: string,
+  startups: StartupSummary[]
+): Promise<AiStartupSuggestion> {
+  const trimmed = problem.trim()
+  if (!trimmed) {
+    throw new Error("Please describe your problem or what project you are seeking.")
+  }
+
+  const sample = startups.slice(0, 50).map((s) => ({
+    id: s.id,
+    name: s.name,
+    category: s.category || "General",
+    problem_solving: (s.problem_solving || "").slice(0, 100),
+  }))
+
+  const promptText = `You are the Reco Labs Startup & Projects AI Matchmaker. A user is looking for a project or startup from the Reco Labs founder network to solve their problem or collaborate with.
+
+User query / problem:
+"${trimmed}"
+
+Available Builder Startups:
+${JSON.stringify(sample, null, 1)}
+
+Instruction:
+1. Select the single best matching startup from the list.
+2. Provide a crisp 1-2 sentence reason for why it fits.
+3. Provide 2-3 search keywords.
+
+Format strictly as JSON:
+{
+  "suggested_startup_name": "Startup Name",
+  "suggested_startup_id": 123,
+  "reason": "1-2 sentence explanation",
+  "search_keywords": ["keyword1", "keyword2"]
+}`
+
+  const requestBody = {
+    contents: [{ parts: [{ text: promptText }] }],
+    generationConfig: { temperature: 0.2, maxOutputTokens: 300 },
+  }
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody),
+  })
+
+  if (!response.ok) {
+    throw new Error(`AI suggestion service responded with status ${response.status}`)
+  }
+
+  const data = await response.json()
+  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || ""
+  const cleaned = rawText.replace(/^```json/im, "").replace(/^```/im, "").replace(/```$/im, "").trim()
+  try {
+    const parsed = JSON.parse(cleaned)
+    return {
+      suggested_startup_name: parsed.suggested_startup_name || "Recommended Project",
+      suggested_startup_id: parsed.suggested_startup_id,
+      reason: parsed.reason || "Matches your query.",
+      search_keywords: Array.isArray(parsed.search_keywords) ? parsed.search_keywords : [trimmed],
+    }
+  } catch {
+    return {
+      suggested_startup_name: "Recommended Project",
+      reason: rawText.slice(0, 150),
+      search_keywords: [trimmed],
+    }
+  }
+}
+
+export async function inspectLinkMetadata(url: string): Promise<{
+  success: boolean
+  title?: string
+  problem_solving?: string
+  category?: string
+  favicon?: string
+}> {
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem("reco_auth_token") : null
+  const res = await fetch(`/api/network/inspect-link`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ url }),
+  })
+  if (!res.ok) {
+    throw new Error("Failed to inspect link metadata")
+  }
+  return await res.json()
+}

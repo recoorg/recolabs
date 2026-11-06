@@ -1350,10 +1350,10 @@ export async function getStartupRatingsSummary(startupId: number) {
     );
     const row = res.rows[0] || {};
     const total = Number(row.total_ratings) || 0;
-    const avgIdea = Number(row.avg_idea) || 5.0;
-    const avgExecution = Number(row.avg_execution) || 5.0;
-    const avgDesign = Number(row.avg_design) || 5.0;
-    const overall = total > 0 ? Number(((avgIdea + avgExecution + avgDesign) / 3).toFixed(1)) : 5.0;
+    const avgIdea = total > 0 ? Number(row.avg_idea) : 0;
+    const avgExecution = total > 0 ? Number(row.avg_execution) : 0;
+    const avgDesign = total > 0 ? Number(row.avg_design) : 0;
+    const overall = total > 0 ? Number(((avgIdea + avgExecution + avgDesign) / 3).toFixed(1)) : 0;
     return {
       totalRatings: total,
       overall,

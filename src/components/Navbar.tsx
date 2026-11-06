@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Menu, X, ArrowUpRight, MessageSquare, Terminal, User, LogOut } from "lucide-react"
+import { Menu, X, ArrowUpRight, MessageSquare, Terminal, User, LogOut, ChevronDown, Zap, LayoutDashboard, Rocket, ShieldCheck, ExternalLink } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile } from "@/services/networkApi"
 import { VerifiedBadge } from "@/components/VerifiedBadge"
@@ -122,30 +122,114 @@ export function Navbar() {
         {/* Right: User Avatar in Circle / Sign In & Discord Button & Mobile Hamburger */}
         <div className="flex items-center justify-end flex-1 gap-2.5 pointer-events-auto">
           {currentUser ? (
-            <Link
-              to={`/builder/${currentUser.username}`}
-              className="hidden sm:flex items-center gap-2 p-1 pl-1 pr-3 rounded-full bg-white/95 dark:bg-[#121216]/95 border-2 border-black dark:border-zinc-700 hover:border-[#FA5D00] shadow-sm transition-all group"
-              title={`View @${currentUser.username} Profile`}
-            >
-              <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[#FA5D00]/15 flex items-center justify-center font-serif font-bold text-xs text-[#FA5D00] border border-black/10 dark:border-white/10 flex-none">
-                {currentUser.avatar_url ? (
-                  <img
-                    src={currentUser.avatar_url}
-                    alt={currentUser.name || currentUser.username}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(currentUser.username)}`;
-                    }}
-                  />
-                ) : (
-                  (currentUser.name || currentUser.username).charAt(0).toUpperCase()
-                )}
+            <div className="relative group/navuser hidden sm:block">
+              <Link
+                to={`/builder/${currentUser.username}`}
+                className="flex items-center gap-2 p-1 pl-1 pr-3 rounded-full bg-white/95 dark:bg-[#121216]/95 border-2 border-black dark:border-zinc-700 hover:border-[#ccff00] shadow-sm transition-all"
+                title={`@${currentUser.username}`}
+              >
+                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[#ccff00]/20 flex items-center justify-center font-serif font-bold text-xs text-black border border-black/10 dark:border-white/10 flex-none">
+                  {currentUser.avatar_url ? (
+                    <img
+                      src={currentUser.avatar_url}
+                      alt={currentUser.name || currentUser.username}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(currentUser.username)}`;
+                      }}
+                    />
+                  ) : (
+                    (currentUser.name || currentUser.username).charAt(0).toUpperCase()
+                  )}
+                </div>
+                <span className="font-mono text-xs font-bold text-zinc-950 dark:text-zinc-50 group-hover/navuser:text-[#ccff00] transition-colors truncate max-w-[110px]">
+                  @{currentUser.username}
+                </span>
+                {currentUser.is_verified && <VerifiedBadge size="xs" />}
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover/navuser:text-[#ccff00] transition-transform duration-200 group-hover/navuser:rotate-180" />
+              </Link>
+
+              {/* Hover Dropdown Menu */}
+              <div className="absolute right-0 top-full pt-2 hidden group-hover/navuser:block group-focus-within/navuser:block z-50">
+                <div className="w-64 p-3 rounded-2xl bg-white dark:bg-[#0c0c0e] border-2 border-black dark:border-zinc-700 shadow-2xl font-mono text-xs text-zinc-800 dark:text-zinc-200 animate-in fade-in duration-150 space-y-2">
+                  {/* User Profile Card */}
+                  <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                    <div className="font-bold text-zinc-950 dark:text-zinc-50 truncate">
+                      {currentUser.name || currentUser.username}
+                    </div>
+                    <div className="text-[11px] text-zinc-500 truncate">
+                      @{currentUser.username}
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-[10px]">
+                      <span className="text-zinc-400">Status:</span>
+                      {currentUser.is_verified || currentUser.is_pro ? (
+                        <span className="text-emerald-500 font-bold flex items-center gap-1">
+                          <VerifiedBadge size="xs" /> Verified Member
+                        </span>
+                      ) : (
+                        <Link
+                          to="/pricing"
+                          className="text-[#ccff00] font-black uppercase hover:underline"
+                        >
+                          ⚡ Get Blue Tick
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Nav Links with Dark Filled Curved Icons */}
+                  <div className="space-y-1">
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 font-bold transition-colors"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-[#ccff00]" />
+                      <span>Console &amp; Dashboard</span>
+                    </Link>
+
+                    <Link
+                      to="/dashboard?tab=startups"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium transition-colors"
+                    >
+                      <Rocket className="w-4 h-4 text-[#FA5D00]" />
+                      <span>My Projects &amp; Startups</span>
+                    </Link>
+
+                    <Link
+                      to={`/builder/${currentUser.username}`}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium transition-colors"
+                    >
+                      <User className="w-4 h-4 text-zinc-400" />
+                      <span>Public Profile</span>
+                    </Link>
+
+                    <Link
+                      to="/pricing"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium transition-colors"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-blue-500" />
+                      <span>Verification &amp; Pricing</span>
+                    </Link>
+                  </div>
+
+                  {/* Sign Out */}
+                  <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        networkApi.logout();
+                        setCurrentUser(null);
+                        window.dispatchEvent(new Event("reco_auth_changed"));
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-500/10 hover:text-rose-500 text-zinc-500 font-bold transition-colors cursor-pointer text-left"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <span className="font-mono text-xs font-bold text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors truncate max-w-[110px]">
-                @{currentUser.username}
-              </span>
-              {currentUser.is_verified && <VerifiedBadge size="xs" />}
-            </Link>
+            </div>
           ) : (
             <Link
               to="/network?auth=login"

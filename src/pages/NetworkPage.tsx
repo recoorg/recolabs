@@ -39,6 +39,7 @@ import {
   Paperclip,
   Smile,
   Share2,
+  PlusSquare,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
 import { networkApi, type UserProfile, type StartupItem, type BuilderProfileWithStats } from "@/services/networkApi"
@@ -48,6 +49,7 @@ import { StartupPromoteModal } from "@/components/StartupPromoteModal"
 import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
 import { VerifiedBadge } from "@/components/VerifiedBadge"
 import { NetworkAvatarCloud } from "@/components/NetworkAvatarCloud"
+import { askGeminiForStartup, inspectLinkMetadata, type AiStartupSuggestion } from "@/services/geminiAiService"
 
 const CATEGORIES = ["ALL", "Software", "Hardware", "Security", "AI", "Education & Tooling"]
 
@@ -101,7 +103,7 @@ export function NetworkPage() {
   const [commentSuccessMsg, setCommentSuccessMsg] = React.useState("")
   const [copiedLinkNotice, setCopiedLinkNotice] = React.useState(false)
 
-  // Functional Ratings State
+  // Functional Ratings State (Real Database Numbers Only)
   const [startupRatings, setStartupRatings] = React.useState<{
     totalRatings: number
     overall: number
@@ -109,11 +111,11 @@ export function NetworkPage() {
     execution: number
     design: number
   }>({
-    totalRatings: 1,
-    overall: 5.0,
-    idea: 5.0,
-    execution: 5.0,
-    design: 5.0,
+    totalRatings: 0,
+    overall: 0,
+    idea: 0,
+    execution: 0,
+    design: 0,
   })
   const [showRatingInput, setShowRatingInput] = React.useState(false)
   const [userRatingScores, setUserRatingScores] = React.useState({
@@ -123,6 +125,59 @@ export function NetworkPage() {
   })
   const [submittingRating, setSubmittingRating] = React.useState(false)
   const [ratingSubmittedNotice, setRatingSubmittedNotice] = React.useState(false)
+
+  // Gemini AI Search State
+  const [aiStartupSuggestion, setAiStartupSuggestion] = React.useState<AiStartupSuggestion | null>(null)
+  const [aiSearching, setAiSearching] = React.useState(false)
+  const [aiSearchError, setAiSearchError] = React.useState<string | null>(null)
+
+  const handleAiStartupSearch = async () => {
+    if (!searchQuery.trim() || aiSearching) return
+    setAiSearching(true)
+    setAiSearchError(null)
+    try {
+      const suggestion = await askGeminiForStartup(searchQuery, startups)
+      setAiStartupSuggestion(suggestion)
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.5 },
+        colors: ["#ccff00", "#FA5D00", "#ffffff"],
+      })
+    } catch (err: any) {
+      setAiSearchError(err.message || "Failed to generate AI suggestion.")
+    } finally {
+      setAiSearching(false)
+    }
+  }
+
+  // Link Inspection State for Project Posting
+  const [inspectingLink, setInspectingLink] = React.useState(false)
+  const [inspectNotice, setInspectNotice] = React.useState<string | null>(null)
+
+  const handleInspectUrl = async (urlToInspect: string) => {
+    const trimmed = urlToInspect.trim()
+    if (!trimmed || trimmed.length < 4) return
+    setInspectingLink(true)
+    setInspectNotice(null)
+    try {
+      const data = await inspectLinkMetadata(trimmed)
+      if (data && data.success) {
+        setStartupForm((prev) => ({
+          ...prev,
+          name: prev.name || data.title || "",
+          problem_solving: prev.problem_solving || data.problem_solving || "",
+          category: data.category || prev.category,
+        }))
+        setInspectNotice("✨ Auto-filled project details & category from link!")
+        setTimeout(() => setInspectNotice(null), 4000)
+      }
+    } catch (err) {
+      console.warn("Link metadata inspect notice:", err)
+    } finally {
+      setInspectingLink(false)
+    }
+  }
   const [favorites, setFavorites] = React.useState<number[]>(() => {
     if (typeof window === "undefined") return []
     try {
@@ -131,6 +186,24 @@ export function NetworkPage() {
       return []
     }
   })
+
+  const filteredStartups = React.useMemo(() => {
+    return startups.filter((item) => {
+      if (selectedCategory !== "ALL" && item.category !== selectedCategory) {
+        return false
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim()
+        const matchesName = item.name?.toLowerCase().includes(q)
+        const matchesProblem = item.problem_solving?.toLowerCase().includes(q)
+        const matchesFounder = item.founder_name?.toLowerCase().includes(q)
+        const matchesCat = item.category?.toLowerCase().includes(q)
+        const matchesUrl = item.url?.toLowerCase().includes(q)
+        return Boolean(matchesName || matchesProblem || matchesFounder || matchesCat || matchesUrl)
+      }
+      return true
+    })
+  }, [startups, selectedCategory, searchQuery])
 
   const selectStartupWithUrl = React.useCallback((item: StartupItem | null) => {
     setSelectedStartup(item)
@@ -165,7 +238,7 @@ export function NetworkPage() {
       networkApi.getStartupRatings(selectedStartup.id),
     ]).then(([comments, ratings]) => {
       setStartupComments(comments || [])
-      setStartupRatings(ratings || { totalRatings: 1, overall: 5.0, idea: 5.0, execution: 5.0, design: 5.0 })
+      setStartupRatings(ratings || { totalRatings: 0, overall: 0, idea: 0, execution: 0, design: 0 })
       setLoadingComments(false)
     })
   }, [selectedStartup?.id])
@@ -602,163 +675,48 @@ export function NetworkPage() {
           </div>
         ) : (
           /* ======================================================== */
-          /* 2. AUTHENTICATED FOUNDER BAR (Replaces big hero on login) */
+          /* 2. AUTHENTICATED CLEAN DIRECTORY HEADER                  */
           /* ======================================================== */
-          <div className="pb-8 pt-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b editorial-hairline">
+          <div className="pt-2 pb-6 border-b editorial-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-[#FA5D00] text-xs font-mono font-bold uppercase tracking-wider mb-1">
-                <Rocket className="w-3.5 h-3.5" />
-                <span>Founder Workspace</span>
-              </div>
               <h1 className="font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal">
-                Startups & Founder Directory
+                Projects &amp; Founder Launchpad<span className="text-[#ccff00]">.</span>
               </h1>
               <p className="font-sans text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                Explore, vote, and collaborate with early-stage builder startups across the guild.
+                Curated peer software, developer tools, and prototypes across the guild.
               </p>
-
-              {/* Circle Avatars & Peer Count Badge */}
-              <div className="flex items-center gap-3 pt-3">
-                <div className="flex items-center -space-x-2.5 overflow-hidden p-1">
-                  {(builders.length > 0 ? builders : networkStats.builders || []).slice(0, 12).map((u) => (
-                    <Link
-                      key={u.id || u.username}
-                      to={`/builder/${u.username}`}
-                      className="relative inline-block w-8 h-8 rounded-full border-2 border-white dark:border-zinc-900 overflow-hidden hover:scale-110 hover:z-20 transition-all shadow-sm flex-none"
-                      title={`${u.name} (@${u.username})`}
-                    >
-                      {u.avatar_url ? (
-                        <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-[#FA5D00] text-black font-mono font-bold text-[10px] flex items-center justify-center">
-                          {u.name.charAt(0)}
-                        </div>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-                <div className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                  <span className="font-bold text-zinc-950 dark:text-zinc-50">{builders.length || networkStats.totalBuilders || 19}</span> builders in guild
-                </div>
-              </div>
             </div>
 
-            <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Profile Pill with Hover Dropdown (View profile, Edit profile, Logout) */}
-              <div className="relative group">
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-[#FA5D00] font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 shadow-sm transition-all cursor-pointer"
-                >
-                  {currentUser.avatar_url ? (
-                    <img
-                      src={currentUser.avatar_url}
-                      alt={currentUser.name}
-                      className="w-5 h-5 rounded-full object-cover flex-none"
-                    />
-                  ) : (
-                    <img src={"https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(currentUser.username)} alt={currentUser.name} className="w-5 h-5 rounded-full object-cover flex-none" />
-                  )}
-                  <span>@{currentUser.username}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#FA5D00] transition-colors" />
-                </button>
-
-                {/* Hover Dropdown Menu */}
-                <div className="absolute right-0 top-full pt-1.5 hidden group-hover:block group-focus-within:block z-50">
-                  <div className="w-48 py-1.5 rounded-2xl bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 shadow-xl font-mono text-xs text-zinc-700 dark:text-zinc-300 animate-in fade-in duration-150">
-                    <div className="px-3.5 py-1.5 border-b border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 truncate">
-                      Signed in as <strong className="text-zinc-800 dark:text-zinc-200">@{currentUser.username}</strong>
-                    </div>
-                    {currentUser.is_verified || currentUser.is_pro ? (
-                      <div className="px-3.5 py-1.5 flex items-center gap-1.5 text-[11px] text-emerald-500 font-bold border-b border-zinc-100 dark:border-zinc-800 bg-emerald-500/5">
-                        <VerifiedBadge size="xs" />
-                        <span>Verified Builder</span>
-                      </div>
-                    ) : (
-                      <Link
-                        to="/pricing"
-                        className="flex items-center gap-2 px-3.5 py-2 hover:bg-orange-500/10 text-[#FA5D00] font-semibold transition-colors border-b border-zinc-100 dark:border-zinc-800"
-                      >
-                        <Zap className="w-3.5 h-3.5 fill-[#FA5D00]" />
-                        <span>⚡ Get Blue Tick</span>
-                      </Link>
-                    )}
-                    <Link
-                      to="/dashboard"
-                      className="flex items-center gap-2 px-3.5 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[#357dff] transition-colors font-semibold"
-                    >
-                      <Briefcase className="w-3.5 h-3.5 text-[#357dff]" />
-                      <span>Console / Dashboard</span>
-                    </Link>
-                    <Link
-                      to={`/builder/${currentUser.username}`}
-                      className="flex items-center gap-2 px-3.5 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[#FA5D00] transition-colors"
-                    >
-                      <User className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>View profile</span>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => setShowProfileModal(true)}
-                      className="w-full text-left flex items-center gap-2 px-3.5 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[#FA5D00] transition-colors cursor-pointer"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>Edit profile</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="w-full text-left flex items-center gap-2 px-3.5 py-2 hover:bg-rose-500/10 hover:text-rose-500 text-zinc-600 dark:text-zinc-400 transition-colors cursor-pointer border-t border-zinc-100 dark:border-zinc-800"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {/* Directory Switcher Tabs */}
+            <div className="flex items-center gap-2 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => setActiveDirectoryTab("startups")}
+                className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  activeDirectoryTab === "startups"
+                    ? "bg-[#ccff00] text-black shadow-sm font-black"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                }`}
+              >
+                <Rocket className="w-3.5 h-3.5" />
+                <span>Projects ({startups.length})</span>
+              </button>
 
               <button
-                onClick={() => setShowPostModal(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer"
+                type="button"
+                onClick={() => setActiveDirectoryTab("builders")}
+                className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  activeDirectoryTab === "builders"
+                    ? "bg-[#ccff00] text-black shadow-sm font-black"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                }`}
               >
-                <Rocket className="w-3.5 h-3.5 fill-black" />
-                <span>List Your Project</span>
+                <User className="w-3.5 h-3.5" />
+                <span>Builders ({builders.length || networkStats.totalBuilders || 19})</span>
               </button>
             </div>
           </div>
         )}
-
-
-        {/* Directory Switcher Tabs */}
-        <div className="mt-8 flex items-center justify-between border-b editorial-hairline pb-4 font-mono text-xs">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveDirectoryTab("startups")}
-              className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                activeDirectoryTab === "startups"
-                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              }`}
-            >
-              <Rocket className="w-3.5 h-3.5" />
-              <span>Startups &amp; Projects ({startups.length})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveDirectoryTab("builders")}
-              className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                activeDirectoryTab === "builders"
-                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>Guild Builders ({builders.length || networkStats.totalBuilders || 19})</span>
-            </button>
-          </div>
-        </div>
 
         {/* ======================================================== */}
         {/* 3. STARTUPS DIRECTORY (Always visible for all builders!)   */}
@@ -873,16 +831,43 @@ export function NetworkPage() {
           <div>
 
         <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
-          {/* Search Input */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search startups, problems, or founder names..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-full border editorial-hairline bg-white/70 dark:bg-zinc-900/60 font-mono text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#FA5D00]"
-            />
+          {/* Symmetrically Centered Search Input with Gemini 2.5 AI Copilot */}
+          <div className="relative flex-1 max-w-lg">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (searchQuery.trim()) {
+                  handleAiStartupSearch()
+                }
+              }}
+              className="relative w-full"
+            >
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search projects, or describe a problem to ask AI..."
+                className="w-full pl-10 pr-24 py-2.5 rounded-full border editorial-hairline bg-white/70 dark:bg-zinc-900/60 font-mono text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#ccff00] transition-colors"
+              />
+              <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center">
+                <button
+                  type="submit"
+                  disabled={aiSearching || !searchQuery.trim()}
+                  title="Describe a problem and let Gemini AI match the best startup"
+                  className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-mono font-bold transition-all ${
+                    aiSearching
+                      ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-500 animate-pulse"
+                      : searchQuery.trim()
+                      ? "bg-[#ccff00] text-black font-black shadow-xs hover:bg-[#b8e600] active:scale-95 cursor-pointer"
+                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 opacity-60 cursor-not-allowed"
+                  }`}
+                >
+                  <Sparkles className="w-3 h-3 fill-current" />
+                  <span>{aiSearching ? "Thinking..." : "Ask AI"}</span>
+                </button>
+              </div>
+            </form>
           </div>
 
           {/* Category Pills */}
@@ -893,8 +878,8 @@ export function NetworkPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
                   selectedCategory === cat
-                    ? "bg-black text-white dark:bg-white dark:text-black"
-                    : "border editorial-hairline bg-white/50 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:border-[#FA5D00]"
+                    ? "bg-[#ccff00] text-black font-bold shadow-xs border border-lime-400"
+                    : "border editorial-hairline bg-white/50 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:border-[#ccff00]"
                 }`}
               >
                 {cat}
@@ -903,6 +888,73 @@ export function NetworkPage() {
           </div>
         </div>
 
+        {/* Gemini AI Recommendation Banner */}
+        {aiStartupSuggestion && (
+          <div className="mt-6 p-4 rounded-2xl border-2 border-lime-400/50 bg-gradient-to-br from-[#ccff00]/[0.08] via-zinc-900/40 to-transparent dark:from-[#ccff00]/[0.12] dark:via-zinc-900/60 relative overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 shadow-lg shadow-[#ccff00]/10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-[#ccff00] text-black flex items-center justify-center font-bold flex-none shadow-sm mt-0.5 sm:mt-0">
+                  <Sparkles className="w-5 h-5 fill-black" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#ccff00] text-black border border-lime-400">
+                      Gemini 2.5 Matchmaker
+                    </span>
+                    <h3 className="font-serif text-lg font-bold text-zinc-950 dark:text-zinc-50 truncate">
+                      {aiStartupSuggestion.suggested_startup_name}
+                    </h3>
+                  </div>
+                  <p className="font-sans text-xs text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed">
+                    {aiStartupSuggestion.reason}
+                  </p>
+                  {aiStartupSuggestion.search_keywords && aiStartupSuggestion.search_keywords.length > 0 && (
+                    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                      <span className="font-mono text-[10px] text-zinc-400">Keywords:</span>
+                      {aiStartupSuggestion.search_keywords.map((kw, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setSearchQuery(kw)}
+                          className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-black hover:bg-[#ccff00] transition-colors cursor-pointer"
+                        >
+                          #{kw}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-none self-end sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery(aiStartupSuggestion.suggested_startup_name)}
+                  className="px-3.5 py-1.5 rounded-full bg-[#ccff00] text-black font-mono text-[11px] font-black uppercase tracking-wider hover:bg-[#b8e600] transition-colors cursor-pointer shadow-sm shadow-[#ccff00]/30"
+                >
+                  Isolate Project
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiStartupSuggestion(null)}
+                  className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  title="Clear suggestion"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {aiSearchError && (
+          <div className="mt-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 font-mono text-xs flex items-center justify-between">
+            <span>{aiSearchError}</span>
+            <button type="button" onClick={() => setAiSearchError(null)} className="text-zinc-400 hover:text-zinc-200 cursor-pointer">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Startups Directory Grid */}
         <div className="mt-8">
           {loading ? (
@@ -910,47 +962,57 @@ export function NetworkPage() {
               <RefreshCw className="w-6 h-6 text-[#FA5D00] animate-spin mb-3" />
               <p className="font-mono text-xs text-zinc-500">Loading registered startups...</p>
             </div>
-          ) : startups.length === 0 ? (
+          ) : filteredStartups.length === 0 ? (
             <div className="py-20 text-center rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-8">
               <div className="w-12 h-12 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 mx-auto mb-3">
                 <Rocket className="w-5 h-5 text-[#FA5D00]" />
               </div>
-              <h3 className="font-serif text-2xl text-zinc-900 dark:text-zinc-100">No startups found</h3>
+              <h3 className="font-serif text-2xl text-zinc-900 dark:text-zinc-100">No projects match filter</h3>
               <p className="mt-1 font-sans text-xs text-zinc-500">
-                Be the first founder to post a startup in this category.
+                Try a different keyword or category, or submit your own project.
               </p>
               <button
                 onClick={() => {
                   if (!currentUser) setShowAuthModal(true)
                   else setShowPostModal(true)
                 }}
-                className="mt-5 inline-flex items-center gap-2 px-6 py-2 rounded-full bg-[#FA5D00] text-black font-mono text-xs font-bold uppercase tracking-wider"
+                className="mt-5 inline-flex items-center gap-2 px-6 py-2 rounded-full bg-[#ccff00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#b8e600] transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>List a Startup</span>
+                <span>List a Project</span>
               </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {startups.map((item) => {
+              {filteredStartups.map((item) => {
                 const safeName = item?.founder_name || "Builder"
                 const founderUser =
                   item?.founder_username ||
                   (item as any)?.author_username ||
                   safeName.toLowerCase().replace(/[^a-z0-9_-]/g, "")
-                const initial = (safeName[0] || "B").toUpperCase()
+                const isAiMatch =
+                  aiStartupSuggestion &&
+                  (String(aiStartupSuggestion.suggested_startup_id) === String(item.id) ||
+                    item.name?.toLowerCase() === aiStartupSuggestion.suggested_startup_name.toLowerCase())
 
                 return (
                   <div
                     key={item.id}
                     onClick={() => selectStartupWithUrl(item)}
                     className={`group relative p-6 sm:p-7 rounded-3xl border-2 transition-all flex flex-col justify-between shadow-sm hover:shadow-md cursor-pointer ${
-                      item.is_featured
+                      isAiMatch
+                        ? "border-[#ccff00] ring-2 ring-[#ccff00]/60 bg-lime-400/[0.06] shadow-xl shadow-[#ccff00]/20"
+                        : item.is_featured
                         ? "border-[#ccff00] dark:border-[#ccff00] bg-lime-400/[0.04] dark:bg-lime-950/20 shadow-xl shadow-lime-400/10 ring-2 ring-lime-400/20"
-                        : "border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00]"
+                        : "border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#ccff00] dark:hover:border-[#ccff00]"
                     }`}
                   >
-                    {item.is_featured && (
+                    {isAiMatch ? (
+                      <div className="absolute -top-3.5 left-6 px-3 py-0.5 rounded-full bg-[#ccff00] text-black font-mono text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 border border-black/20">
+                        <Sparkles className="w-3 h-3 fill-black text-black" />
+                        <span>AI RECOMMENDED</span>
+                      </div>
+                    ) : item.is_featured && (
                       <div className="absolute -top-3.5 left-6 px-3 py-0.5 rounded-full bg-[#ccff00] text-black font-mono text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 border border-black/20">
                         <Flame className="w-3.5 h-3.5 fill-black text-black" />
                         <span>BOOSTED · 1 WEEK PIN</span>
@@ -1297,6 +1359,70 @@ export function NetworkPage() {
 
             <form onSubmit={handlePostStartup} className="mt-6 space-y-4 font-mono text-xs">
               <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-zinc-600 dark:text-zinc-400 font-bold text-[11px]">
+                    PROJECT URL / REPOSITORY *
+                  </label>
+                  {inspectingLink ? (
+                    <span className="text-[10px] text-lime-500 font-bold flex items-center gap-1 animate-pulse">
+                      <RefreshCw className="w-3 h-3 animate-spin" /> Fetching details...
+                    </span>
+                  ) : startupForm.url && (
+                    <button
+                      type="button"
+                      onClick={() => handleInspectUrl(startupForm.url)}
+                      className="text-[10px] text-lime-400 dark:text-[#ccff00] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3 fill-current" /> Auto-fetch details
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={startupForm.url}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setStartupForm({ ...startupForm, url: val })
+                      if (val.startsWith("http") || val.includes("github.com") || (val.includes(".") && val.length > 8)) {
+                        if ((window as any)._inspectTimer) clearTimeout((window as any)._inspectTimer)
+                        ;(window as any)._inspectTimer = setTimeout(() => handleInspectUrl(val), 700)
+                      }
+                    }}
+                    onBlur={() => {
+                      if (startupForm.url && (!startupForm.name || !startupForm.problem_solving)) {
+                        handleInspectUrl(startupForm.url)
+                      }
+                    }}
+                    placeholder="https://myproject.com or github.com/user/repo"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#ccff00]"
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    {startupForm.url && (startupForm.url.startsWith("http") || startupForm.url.includes(".")) ? (
+                      <img
+                        src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(
+                          startupForm.url.replace(/^https?:\/\//, "").split("/")[0]
+                        )}&sz=64`}
+                        alt=""
+                        className="w-4 h-4 rounded-sm object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none"
+                        }}
+                      />
+                    ) : (
+                      <Globe className="w-4 h-4 text-zinc-400" />
+                    )}
+                  </div>
+                </div>
+                {inspectNotice && (
+                  <p className="mt-1 text-[11px] text-lime-400 dark:text-[#ccff00] font-mono animate-in fade-in">
+                    {inspectNotice}
+                  </p>
+                )}
+              </div>
+
+              <div>
                 <label className="block text-zinc-600 dark:text-zinc-400 mb-1">STARTUP / PROJECT NAME *</label>
                 <input
                   type="text"
@@ -1304,19 +1430,7 @@ export function NetworkPage() {
                   value={startupForm.name}
                   onChange={(e) => setStartupForm({ ...startupForm, name: e.target.value })}
                   placeholder="e.g. PulseKit"
-                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PROJECT URL / REPO *</label>
-                <input
-                  type="text"
-                  required
-                  value={startupForm.url}
-                  onChange={(e) => setStartupForm({ ...startupForm, url: e.target.value })}
-                  placeholder="https://myproject.com or github.com/user/repo"
-                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#ccff00]"
                 />
               </div>
 
@@ -1328,7 +1442,7 @@ export function NetworkPage() {
                   value={startupForm.problem_solving}
                   onChange={(e) => setStartupForm({ ...startupForm, problem_solving: e.target.value })}
                   placeholder="Explain the technical problem and how your build solves it..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#ccff00]"
                 />
               </div>
 
@@ -1807,114 +1921,124 @@ export function NetworkPage() {
                   </div>
                 </div>
 
-                {/* RIGHT COLUMN: Reco Labs Launchpad Card + 5.0 Functional Rating */}
+                {/* RIGHT COLUMN: Reco Labs Launchpad Card + Real Functional Rating */}
                 <div className="lg:col-span-5 space-y-4">
                   <div className="p-5 sm:p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 shadow-xs space-y-5">
                     
-                    {/* Laurel Wreath Badge Header */}
+                    {/* Real Launchpad Header */}
                     <div className="text-center pt-1">
-                      <span className="font-mono text-[10px] uppercase font-bold tracking-widest text-zinc-400 block mb-0.5">
-                        WEEK 45 · 2026
-                      </span>
                       <div className="flex items-center justify-center gap-1.5 text-zinc-900 dark:text-zinc-100">
-                        <Award className="w-4 h-4 text-[#FA5D00]" />
+                        <Award className="w-4 h-4 text-[#ccff00]" />
                         <h3 className="font-serif text-lg font-normal tracking-tight">
-                          Reco Labs <span className="font-sans font-light text-zinc-500 italic text-sm">Launchpad</span>
+                          Builder <span className="font-sans font-light text-zinc-500 italic text-sm">Evaluation</span>
                         </h3>
                       </div>
                     </div>
 
-                    {/* Stats 2 Columns: Comments & Views (NO UPVOTES) */}
-                    <div className="grid grid-cols-2 gap-2 text-center py-2 border-y border-zinc-200 dark:border-zinc-800">
-                      <div>
-                        <div className="font-serif text-xl text-zinc-950 dark:text-zinc-50 font-normal">
+                    {/* Real Peer Activity: Comments Count & Real Commenter Avatars */}
+                    <div className="py-3 border-y border-zinc-200 dark:border-zinc-800 text-center space-y-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-zinc-400" />
+                        <span className="font-mono text-sm font-bold text-zinc-950 dark:text-zinc-50">
                           {startupComments.length}
-                        </div>
-                        <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
-                          Comments
-                        </div>
+                        </span>
+                        <span className="font-mono text-[11px] text-zinc-500 uppercase tracking-wider">
+                          {startupComments.length === 1 ? 'Peer Review' : 'Peer Reviews'}
+                        </span>
                       </div>
-
-                      <div>
-                        <div className="font-serif text-xl text-zinc-950 dark:text-zinc-50 font-normal">
-                          {((selectedStartup.id * 13 + 47) % 300) + 120}
+                      {startupComments.length > 0 ? (
+                        <div className="flex items-center justify-center -space-x-1.5 pt-0.5">
+                          {startupComments.slice(0, 5).map((c, idx) => (
+                            <img
+                              key={c.id || idx}
+                              src={c.author_avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${c.author_name}`}
+                              alt={c.author_name}
+                              title={c.author_name}
+                              className="w-6 h-6 rounded-full border-2 border-white dark:border-zinc-900 object-cover shadow-xs"
+                            />
+                          ))}
                         </div>
-                        <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
-                          Views
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Supporting Peers Strip */}
-                    <div className="text-center space-y-1.5">
-                      <div className="flex items-center justify-center -space-x-1.5">
-                        {["https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=faces", "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=64&h=64&fit=crop&crop=faces", "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=64&h=64&fit=crop&crop=faces"].map((pfp, idx) => (<img key={idx} src={pfp} alt="Peer" className="w-6 h-6 rounded-full border-2 border-white dark:border-zinc-900 object-cover shadow-xs" />))}
-                      </div>
-                      <p className="font-mono text-[11px] text-zinc-500">
-                        4 Peers supporting this startup!
-                      </p>
+                      ) : (
+                        <p className="font-mono text-[10px] text-zinc-400">
+                          No reviews yet — be the first to evaluate below
+                        </p>
+                      )}
                     </div>
 
                     {/* Functional Rating Scorecard */}
                     <div className="p-4 rounded-2xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-3">
-                      <div className="grid grid-cols-12 gap-3 items-center">
-                        {/* Overall Score */}
-                        <div className="col-span-5 text-center">
-                          <div className="font-serif text-3xl font-normal text-zinc-950 dark:text-zinc-50 leading-none">
-                            {Number(startupRatings?.overall || 5).toFixed(1)}
+                      {startupRatings && startupRatings.totalRatings > 0 ? (
+                        <div className="grid grid-cols-12 gap-3 items-center">
+                          {/* Overall Score */}
+                          <div className="col-span-5 text-center">
+                            <div className="font-serif text-3xl font-normal text-zinc-950 dark:text-zinc-50 leading-none">
+                              {Number(startupRatings.overall).toFixed(1)}
+                            </div>
+                            <div className="flex items-center justify-center gap-0.5 text-[#ccff00] mt-1.5">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Star
+                                  key={s}
+                                  className={`w-3 h-3 ${s <= Math.round(Number(startupRatings.overall)) ? 'fill-[#ccff00] text-[#ccff00]' : 'text-zinc-300 dark:text-zinc-700'}`}
+                                />
+                              ))}
+                            </div>
+                            <span className="font-mono text-[10px] text-zinc-400 block mt-1">
+                              {startupRatings.totalRatings} verified rating{startupRatings.totalRatings === 1 ? '' : 's'}
+                            </span>
                           </div>
-                          <div className="flex items-center justify-center gap-0.5 text-[#FA5D00] mt-1.5">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                              <Star key={s} className="w-3 h-3 fill-[#FA5D00]" />
-                            ))}
+
+                          {/* Breakdown Bars (Idea, Execution, Design) */}
+                          <div className="col-span-7 space-y-2 font-mono text-[11px]">
+                            <div>
+                              <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
+                                <span>Idea</span>
+                                <span className="font-bold">{Number(startupRatings.idea).toFixed(1)}</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                  style={{ width: `${(Number(startupRatings.idea) / 5) * 100}%` }}
+                                  className="h-full bg-[#ccff00] rounded-full"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
+                                <span>Execution</span>
+                                <span className="font-bold">{Number(startupRatings.execution).toFixed(1)}</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                  style={{ width: `${(Number(startupRatings.execution) / 5) * 100}%` }}
+                                  className="h-full bg-[#ccff00] rounded-full"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
+                                <span>Design</span>
+                                <span className="font-bold">{Number(startupRatings.design).toFixed(1)}</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                  style={{ width: `${(Number(startupRatings.design) / 5) * 100}%` }}
+                                  className="h-full bg-[#ccff00] rounded-full"
+                                />
+                              </div>
+                            </div>
                           </div>
-                          <span className="font-mono text-[10px] text-zinc-400 block mt-1">
-                            {startupRatings.totalRatings} rating{startupRatings.totalRatings === 1 ? '' : 's'}
-                          </span>
                         </div>
-
-                        {/* Breakdown Bars (Idea, Execution, Design) */}
-                        <div className="col-span-7 space-y-2 font-mono text-[11px]">
-                          <div>
-                            <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
-                              <span>Idea</span>
-                              <span className="font-bold">{Number(startupRatings?.idea || 5).toFixed(1)}</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                              <div
-                                style={{ width: `${(Number(startupRatings?.idea || 5) / 5) * 100}%` }}
-                                className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
-                              <span>Execution</span>
-                              <span className="font-bold">{Number(startupRatings?.execution || 5).toFixed(1)}</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                              <div
-                                style={{ width: `${(Number(startupRatings?.execution || 5) / 5) * 100}%` }}
-                                className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="flex justify-between text-zinc-600 dark:text-zinc-300 mb-0.5">
-                              <span>Design</span>
-                              <span className="font-bold">{Number(startupRatings?.design || 5).toFixed(1)}</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                              <div
-                                style={{ width: `${(Number(startupRatings?.design || 5) / 5) * 100}%` }}
-                                className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
-                              />
-                            </div>
-                          </div>
+                      ) : (
+                        <div className="py-3 text-center space-y-1 font-mono">
+                          <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                            No peer ratings yet
+                          </p>
+                          <p className="text-[10px] text-zinc-400">
+                            Rate Idea, Execution, and Design to give feedback to this builder.
+                          </p>
                         </div>
-                      </div>
+                      )}
 
                       {/* Interactive Rating Form Dropdown */}
                       {showRatingInput ? (
@@ -2028,6 +2152,22 @@ export function NetworkPage() {
           onClose={() => setShowUpgradeModal(false)}
         />
       )}
+
+      {/* FLOATING ACTION BUTTON: + IN A BOX TO LIST PROJECT */}
+      <button
+        type="button"
+        onClick={() => {
+          if (!currentUser) setShowAuthModal(true)
+          else setShowPostModal(true)
+        }}
+        title="List Your Project"
+        className="fixed bottom-6 right-6 z-40 group flex items-center gap-2.5 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl bg-[#ccff00] text-black hover:bg-[#b8e600] font-mono text-xs font-black uppercase tracking-wider shadow-2xl shadow-[#ccff00]/40 border-2 border-black dark:border-zinc-800 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+      >
+        <span className="w-6 h-6 rounded-md bg-black text-[#ccff00] flex items-center justify-center font-mono font-black text-sm border border-black/30 group-hover:rotate-90 transition-transform duration-200">
+          +
+        </span>
+        <span className="font-mono font-bold tracking-wider">List Project</span>
+      </button>
     </div>
   )
 }

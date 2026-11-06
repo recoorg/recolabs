@@ -1218,10 +1218,10 @@ async function getStartupRatingsSummary(startupId) {
     );
     const row = res.rows[0] || {};
     const total = Number(row.total_ratings) || 0;
-    const avgIdea = Number(row.avg_idea) || 5;
-    const avgExecution = Number(row.avg_execution) || 5;
-    const avgDesign = Number(row.avg_design) || 5;
-    const overall = total > 0 ? Number(((avgIdea + avgExecution + avgDesign) / 3).toFixed(1)) : 5;
+    const avgIdea = total > 0 ? Number(row.avg_idea) : 0;
+    const avgExecution = total > 0 ? Number(row.avg_execution) : 0;
+    const avgDesign = total > 0 ? Number(row.avg_design) : 0;
+    const overall = total > 0 ? Number(((avgIdea + avgExecution + avgDesign) / 3).toFixed(1)) : 0;
     return {
       totalRatings: total,
       overall,
@@ -2986,6 +2986,107 @@ async function handleNetworkRequest(req, res) {
       });
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, ratings: updatedSummary }));
+      return;
+    }
+    if (pathname === "/api/network/inspect-link" || pathname === "/api/inspect-link") {
+      let targetUrl = searchParams.get("url");
+      if (!targetUrl && req.method === "POST") {
+        const body = await parseBody();
+        targetUrl = body.url;
+      }
+      if (!targetUrl) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "URL is required" }));
+        return;
+      }
+      let parsedUrl;
+      try {
+        const withProtocol = targetUrl.startsWith("http://") || targetUrl.startsWith("https://") ? targetUrl : `https://${targetUrl}`;
+        parsedUrl = new URL(withProtocol);
+      } catch (e) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Invalid URL provided" }));
+        return;
+      }
+      const domain = parsedUrl.hostname;
+      const favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+      let title = "";
+      let description = "";
+      let category = "Software";
+      if (domain === "github.com") {
+        const parts = parsedUrl.pathname.split("/").filter(Boolean);
+        if (parts.length >= 2) {
+          const [owner, repo] = parts;
+          title = repo.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+          try {
+            const ghRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+              headers: { "User-Agent": "RecoLabs-LinkInspector/1.0" }
+            });
+            if (ghRes.ok) {
+              const ghData = await ghRes.json();
+              if (ghData.name) title = ghData.name;
+              if (ghData.description) description = ghData.description;
+              const topics = Array.isArray(ghData.topics) ? ghData.topics.join(" ") : "";
+              const fullText = `${title} ${description} ${topics}`.toLowerCase();
+              if (/ai|llm|gpt|agent|machine learning|vision|deepseek|model/.test(fullText)) category = "AI";
+              else if (/security|exploit|bypass|auth|crypto|protect|cve/.test(fullText)) category = "Security";
+              else if (/hardware|pcb|firmware|embedded|cad|iot|esp32/.test(fullText)) category = "Hardware";
+              else if (/learn|course|tool|toolkit|cli|framework|template|education/.test(fullText)) category = "Education & Tooling";
+            }
+          } catch {
+          }
+        }
+      }
+      if (!description) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 4e3);
+          const response = await fetch(parsedUrl.toString(), {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Accept": "text/html,application/xhtml+xml"
+            },
+            signal: controller.signal
+          });
+          clearTimeout(timeout);
+          if (response.ok) {
+            const html = await response.text();
+            if (!title) {
+              const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+              if (titleMatch) {
+                title = titleMatch[1].trim().replace(/(\s*[-|–—]\s*.*)$/, "").slice(0, 80);
+              }
+            }
+            const ogDescMatch = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i) || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:description["']/i);
+            const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i) || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["']/i);
+            const rawDesc = (ogDescMatch ? ogDescMatch[1] : metaDescMatch ? metaDescMatch[1] : "").trim();
+            if (rawDesc) {
+              description = rawDesc.slice(0, 300);
+            }
+            const combined = `${title} ${description}`.toLowerCase();
+            if (/ai|llm|gpt|agent|machine learning|neural|vision|copilot/.test(combined)) category = "AI";
+            else if (/security|auth|cipher|protect|encrypt|vulnerability|audit|firewall|pentest/.test(combined)) category = "Security";
+            else if (/hardware|pcb|firmware|cad|circuit|arduino|esp32|sensor|raspberry/.test(combined)) category = "Hardware";
+            else if (/learn|tutorial|course|doc|guide|book|education|tool/.test(combined)) category = "Education & Tooling";
+          }
+        } catch {
+        }
+      }
+      if (!title) {
+        title = domain.replace(/^www\./, "").split(".")[0];
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+      }
+      if (!description) {
+        description = `Innovative engineering stack and builder build hosted at ${domain}.`;
+      }
+      res.statusCode = 200;
+      res.end(JSON.stringify({
+        success: true,
+        title,
+        problem_solving: description,
+        category,
+        favicon
+      }));
       return;
     }
     if (req.method === "POST" && (pathname === "/api/network/admin/send-email" || pathname === "/api/admin/send-email")) {
