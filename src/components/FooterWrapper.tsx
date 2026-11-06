@@ -4,6 +4,7 @@ import * as React from "react"
 import { Link, useLocation } from "react-router-dom"
 import { CrowdCanvas } from "@/components/CrowdCanvas"
 import { networkApi } from "@/services/networkApi"
+import { GithubIcon, DiscordIcon, TwitterIcon } from "@/components/icons"
 
 export function FooterWrapper() {
   const location = useLocation()
@@ -105,17 +106,19 @@ export function FooterWrapper() {
                 href="https://discord.com/invite/7dk4w37BhP"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-1.5 rounded-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-mono text-xs font-bold transition-all shadow-sm active:scale-95"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-mono text-xs font-bold transition-all shadow-sm active:scale-95"
               >
-                Join Discord
+                <DiscordIcon className="w-4 h-4" />
+                <span>Discord</span>
               </a>
               <a
                 href="https://github.com/recoorg"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-1.5 rounded-full border border-black dark:border-zinc-700 bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold hover:opacity-85 transition-opacity"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-black dark:border-zinc-700 bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold hover:opacity-85 transition-opacity"
               >
-                Explore GitHub
+                <GithubIcon className="w-4 h-4" />
+                <span>GitHub</span>
               </a>
             </div>
           </div>
@@ -164,12 +167,39 @@ export function FooterWrapper() {
         <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-white dark:from-[#09090b] to-transparent pointer-events-none" />
       </div>
 
-      {/* Bottom Copyright & Legal row */}
+      {/* Bottom Copyright & Legal row with Social Icons */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 pt-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left font-mono text-xs text-zinc-500 dark:text-zinc-400 border-t border-zinc-100 dark:border-zinc-800/60 pt-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left font-mono text-xs text-zinc-500 dark:text-zinc-400 border-t border-zinc-100 dark:border-zinc-800/60 pt-6">
           <p>© 2026 Reco Labs · Founded by Aditya &amp; Tanish · Built by curious minds worldwide.</p>
-          <div className="flex items-center gap-4">
-            <Link to="/privacy" className="hover:text-[#FA5D00] transition-colors underline underline-offset-2">
+          <div className="flex items-center gap-3">
+            <a
+              href="https://discord.com/invite/7dk4w37BhP"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-850 hover:bg-[#5865F2] hover:text-white text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition-all shadow-2xs"
+              title="Discord Guild"
+            >
+              <DiscordIcon className="w-4 h-4" />
+            </a>
+            <a
+              href="https://github.com/recoorg"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-850 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition-all shadow-2xs"
+              title="GitHub Repositories"
+            >
+              <GithubIcon className="w-4 h-4" />
+            </a>
+            <a
+              href="https://x.com/adibxr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-850 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition-all shadow-2xs"
+              title="Founder X"
+            >
+              <TwitterIcon className="w-3.5 h-3.5" />
+            </a>
+            <Link to="/privacy" className="hover:text-[#FA5D00] transition-colors underline underline-offset-2 ml-2">
               Privacy Policy
             </Link>
           </div>
