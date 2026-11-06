@@ -42,7 +42,7 @@ import {
   Share2,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
-import { networkApi, type UserProfile, type StartupItem } from "@/services/networkApi"
+import { networkApi, type UserProfile, type StartupItem, type BuilderProfileWithStats } from "@/services/networkApi"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
 import { StartupPromoteModal } from "@/components/StartupPromoteModal"
@@ -66,6 +66,9 @@ export function NetworkPage() {
   const [loading, setLoading] = React.useState(true)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [selectedCategory, setSelectedCategory] = React.useState("ALL")
+  const [builders, setBuilders] = React.useState<BuilderProfileWithStats[]>([])
+  const [activeDirectoryTab, setActiveDirectoryTab] = React.useState<"builders" | "startups">("builders")
+
 
   // Modals & Panels
   const [showAuthModal, setShowAuthModal] = React.useState(false)
@@ -675,9 +678,181 @@ export function NetworkPage() {
           </div>
         )}
 
+
+        {/* ======================================================== */}
+        {/* NEW LAUNCHPAD BANNER & DIRECTORY SWITCHER                */}
+        {/* ======================================================== */}
+        <div className="mt-8 mb-6 p-5 rounded-3xl border-2 border-[#FA5D00]/40 bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-[#FA5D00] text-black flex items-center justify-center font-bold flex-none shadow-md">
+              <Rocket className="w-5 h-5 fill-black" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-serif text-base sm:text-lg font-bold text-zinc-950 dark:text-zinc-50">
+                  Reco Launchpad is Live!
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#FA5D00] text-black uppercase">
+                  NEW REPO & APP
+                </span>
+              </div>
+              <p className="font-mono text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+                Our standalone Peerlist-style discovery engine with live upvoting, community scroll feed, and spotlight pinning.
+              </p>
+            </div>
+          </div>
+          <a
+            href={`https://recolabslauch.vercel.app${networkApi.getToken() ? `?sso_token=${encodeURIComponent(networkApi.getToken()!)}` : ""}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-5 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:text-black transition-all flex items-center gap-1.5 flex-none shadow-sm"
+          >
+            <span>Open Launchpad</span>
+            <ArrowUpRight className="w-4 h-4" />
+          </a>
+        </div>
+
+        {/* Directory Switcher Tabs */}
+        <div className="flex items-center gap-2 border-b editorial-hairline pb-4 font-mono text-xs">
+          <button
+            type="button"
+            onClick={() => setActiveDirectoryTab("builders")}
+            className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              activeDirectoryTab === "builders"
+                ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            }`}
+          >
+            <User className="w-3.5 h-3.5" />
+            <span>All Guild Builders ({builders.length || networkStats.totalBuilders || 19})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveDirectoryTab("startups")}
+            className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              activeDirectoryTab === "startups"
+                ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            }`}
+          >
+            <Rocket className="w-3.5 h-3.5" />
+            <span>Startups & Projects ({startups.length})</span>
+          </button>
+        </div>
+
         {/* ======================================================== */}
         {/* 3. STARTUPS DIRECTORY (Always visible for all builders!)   */}
         {/* ======================================================== */}
+
+        {/* ======================================================== */}
+        {/* BUILDERS DIRECTORY VIEW (Profiles & Contribution numbers) */}
+        {/* ======================================================== */}
+        {activeDirectoryTab === "builders" ? (
+          <div className="mt-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-serif text-2xl font-bold text-zinc-950 dark:text-zinc-50">
+                  Guild Builders &amp; Contributors
+                </h3>
+                <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  Verified profiles, project contributions, startup launches, and guild standing.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {builders.map((builder, idx) => (
+                <div
+                  key={builder.id}
+                  className="p-6 rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/60 shadow-sm hover:border-[#FA5D00] dark:hover:border-[#FA5D00] transition-all flex flex-col justify-between space-y-4 group"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative w-12 h-12 rounded-full overflow-hidden bg-[#FA5D00]/15 flex items-center justify-center font-serif font-bold text-sm text-[#FA5D00] border-2 border-black/10 dark:border-white/10 flex-none">
+                          {builder.avatar_url ? (
+                            <img
+                              src={builder.avatar_url}
+                              alt={builder.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(builder.username)}`
+                              }}
+                            />
+                          ) : (
+                            builder.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <Link
+                            to={`/builder/${builder.username}`}
+                            className="font-serif text-base font-bold text-zinc-950 dark:text-zinc-50 hover:text-[#FA5D00] transition-colors flex items-center gap-1.5 truncate"
+                          >
+                            <span className="truncate">{builder.name}</span>
+                            {builder.is_verified && <VerifiedBadge size="xs" />}
+                          </Link>
+                          <div className="font-mono text-xs text-zinc-400 truncate">
+                            @{builder.username}
+                          </div>
+                        </div>
+                      </div>
+
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex-none">
+                        #{idx + 1} Rank
+                      </span>
+                    </div>
+
+                    <p className="font-sans text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 min-h-[32px] leading-relaxed">
+                      {builder.bio || "Active builder in the Reco Labs open-source developer collective."}
+                    </p>
+                  </div>
+
+                  {/* Contribution Breakdown Numbers */}
+                  <div className="pt-3 border-t editorial-hairline space-y-3">
+                    <div className="grid grid-cols-3 gap-2 text-center font-mono">
+                      <div className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
+                        <div className="text-xs font-bold text-zinc-950 dark:text-zinc-50">
+                          {builder.startups_count}
+                        </div>
+                        <div className="text-[9px] text-zinc-400 uppercase tracking-tight">
+                          Startups
+                        </div>
+                      </div>
+
+                      <div className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
+                        <div className="text-xs font-bold text-zinc-950 dark:text-zinc-50">
+                          {builder.upvotes_count}
+                        </div>
+                        <div className="text-[9px] text-zinc-400 uppercase tracking-tight">
+                          Upvotes
+                        </div>
+                      </div>
+
+                      <div className="p-2 rounded-xl bg-[#FA5D00]/10 border border-[#FA5D00]/20 text-[#FA5D00]">
+                        <div className="text-xs font-extrabold">
+                          {builder.contributions}
+                        </div>
+                        <div className="text-[9px] uppercase tracking-tight font-bold">
+                          Points
+                        </div>
+                      </div>
+                    </div>
+
+                    <Link
+                      to={`/builder/${builder.username}`}
+                      className="w-full py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-black dark:hover:border-white font-mono text-xs font-bold text-center block transition-colors text-zinc-900 dark:text-zinc-100"
+                    >
+                      View Profile &amp; Projects →
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div>
+
         <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
           {/* Search Input */}
           <div className="relative flex-1 max-w-md">
@@ -911,6 +1086,8 @@ export function NetworkPage() {
             </div>
           )}
         </div>
+        </div>
+        )}
 
       </div>
 

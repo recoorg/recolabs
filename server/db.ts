@@ -1858,3 +1858,272 @@ export async function validateCoupon(code: string, amount: number) {
     client.release();
   }
 }
+
+
+// ==========================================
+// BUILDER DIRECTORY & CONTRIBUTIONS
+// ==========================================
+export async function listBuildersWithContributions(limit: number = 100) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT 
+        u.id, 
+        u.name, 
+        u.username, 
+        u.avatar_url, 
+        u.bio, 
+        u.github, 
+        u.twitter, 
+        u.discord, 
+        u.website, 
+        COALESCE(u.is_verified, false) as is_verified, 
+        COALESCE(u.is_pro, false) as is_pro, 
+        u.plan,
+        u.created_at,
+        COUNT(DISTINCT s.id)::int AS startups_count,
+        COALESCE(SUM(s.upvotes_count), 0)::int AS upvotes_count,
+        COUNT(DISTINCT j.id)::int AS jobs_count,
+        (COUNT(DISTINCT s.id) * 10 + COALESCE(SUM(s.upvotes_count), 0) * 2 + COUNT(DISTINCT j.id) * 5 + (CASE WHEN u.is_verified THEN 25 ELSE 0 END))::int AS contributions
+      FROM users u
+      LEFT JOIN startups s ON s.user_id = u.id OR LOWER(s.founder_username) = LOWER(u.username)
+      LEFT JOIN builder_jobs j ON j.user_id = u.id OR LOWER(j.author_username) = LOWER(u.username)
+      GROUP BY u.id
+      ORDER BY contributions DESC, u.is_verified DESC, u.created_at DESC
+      LIMIT $1`,
+      [limit]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+// ==========================================
+// LAUNCHPAD STARTUP UPVOTING
+// ==========================================
+export async function toggleStartupUpvote(startupId: number, userId?: number | null, ipAddress?: string | null) {
+  const client = await pool.connect();
+  try {
+    let hasUpvoted = false;
+    if (userId) {
+      const existing = await client.query(
+        "SELECT id FROM startup_upvotes WHERE startup_id = $1 AND user_id = $2",
+        [startupId, userId]
+      );
+      if (existing.rows.length > 0) {
+        await client.query("DELETE FROM startup_upvotes WHERE startup_id = $1 AND user_id = $2", [startupId, userId]);
+        await client.query("UPDATE startups SET upvotes_count = GREATEST(0, upvotes_count - 1) WHERE id = $1", [startupId]);
+        hasUpvoted = false;
+      } else {
+        await client.query(
+          "INSERT INTO startup_upvotes (startup_id, user_id, ip_address) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+          [startupId, userId, ipAddress || null]
+        );
+        await client.query("UPDATE startups SET upvotes_count = upvotes_count + 1 WHERE id = $1", [startupId]);
+        hasUpvoted = true;
+      }
+    } else {
+      await client.query("UPDATE startups SET upvotes_count = upvotes_count + 1 WHERE id = $1", [startupId]);
+      hasUpvoted = true;
+    }
+
+    const updated = await client.query("SELECT upvotes_count FROM startups WHERE id = $1", [startupId]);
+    return {
+      success: true,
+      hasUpvoted,
+      upvotesCount: updated.rows[0]?.upvotes_count || 0,
+    };
+  } finally {
+    client.release();
+  }
+}
+
+// ==========================================
+// COMMUNITY POSTS / SCROLL DISCUSSIONS
+// ==========================================
+export async function listCommunityPosts({
+  category,
+  limit = 50,
+  offset = 0,
+  search,
+  currentUserId,
+}: {
+  category?: string;
+  limit?: number;
+  offset?: number;
+  search?: string;
+  currentUserId?: number | null;
+} = {}) {
+  const client = await pool.connect();
+  try {
+    let query = `
+      SELECT 
+        p.id, 
+        p.user_id, 
+        p.author_name, 
+        p.author_username, 
+        p.author_avatar, 
+        COALESCE(u.is_verified, p.is_verified, false) as is_verified, 
+        p.title, 
+        p.content, 
+        p.category, 
+        p.tags, 
+        p.media_url, 
+        p.upvotes_count, 
+        p.comments_count, 
+        p.created_at,
+        ${currentUserId ? `EXISTS(SELECT 1 FROM post_upvotes pu WHERE pu.post_id = p.id AND pu.user_id = $1)` : "false"} as has_upvoted
+      FROM community_posts p
+      LEFT JOIN users u ON p.user_id = u.id
+      WHERE 1=1
+    `;
+    const params: any[] = [];
+    if (currentUserId) {
+      params.push(currentUserId);
+    }
+
+    if (category && category !== "ALL" && category !== "all") {
+      params.push(category.toLowerCase());
+      query += ` AND LOWER(p.category) = $${params.length}`;
+    }
+
+    if (search && search.trim()) {
+      params.push(`%${search.trim().toLowerCase()}%`);
+      query += ` AND (LOWER(p.title) LIKE $${params.length} OR LOWER(p.content) LIKE $${params.length} OR LOWER(p.author_name) LIKE $${params.length})`;
+    }
+
+    query += ` ORDER BY p.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
+
+    const res = await client.query(query, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createCommunityPost({
+  userId,
+  authorName,
+  authorUsername,
+  authorAvatar,
+  isVerified = false,
+  title,
+  content,
+  category = "ask",
+  tags = [],
+  mediaUrl,
+}: {
+  userId?: number | null;
+  authorName: string;
+  authorUsername: string;
+  authorAvatar?: string | null;
+  isVerified?: boolean;
+  title?: string | null;
+  content: string;
+  category?: string;
+  tags?: string[];
+  mediaUrl?: string | null;
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO community_posts 
+        (user_id, author_name, author_username, author_avatar, is_verified, title, content, category, tags, media_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        userId || null,
+        authorName,
+        authorUsername,
+        authorAvatar || null,
+        isVerified,
+        title || null,
+        content,
+        category,
+        tags,
+        mediaUrl || null,
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function togglePostUpvote(postId: number, userId?: number | null) {
+  const client = await pool.connect();
+  try {
+    let hasUpvoted = false;
+    if (userId) {
+      const existing = await client.query("SELECT id FROM post_upvotes WHERE post_id = $1 AND user_id = $2", [postId, userId]);
+      if (existing.rows.length > 0) {
+        await client.query("DELETE FROM post_upvotes WHERE post_id = $1 AND user_id = $2", [postId, userId]);
+        await client.query("UPDATE community_posts SET upvotes_count = GREATEST(0, upvotes_count - 1) WHERE id = $1", [postId]);
+        hasUpvoted = false;
+      } else {
+        await client.query("INSERT INTO post_upvotes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [postId, userId]);
+        await client.query("UPDATE community_posts SET upvotes_count = upvotes_count + 1 WHERE id = $1", [postId]);
+        hasUpvoted = true;
+      }
+    } else {
+      await client.query("UPDATE community_posts SET upvotes_count = upvotes_count + 1 WHERE id = $1", [postId]);
+      hasUpvoted = true;
+    }
+    const updated = await client.query("SELECT upvotes_count FROM community_posts WHERE id = $1", [postId]);
+    return { success: true, hasUpvoted, upvotesCount: updated.rows[0]?.upvotes_count || 0 };
+  } finally {
+    client.release();
+  }
+}
+
+export async function listPostComments(postId: number) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT c.id, c.post_id, c.user_id, c.author_name, c.author_username, c.author_avatar, 
+              COALESCE(u.is_verified, c.is_verified, false) as is_verified, c.content, c.created_at
+       FROM post_comments c
+       LEFT JOIN users u ON c.user_id = u.id
+       WHERE c.post_id = $1
+       ORDER BY c.created_at ASC`,
+      [postId]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createPostComment({
+  postId,
+  userId,
+  authorName,
+  authorUsername,
+  authorAvatar,
+  isVerified = false,
+  content,
+}: {
+  postId: number;
+  userId?: number | null;
+  authorName: string;
+  authorUsername: string;
+  authorAvatar?: string | null;
+  isVerified?: boolean;
+  content: string;
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO post_comments (post_id, user_id, author_name, author_username, author_avatar, is_verified, content)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [postId, userId || null, authorName, authorUsername, authorAvatar || null, isVerified, content]
+    );
+    await client.query("UPDATE community_posts SET comments_count = comments_count + 1 WHERE id = $1", [postId]);
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}

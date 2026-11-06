@@ -1,3 +1,53 @@
+export interface BuilderProfileWithStats {
+  id: number
+  name: string
+  username: string
+  avatar_url?: string | null
+  bio?: string | null
+  github?: string | null
+  twitter?: string | null
+  discord?: string | null
+  website?: string | null
+  is_verified?: boolean
+  is_pro?: boolean
+  plan?: string
+  created_at?: string
+  startups_count: number
+  upvotes_count: number
+  jobs_count: number
+  contributions: number
+}
+
+export interface CommunityPostItem {
+  id: number
+  user_id?: number | null
+  author_name: string
+  author_username: string
+  author_avatar?: string | null
+  is_verified?: boolean
+  title?: string | null
+  content: string
+  category: string
+  tags: string[]
+  media_url?: string | null
+  upvotes_count: number
+  comments_count: number
+  has_upvoted?: boolean
+  created_at: string
+}
+
+export interface CommunityPostComment {
+  id: number
+  post_id: number
+  user_id?: number | null
+  author_name: string
+  author_username?: string | null
+  author_avatar?: string | null
+  is_verified?: boolean
+  content: string
+  created_at: string
+}
+
 export interface UserProfile {
   id: number
   name: string
@@ -501,6 +551,134 @@ export const networkApi = {
       }
     )
     return json.startup
+  },
+
+
+  // ==========================================
+  // BUILDERS DIRECTORY & CONTRIBUTIONS
+  // ==========================================
+  async getBuilders(limit: number = 100): Promise<BuilderProfileWithStats[]> {
+    try {
+      const res = await safeJsonFetch<{ success: boolean; builders: BuilderProfileWithStats[] }>(
+        `/api/network/builders?limit=${limit}`
+      )
+      return res.builders || []
+    } catch (err) {
+      console.warn("[networkApi.getBuilders] Fallback to empty:", err)
+      return []
+    }
+  },
+
+  // ==========================================
+  // STARTUP UPVOTING
+  // ==========================================
+  async upvoteStartup(startupId: number): Promise<{ success: boolean; hasUpvoted: boolean; upvotesCount: number }> {
+    const token = this.getToken()
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (token) headers["Authorization"] = `Bearer ${token}`
+
+    return await safeJsonFetch<{ success: boolean; hasUpvoted: boolean; upvotesCount: number }>(
+      `/api/network/startups/${startupId}/upvote`,
+      { method: "POST", headers, body: JSON.stringify({ startupId }) }
+    )
+  },
+
+  // ==========================================
+  // COMMUNITY POSTS / SCROLL DISCUSSIONS
+  // ==========================================
+  async getCommunityPosts(params?: { category?: string; search?: string; limit?: number; offset?: number }): Promise<CommunityPostItem[]> {
+    const q = new URLSearchParams()
+    if (params?.category) q.set("category", params.category)
+    if (params?.search) q.set("search", params.search)
+    if (params?.limit) q.set("limit", String(params.limit))
+    if (params?.offset) q.set("offset", String(params.offset))
+
+    const token = this.getToken()
+    const headers: Record<string, string> = {}
+    if (token) headers["Authorization"] = `Bearer ${token}`
+
+    try {
+      const res = await safeJsonFetch<{ success: boolean; posts: CommunityPostItem[] }>(
+        `/api/network/posts?${q.toString()}`,
+        { headers }
+      )
+      return res.posts || []
+    } catch (err) {
+      console.warn("[networkApi.getCommunityPosts] Failed:", err)
+      return []
+    }
+  },
+
+  async createCommunityPost(data: {
+    title?: string
+    content: string
+    category?: string
+    tags?: string[]
+    mediaUrl?: string
+  }): Promise<CommunityPostItem> {
+    const token = this.getToken()
+    const currentUser = this.getCurrentUser()
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (token) headers["Authorization"] = `Bearer ${token}`
+
+    const res = await safeJsonFetch<{ success: boolean; post: CommunityPostItem }>(
+      "/api/network/posts",
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          ...data,
+          authorName: currentUser?.name || "Anonymous Builder",
+          authorUsername: currentUser?.username || "builder",
+          authorAvatar: currentUser?.avatar_url || null,
+        }),
+      }
+    )
+    return res.post
+  },
+
+  async upvotePost(postId: number): Promise<{ success: boolean; hasUpvoted: boolean; upvotesCount: number }> {
+    const token = this.getToken()
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (token) headers["Authorization"] = `Bearer ${token}`
+
+    return await safeJsonFetch<{ success: boolean; hasUpvoted: boolean; upvotesCount: number }>(
+      `/api/network/posts/${postId}/upvote`,
+      { method: "POST", headers }
+    )
+  },
+
+  async getPostComments(postId: number): Promise<CommunityPostComment[]> {
+    try {
+      const res = await safeJsonFetch<{ success: boolean; comments: CommunityPostComment[] }>(
+        `/api/network/posts/${postId}/comments`
+      )
+      return res.comments || []
+    } catch {
+      return []
+    }
+  },
+
+  async createPostComment(postId: number, content: string): Promise<CommunityPostComment> {
+    const token = this.getToken()
+    const currentUser = this.getCurrentUser()
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (token) headers["Authorization"] = `Bearer ${token}`
+
+    const res = await safeJsonFetch<{ success: boolean; comment: CommunityPostComment }>(
+      `/api/network/posts/${postId}/comments`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          content,
+          authorName: currentUser?.name || "Anonymous Builder",
+          authorUsername: currentUser?.username || "builder",
+          authorAvatar: currentUser?.avatar_url || null,
+        }),
+      }
+    )
+    return res.comment
   },
 
   async getNetworkStats(): Promise<{

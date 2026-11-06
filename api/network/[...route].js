@@ -1654,6 +1654,228 @@ async function validateCoupon(code, amount) {
     client.release();
   }
 }
+async function listBuildersWithContributions(limit = 100) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT 
+        u.id, 
+        u.name, 
+        u.username, 
+        u.avatar_url, 
+        u.bio, 
+        u.github, 
+        u.twitter, 
+        u.discord, 
+        u.website, 
+        COALESCE(u.is_verified, false) as is_verified, 
+        COALESCE(u.is_pro, false) as is_pro, 
+        u.plan,
+        u.created_at,
+        COUNT(DISTINCT s.id)::int AS startups_count,
+        COALESCE(SUM(s.upvotes_count), 0)::int AS upvotes_count,
+        COUNT(DISTINCT j.id)::int AS jobs_count,
+        (COUNT(DISTINCT s.id) * 10 + COALESCE(SUM(s.upvotes_count), 0) * 2 + COUNT(DISTINCT j.id) * 5 + (CASE WHEN u.is_verified THEN 25 ELSE 0 END))::int AS contributions
+      FROM users u
+      LEFT JOIN startups s ON s.user_id = u.id OR LOWER(s.founder_username) = LOWER(u.username)
+      LEFT JOIN builder_jobs j ON j.user_id = u.id OR LOWER(j.author_username) = LOWER(u.username)
+      GROUP BY u.id
+      ORDER BY contributions DESC, u.is_verified DESC, u.created_at DESC
+      LIMIT $1`,
+      [limit]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function toggleStartupUpvote(startupId, userId, ipAddress) {
+  const client = await pool.connect();
+  try {
+    let hasUpvoted = false;
+    if (userId) {
+      const existing = await client.query(
+        "SELECT id FROM startup_upvotes WHERE startup_id = $1 AND user_id = $2",
+        [startupId, userId]
+      );
+      if (existing.rows.length > 0) {
+        await client.query("DELETE FROM startup_upvotes WHERE startup_id = $1 AND user_id = $2", [startupId, userId]);
+        await client.query("UPDATE startups SET upvotes_count = GREATEST(0, upvotes_count - 1) WHERE id = $1", [startupId]);
+        hasUpvoted = false;
+      } else {
+        await client.query(
+          "INSERT INTO startup_upvotes (startup_id, user_id, ip_address) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+          [startupId, userId, ipAddress || null]
+        );
+        await client.query("UPDATE startups SET upvotes_count = upvotes_count + 1 WHERE id = $1", [startupId]);
+        hasUpvoted = true;
+      }
+    } else {
+      await client.query("UPDATE startups SET upvotes_count = upvotes_count + 1 WHERE id = $1", [startupId]);
+      hasUpvoted = true;
+    }
+    const updated = await client.query("SELECT upvotes_count FROM startups WHERE id = $1", [startupId]);
+    return {
+      success: true,
+      hasUpvoted,
+      upvotesCount: updated.rows[0]?.upvotes_count || 0
+    };
+  } finally {
+    client.release();
+  }
+}
+async function listCommunityPosts({
+  category,
+  limit = 50,
+  offset = 0,
+  search,
+  currentUserId
+} = {}) {
+  const client = await pool.connect();
+  try {
+    let query = `
+      SELECT 
+        p.id, 
+        p.user_id, 
+        p.author_name, 
+        p.author_username, 
+        p.author_avatar, 
+        COALESCE(u.is_verified, p.is_verified, false) as is_verified, 
+        p.title, 
+        p.content, 
+        p.category, 
+        p.tags, 
+        p.media_url, 
+        p.upvotes_count, 
+        p.comments_count, 
+        p.created_at,
+        ${currentUserId ? `EXISTS(SELECT 1 FROM post_upvotes pu WHERE pu.post_id = p.id AND pu.user_id = $1)` : "false"} as has_upvoted
+      FROM community_posts p
+      LEFT JOIN users u ON p.user_id = u.id
+      WHERE 1=1
+    `;
+    const params = [];
+    if (currentUserId) {
+      params.push(currentUserId);
+    }
+    if (category && category !== "ALL" && category !== "all") {
+      params.push(category.toLowerCase());
+      query += ` AND LOWER(p.category) = $${params.length}`;
+    }
+    if (search && search.trim()) {
+      params.push(`%${search.trim().toLowerCase()}%`);
+      query += ` AND (LOWER(p.title) LIKE $${params.length} OR LOWER(p.content) LIKE $${params.length} OR LOWER(p.author_name) LIKE $${params.length})`;
+    }
+    query += ` ORDER BY p.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
+    const res = await client.query(query, params);
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function createCommunityPost({
+  userId,
+  authorName,
+  authorUsername,
+  authorAvatar,
+  isVerified = false,
+  title,
+  content,
+  category = "ask",
+  tags = [],
+  mediaUrl
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO community_posts 
+        (user_id, author_name, author_username, author_avatar, is_verified, title, content, category, tags, media_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        userId || null,
+        authorName,
+        authorUsername,
+        authorAvatar || null,
+        isVerified,
+        title || null,
+        content,
+        category,
+        tags,
+        mediaUrl || null
+      ]
+    );
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
+async function togglePostUpvote(postId, userId) {
+  const client = await pool.connect();
+  try {
+    let hasUpvoted = false;
+    if (userId) {
+      const existing = await client.query("SELECT id FROM post_upvotes WHERE post_id = $1 AND user_id = $2", [postId, userId]);
+      if (existing.rows.length > 0) {
+        await client.query("DELETE FROM post_upvotes WHERE post_id = $1 AND user_id = $2", [postId, userId]);
+        await client.query("UPDATE community_posts SET upvotes_count = GREATEST(0, upvotes_count - 1) WHERE id = $1", [postId]);
+        hasUpvoted = false;
+      } else {
+        await client.query("INSERT INTO post_upvotes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [postId, userId]);
+        await client.query("UPDATE community_posts SET upvotes_count = upvotes_count + 1 WHERE id = $1", [postId]);
+        hasUpvoted = true;
+      }
+    } else {
+      await client.query("UPDATE community_posts SET upvotes_count = upvotes_count + 1 WHERE id = $1", [postId]);
+      hasUpvoted = true;
+    }
+    const updated = await client.query("SELECT upvotes_count FROM community_posts WHERE id = $1", [postId]);
+    return { success: true, hasUpvoted, upvotesCount: updated.rows[0]?.upvotes_count || 0 };
+  } finally {
+    client.release();
+  }
+}
+async function listPostComments(postId) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT c.id, c.post_id, c.user_id, c.author_name, c.author_username, c.author_avatar, 
+              COALESCE(u.is_verified, c.is_verified, false) as is_verified, c.content, c.created_at
+       FROM post_comments c
+       LEFT JOIN users u ON c.user_id = u.id
+       WHERE c.post_id = $1
+       ORDER BY c.created_at ASC`,
+      [postId]
+    );
+    return res.rows;
+  } finally {
+    client.release();
+  }
+}
+async function createPostComment({
+  postId,
+  userId,
+  authorName,
+  authorUsername,
+  authorAvatar,
+  isVerified = false,
+  content
+}) {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `INSERT INTO post_comments (post_id, user_id, author_name, author_username, author_avatar, is_verified, content)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [postId, userId || null, authorName, authorUsername, authorAvatar || null, isVerified, content]
+    );
+    await client.query("UPDATE community_posts SET comments_count = comments_count + 1 WHERE id = $1", [postId]);
+    return res.rows[0];
+  } finally {
+    client.release();
+  }
+}
 
 // server/apiRouter.ts
 function escapeHtml(str) {
@@ -1819,6 +2041,145 @@ async function handleNetworkRequest(req, res) {
       res.statusCode = 200;
       res.end(JSON.stringify({ success: true, user, startups }));
       return;
+    }
+    if (req.method === "GET" && pathname === "/api/network/builders") {
+      const limit = parseInt(searchParams.get("limit") || "100", 10);
+      const builders = await listBuildersWithContributions(limit);
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, builders }));
+      return;
+    }
+    if (req.method === "POST" && (pathname.startsWith("/api/network/startups/") && pathname.endsWith("/upvote") || pathname === "/api/network/upvote")) {
+      let startupId = 0;
+      if (pathname === "/api/network/upvote") {
+        const body = await parseBody();
+        startupId = parseInt(body.startupId || body.id || "0", 10);
+      } else {
+        const match = pathname.match(/\/api\/network\/startups\/(\d+)\/upvote/);
+        startupId = match ? parseInt(match[1], 10) : 0;
+      }
+      if (!startupId) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid startup ID is required." }));
+        return;
+      }
+      const auth = getAuthUser();
+      const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim();
+      const result = await toggleStartupUpvote(startupId, auth?.id, ip);
+      res.statusCode = 200;
+      res.end(JSON.stringify(result));
+      return;
+    }
+    if (req.method === "GET" && (pathname === "/api/network/posts" || pathname === "/api/network/discussions")) {
+      const category = searchParams.get("category") || void 0;
+      const search = searchParams.get("search") || void 0;
+      const limit = parseInt(searchParams.get("limit") || "50", 10);
+      const offset = parseInt(searchParams.get("offset") || "0", 10);
+      const auth = getAuthUser();
+      const posts = await listCommunityPosts({ category, search, limit, offset, currentUserId: auth?.id });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, posts }));
+      return;
+    }
+    if (req.method === "POST" && (pathname === "/api/network/posts" || pathname === "/api/network/discussions")) {
+      const auth = getAuthUser();
+      const body = await parseBody();
+      if (!body.content || !body.content.trim()) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Post content cannot be empty." }));
+        return;
+      }
+      let authorName = body.authorName || "Anonymous Builder";
+      let authorUsername = body.authorUsername || "builder";
+      let authorAvatar = body.authorAvatar || null;
+      let isVerified = false;
+      if (auth) {
+        const user = await getUserById(auth.id);
+        if (user) {
+          authorName = user.name || authorName;
+          authorUsername = user.username || authorUsername;
+          authorAvatar = user.avatar_url || authorAvatar;
+          isVerified = !!user.is_verified;
+        }
+      }
+      const post = await createCommunityPost({
+        userId: auth?.id || null,
+        authorName,
+        authorUsername,
+        authorAvatar,
+        isVerified,
+        title: body.title || null,
+        content: body.content.trim(),
+        category: body.category || "ask",
+        tags: Array.isArray(body.tags) ? body.tags : [],
+        mediaUrl: body.mediaUrl || null
+      });
+      res.statusCode = 200;
+      res.end(JSON.stringify({ success: true, post }));
+      return;
+    }
+    if (req.method === "POST" && pathname.startsWith("/api/network/posts/") && pathname.endsWith("/upvote")) {
+      const match = pathname.match(/\/api\/network\/posts\/(\d+)\/upvote/);
+      const postId = match ? parseInt(match[1], 10) : 0;
+      if (!postId) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid post ID is required." }));
+        return;
+      }
+      const auth = getAuthUser();
+      const result = await togglePostUpvote(postId, auth?.id);
+      res.statusCode = 200;
+      res.end(JSON.stringify(result));
+      return;
+    }
+    if (pathname.startsWith("/api/network/posts/") && pathname.endsWith("/comments")) {
+      const match = pathname.match(/\/api\/network\/posts\/(\d+)\/comments/);
+      const postId = match ? parseInt(match[1], 10) : 0;
+      if (!postId) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "Valid post ID is required." }));
+        return;
+      }
+      if (req.method === "GET") {
+        const comments = await listPostComments(postId);
+        res.statusCode = 200;
+        res.end(JSON.stringify({ success: true, comments }));
+        return;
+      }
+      if (req.method === "POST") {
+        const auth = getAuthUser();
+        const body = await parseBody();
+        if (!body.content || !body.content.trim()) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ error: "Comment content is required." }));
+          return;
+        }
+        let authorName = body.authorName || "Anonymous Builder";
+        let authorUsername = body.authorUsername || "builder";
+        let authorAvatar = body.authorAvatar || null;
+        let isVerified = false;
+        if (auth) {
+          const user = await getUserById(auth.id);
+          if (user) {
+            authorName = user.name || authorName;
+            authorUsername = user.username || authorUsername;
+            authorAvatar = user.avatar_url || authorAvatar;
+            isVerified = !!user.is_verified;
+          }
+        }
+        const comment = await createPostComment({
+          postId,
+          userId: auth?.id || null,
+          authorName,
+          authorUsername,
+          authorAvatar,
+          isVerified,
+          content: body.content.trim()
+        });
+        res.statusCode = 200;
+        res.end(JSON.stringify({ success: true, comment }));
+        return;
+      }
     }
     if (req.method === "GET" && (pathname === "/api/network/builder-preview" || pathname.startsWith("/api/network/builder-preview"))) {
       let username = searchParams.get("username") || pathname.replace("/api/network/builder-preview", "").replace(/^\//, "").trim();

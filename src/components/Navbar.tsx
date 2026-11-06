@@ -59,10 +59,18 @@ export function Navbar() {
   const navLinks: NavItem[] = [
     { label: "ABOUT", path: "/about" },
     { label: "JOBS", path: "/jobs" },
-    { label: "PROJECTS", path: "/projects" },
+    { label: "LAUNCHPAD", path: "https://recolabslauch.vercel.app", external: true },
     { label: "HACKATHONS", path: "/hackathons" },
-    { label: "NETWORK", path: "/network" },
+    { label: "BUILDERS", path: "/network" },
   ]
+
+  const getNavHref = (link: NavItem) => {
+    if (link.external && link.label === "LAUNCHPAD") {
+      const token = networkApi.getToken()
+      return token ? `${link.path}?sso_token=${encodeURIComponent(token)}` : link.path
+    }
+    return link.path
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-full px-4 sm:px-6 py-3.5 sm:py-5 pointer-events-none">
@@ -98,7 +106,7 @@ export function Navbar() {
               link.external ? (
                 <a
                   key={link.label}
-                  href={link.path}
+                  href={getNavHref(link)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:opacity-75 transition-opacity inline-flex items-center gap-0.5"
@@ -280,7 +288,7 @@ export function Navbar() {
                 link.external ? (
                   <a
                     key={link.label}
-                    href={link.path}
+                    href={getNavHref(link)}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}

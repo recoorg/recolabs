@@ -73,6 +73,13 @@ import {
 
   saveProjectAsset,
   getProjectAsset,
+  listBuildersWithContributions,
+  toggleStartupUpvote,
+  listCommunityPosts,
+  createCommunityPost,
+  togglePostUpvote,
+  listPostComments,
+  createPostComment,
 } from "./db.js"
 
 // Anti-misuse security guard: Verifies admin master credentials
@@ -263,6 +270,163 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       res.statusCode = 200
       res.end(JSON.stringify({ success: true, user, startups }))
       return
+    }
+
+
+    // 6.1 GET ALL BUILDERS WITH CONTRIBUTIONS: GET /api/network/builders
+    if (req.method === "GET" && pathname === "/api/network/builders") {
+      const limit = parseInt(searchParams.get("limit") || "100", 10)
+      const builders = await listBuildersWithContributions(limit)
+      res.statusCode = 200
+      res.end(JSON.stringify({ success: true, builders }))
+      return
+    }
+
+    // 6.2 UPVOTE STARTUP: POST /api/network/startups/:id/upvote or POST /api/network/upvote
+    if (req.method === "POST" && (pathname.startsWith("/api/network/startups/") && pathname.endsWith("/upvote") || pathname === "/api/network/upvote")) {
+      let startupId = 0
+      if (pathname === "/api/network/upvote") {
+        const body = await parseBody()
+        startupId = parseInt(body.startupId || body.id || "0", 10)
+      } else {
+        const match = pathname.match(/\/api\/network\/startups\/(\d+)\/upvote/)
+        startupId = match ? parseInt(match[1], 10) : 0
+      }
+      if (!startupId) {
+        res.statusCode = 400
+        res.end(JSON.stringify({ error: "Valid startup ID is required." }))
+        return
+      }
+      const auth = getAuthUser()
+      const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString().split(",")[0].trim()
+      const result = await toggleStartupUpvote(startupId, auth?.id, ip)
+      res.statusCode = 200
+      res.end(JSON.stringify(result))
+      return
+    }
+
+    // 6.3 COMMUNITY POSTS / SCROLL FEED: GET /api/network/posts, POST /api/network/posts
+    if (req.method === "GET" && (pathname === "/api/network/posts" || pathname === "/api/network/discussions")) {
+      const category = searchParams.get("category") || undefined
+      const search = searchParams.get("search") || undefined
+      const limit = parseInt(searchParams.get("limit") || "50", 10)
+      const offset = parseInt(searchParams.get("offset") || "0", 10)
+      const auth = getAuthUser()
+      const posts = await listCommunityPosts({ category, search, limit, offset, currentUserId: auth?.id })
+      res.statusCode = 200
+      res.end(JSON.stringify({ success: true, posts }))
+      return
+    }
+
+    if (req.method === "POST" && (pathname === "/api/network/posts" || pathname === "/api/network/discussions")) {
+      const auth = getAuthUser()
+      const body = await parseBody()
+      if (!body.content || !body.content.trim()) {
+        res.statusCode = 400
+        res.end(JSON.stringify({ error: "Post content cannot be empty." }))
+        return
+      }
+      let authorName = body.authorName || "Anonymous Builder"
+      let authorUsername = body.authorUsername || "builder"
+      let authorAvatar = body.authorAvatar || null
+      let isVerified = false
+
+      if (auth) {
+        const user = await getUserById(auth.id)
+        if (user) {
+          authorName = user.name || authorName
+          authorUsername = user.username || authorUsername
+          authorAvatar = user.avatar_url || authorAvatar
+          isVerified = !!user.is_verified
+        }
+      }
+
+      const post = await createCommunityPost({
+        userId: auth?.id || null,
+        authorName,
+        authorUsername,
+        authorAvatar,
+        isVerified,
+        title: body.title || null,
+        content: body.content.trim(),
+        category: body.category || "ask",
+        tags: Array.isArray(body.tags) ? body.tags : [],
+        mediaUrl: body.mediaUrl || null,
+      })
+      res.statusCode = 200
+      res.end(JSON.stringify({ success: true, post }))
+      return
+    }
+
+    // 6.4 POST UPVOTE: POST /api/network/posts/:id/upvote
+    if (req.method === "POST" && pathname.startsWith("/api/network/posts/") && pathname.endsWith("/upvote")) {
+      const match = pathname.match(/\/api\/network\/posts\/(\d+)\/upvote/)
+      const postId = match ? parseInt(match[1], 10) : 0
+      if (!postId) {
+        res.statusCode = 400
+        res.end(JSON.stringify({ error: "Valid post ID is required." }))
+        return
+      }
+      const auth = getAuthUser()
+      const result = await togglePostUpvote(postId, auth?.id)
+      res.statusCode = 200
+      res.end(JSON.stringify(result))
+      return
+    }
+
+    // 6.5 POST COMMENTS: GET /api/network/posts/:id/comments, POST /api/network/posts/:id/comments
+    if (pathname.startsWith("/api/network/posts/") && pathname.endsWith("/comments")) {
+      const match = pathname.match(/\/api\/network\/posts\/(\d+)\/comments/)
+      const postId = match ? parseInt(match[1], 10) : 0
+      if (!postId) {
+        res.statusCode = 400
+        res.end(JSON.stringify({ error: "Valid post ID is required." }))
+        return
+      }
+
+      if (req.method === "GET") {
+        const comments = await listPostComments(postId)
+        res.statusCode = 200
+        res.end(JSON.stringify({ success: true, comments }))
+        return
+      }
+
+      if (req.method === "POST") {
+        const auth = getAuthUser()
+        const body = await parseBody()
+        if (!body.content || !body.content.trim()) {
+          res.statusCode = 400
+          res.end(JSON.stringify({ error: "Comment content is required." }))
+          return
+        }
+        let authorName = body.authorName || "Anonymous Builder"
+        let authorUsername = body.authorUsername || "builder"
+        let authorAvatar = body.authorAvatar || null
+        let isVerified = false
+
+        if (auth) {
+          const user = await getUserById(auth.id)
+          if (user) {
+            authorName = user.name || authorName
+            authorUsername = user.username || authorUsername
+            authorAvatar = user.avatar_url || authorAvatar
+            isVerified = !!user.is_verified
+          }
+        }
+
+        const comment = await createPostComment({
+          postId,
+          userId: auth?.id || null,
+          authorName,
+          authorUsername,
+          authorAvatar,
+          isVerified,
+          content: body.content.trim(),
+        })
+        res.statusCode = 200
+        res.end(JSON.stringify({ success: true, comment }))
+        return
+      }
     }
 
     // SOCIAL CRAWLER PREVIEW: GET /api/network/builder-preview
