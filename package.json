@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && node scripts/bundle-api.mjs",
+    "build:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-recolabs-apk.ps1",
     "lint": "oxlint",
     "preview": "vite preview"
   },

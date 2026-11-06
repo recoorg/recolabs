@@ -27,3 +27,8 @@ dist-ssr
 .env*
 
 resources_extracted.json
+
+android-build/
+*.idsig
+/recolabs.apk
+

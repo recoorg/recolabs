@@ -823,7 +823,7 @@ export async function listStoreLinks(category?: string) {
       query += " AND category = $1";
       params.push(category);
     }
-    query += " ORDER BY id ASC";
+    query += " ORDER BY is_sponsored DESC, id DESC";
     const res = await client.query(query, params);
     return res.rows;
   } finally {
@@ -999,7 +999,7 @@ export async function listCatalogProjects(category?: string) {
       query += " AND LOWER(category) = LOWER($1)";
       params.push(category);
     }
-    query += " ORDER BY id ASC";
+    query += " ORDER BY is_sponsored DESC, id DESC";
     const res = await client.query(query, params);
     return res.rows;
   } finally {

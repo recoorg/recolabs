@@ -62,6 +62,7 @@ export function FooterWrapper() {
         { label: "Founder Network", href: "/network" },
         { label: "Hackathons & Sprints", href: "/hackathons" },
         { label: "Guild Roles & Jobs", href: "/jobs" },
+        { label: "Android APK App ↘", href: "/download/recolabs.apk" },
         { label: "GitHub Codebases ↗", href: "https://github.com/recoorg" },
       ],
     },

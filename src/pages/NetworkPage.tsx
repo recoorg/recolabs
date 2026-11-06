@@ -61,11 +61,25 @@ export function NetworkPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [currentUser, setCurrentUser] = React.useState<UserProfile | null>(null)
-  const [startups, setStartups] = React.useState<StartupItem[]>([])
-  const [loading, setLoading] = React.useState(true)
+  const [startups, setStartups] = React.useState<StartupItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("reco_cached_startups")
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
+  const [loading, setLoading] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [selectedCategory, setSelectedCategory] = React.useState("ALL")
-  const [builders, setBuilders] = React.useState<BuilderProfileWithStats[]>([])
+  const [builders, setBuilders] = React.useState<BuilderProfileWithStats[]>(() => {
+    try {
+      const saved = localStorage.getItem("reco_cached_builders")
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
   const [activeDirectoryTab, setActiveDirectoryTab] = React.useState<"startups" | "builders">("startups")
 
 
@@ -311,7 +325,16 @@ export function NetworkPage() {
     window.addEventListener("reco_auth_changed", syncSession)
     loadStartups()
 
-    // Fetch live network statistics & registered builders for avatar cloud
+    // Fetch live network builders and statistics
+    networkApi.getBuilders().then((list) => {
+      if (Array.isArray(list) && list.length > 0) {
+        setBuilders(list)
+        try {
+          localStorage.setItem("reco_cached_builders", JSON.stringify(list))
+        } catch {}
+      }
+    })
+
     networkApi.getNetworkStats().then((data) => {
       if (data) {
         setNetworkStats(data)
@@ -352,12 +375,15 @@ export function NetworkPage() {
 
   const loadStartups = async () => {
     try {
-      setLoading(true)
+      if (startups.length === 0) setLoading(true)
       const data = await networkApi.getStartups({
         search: searchQuery,
         category: selectedCategory,
       })
       setStartups(data)
+      try {
+        localStorage.setItem("reco_cached_startups", JSON.stringify(data))
+      } catch {}
     } catch (err: any) {
       console.error("Failed to load startups:", err)
     } finally {
