@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Link } from "react-router-dom"
 import { usePageMeta } from "@/hooks/usePageMeta"
-import { Calendar, MapPin, ExternalLink, Search, RefreshCw, Trophy, Plus, ArrowUpRight, Globe, Sparkles } from "lucide-react"
+import { Calendar, MapPin, ExternalLink, Search, RefreshCw, Trophy, Plus, ArrowUpRight, Globe, Sparkles, Filter, ChevronDown, Check } from "lucide-react"
 import { api, type HackathonEvent } from "@/services/api"
 import { networkApi, type BuilderHackathon } from "@/services/networkApi"
 
@@ -51,6 +51,7 @@ export function HackathonsPage() {
   const [attendanceFilter, setAttendanceFilter] = React.useState<AttendanceFilter>("ALL")
   const [sourceFilter, setSourceFilter] = React.useState<SourceFilter>("ALL")
   const [visibleCount, setVisibleCount] = React.useState(30)
+  const [showFilterMenu, setShowFilterMenu] = React.useState(false)
 
   // Fetch upcoming events & builder events on mount
   React.useEffect(() => {
@@ -269,82 +270,104 @@ export function HackathonsPage() {
             />
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Clean Filter Dropdown with Filter Icon */}
+          <div className="relative">
             <button
               type="button"
-              onClick={() => {
-                setSourceFilter("ALL")
-                setAttendanceFilter("ALL")
-              }}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                sourceFilter === "ALL" && attendanceFilter === "ALL"
-                  ? "bg-[#FA5D00] text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
+              onClick={() => setShowFilterMenu(!showFilterMenu)}
+              className={`h-11 px-5 rounded-full border text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
+                sourceFilter !== "ALL" || attendanceFilter !== "ALL"
+                  ? "border-[#FA5D00] bg-[#FA5D00]/10 text-[#FA5D00]"
+                  : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600"
               }`}
             >
-              All Sources
+              <Filter className="w-4 h-4 text-[#FA5D00]" />
+              <span>Filter</span>
+              {(sourceFilter !== "ALL" || attendanceFilter !== "ALL") && (
+                <span className="w-2 h-2 rounded-full bg-[#FA5D00]" />
+              )}
+              <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${showFilterMenu ? "rotate-180" : ""}`} />
             </button>
 
-            <button
-              type="button"
-              onClick={() => setSourceFilter(sourceFilter === "BUILDER" ? "ALL" : "BUILDER")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                sourceFilter === "BUILDER"
-                  ? "bg-[#FA5D00] text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-              }`}
-            >
-              ✨ Builder Hosted ({builderEvents.length})
-            </button>
+            {showFilterMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowFilterMenu(false)} />
+                <div className="absolute right-0 top-full mt-2 w-72 p-3.5 rounded-2xl bg-white dark:bg-[#0c0c0e] border-2 border-black dark:border-zinc-700 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="flex items-center justify-between pb-2 mb-2.5 border-b editorial-hairline">
+                  <span className="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100">Filter Hackathons</span>
+                  {(sourceFilter !== "ALL" || attendanceFilter !== "ALL") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSourceFilter("ALL")
+                        setAttendanceFilter("ALL")
+                      }}
+                      className="text-[11px] font-mono text-[#FA5D00] hover:underline cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
 
-            <button
-              type="button"
-              onClick={() => setSourceFilter(sourceFilter === "HACKCLUB" ? "ALL" : "HACKCLUB")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                sourceFilter === "HACKCLUB"
-                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-              }`}
-            >
-              Hack Club
-            </button>
+                <div className="space-y-1.5 font-mono text-xs mb-3">
+                  <span className="text-[10px] uppercase font-bold text-zinc-400">Source:</span>
+                  <div className="grid grid-cols-1 gap-1">
+                    {[
+                      { id: "ALL", label: "All Sources" },
+                      { id: "BUILDER", label: `✨ Builder Hosted (${builderEvents.length})` },
+                      { id: "HACKCLUB", label: "Hack Club Aggregate" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setSourceFilter(opt.id as SourceFilter)
+                          setShowFilterMenu(false)
+                        }}
+                        className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+                          sourceFilter === opt.id
+                            ? "bg-[#FA5D00] text-black font-bold"
+                            : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {sourceFilter === opt.id && <Check className="w-3.5 h-3.5" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <button
-              type="button"
-              onClick={() => setAttendanceFilter(attendanceFilter === "VIRTUAL" ? "ALL" : "VIRTUAL")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                attendanceFilter === "VIRTUAL"
-                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-              }`}
-            >
-              Virtual
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setAttendanceFilter(attendanceFilter === "IN_PERSON" ? "ALL" : "IN_PERSON")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                attendanceFilter === "IN_PERSON"
-                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-              }`}
-            >
-              In-Person
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setAttendanceFilter(attendanceFilter === "APAC" ? "ALL" : "APAC")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                attendanceFilter === "APAC"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-              }`}
-            >
-              APAC / India
-            </button>
+                <div className="space-y-1.5 font-mono text-xs">
+                  <span className="text-[10px] uppercase font-bold text-zinc-400">Attendance:</span>
+                  <div className="grid grid-cols-1 gap-1">
+                    {[
+                      { id: "ALL", label: "Any Attendance" },
+                      { id: "VIRTUAL", label: "Virtual / Online" },
+                      { id: "IN_PERSON", label: "In-Person (IRL)" },
+                      { id: "APAC", label: "APAC / India Region" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setAttendanceFilter(opt.id as AttendanceFilter)
+                          setShowFilterMenu(false)
+                        }}
+                        className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+                          attendanceFilter === opt.id
+                            ? "bg-[#FA5D00] text-black font-bold"
+                            : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {attendanceFilter === opt.id && <Check className="w-3.5 h-3.5" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
           </div>
         </div>
 

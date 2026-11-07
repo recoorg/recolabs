@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Link } from "react-router-dom"
 import { usePageMeta } from "@/hooks/usePageMeta"
-import { CheckCircle2, Briefcase, Search, MapPin, ExternalLink, RefreshCw, X, Plus, ArrowUpRight, Building2, Sparkles, Filter } from "lucide-react"
+import { CheckCircle2, Briefcase, Search, MapPin, ExternalLink, RefreshCw, X, Plus, ArrowUpRight, Building2, Sparkles, Filter, ChevronDown, Check } from "lucide-react"
 import { api, type GoogleJobItem } from "@/services/api"
 import { networkApi, type BuilderJob } from "@/services/networkApi"
 
@@ -38,6 +38,7 @@ export function JobsPage() {
   const [loading, setLoading] = React.useState(true)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [filterType, setFilterType] = React.useState<"ALL" | "DIRECT" | "REMOTE" | "FULL_TIME" | "INTERNSHIP" | "CONTRACT">("ALL")
+  const [showFilterMenu, setShowFilterMenu] = React.useState(false)
 
   // Core fetch function
   const fetchAllJobs = React.useCallback(async (query: string) => {
@@ -213,79 +214,75 @@ export function JobsPage() {
             )}
           </form>
 
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Clean Filter Dropdown with Filter Icon */}
+          <div className="relative">
             <button
               type="button"
-              onClick={() => setFilterType("ALL")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                filterType === "ALL"
-                  ? "bg-[#FA5D00] text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
+              onClick={() => setShowFilterMenu(!showFilterMenu)}
+              className={`h-11 px-5 rounded-full border text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
+                filterType !== "ALL"
+                  ? "border-[#FA5D00] bg-[#FA5D00]/10 text-[#FA5D00]"
+                  : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600"
               }`}
             >
-              All Roles
+              <Filter className="w-4 h-4 text-[#FA5D00]" />
+              <span>Filter</span>
+              {filterType !== "ALL" && (
+                <span className="w-2 h-2 rounded-full bg-[#FA5D00]" />
+              )}
+              <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${showFilterMenu ? "rotate-180" : ""}`} />
             </button>
 
-            <button
-              type="button"
-              onClick={() => setFilterType("DIRECT")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                filterType === "DIRECT"
-                  ? "bg-[#FA5D00] text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-              }`}
-            >
-              ✨ Direct Guild ({builderJobs.length})
-            </button>
+            {showFilterMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowFilterMenu(false)} />
+                <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-2xl bg-white dark:bg-[#0c0c0e] border-2 border-black dark:border-zinc-700 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="flex items-center justify-between pb-2 mb-2 border-b editorial-hairline">
+                  <span className="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100">Filter Roles</span>
+                  {filterType !== "ALL" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterType("ALL")
+                        setShowFilterMenu(false)
+                      }}
+                      className="text-[11px] font-mono text-[#FA5D00] hover:underline cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
 
-            <button
-              type="button"
-              onClick={() => setFilterType("REMOTE")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                filterType === "REMOTE"
-                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-              }`}
-            >
-              Remote
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterType("FULL_TIME")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                filterType === "FULL_TIME"
-                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-              }`}
-            >
-              Full-time
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterType("INTERNSHIP")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                filterType === "INTERNSHIP"
-                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-              }`}
-            >
-              Internships
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterType("CONTRACT")}
-              className={`h-9 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                filterType === "CONTRACT"
-                  ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                  : "border editorial-hairline text-zinc-600 dark:text-zinc-400 hover:border-black dark:hover:border-zinc-500 bg-transparent"
-              }`}
-            >
-              Contract
-            </button>
+                <div className="space-y-1 font-mono text-xs">
+                  {[
+                    { id: "ALL", label: "All Roles" },
+                    { id: "DIRECT", label: `✨ Direct Guild (${builderJobs.length})` },
+                    { id: "REMOTE", label: "Remote Only" },
+                    { id: "FULL_TIME", label: "Full-Time" },
+                    { id: "INTERNSHIP", label: "Internships" },
+                    { id: "CONTRACT", label: "Contract / Freelance" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setFilterType(opt.id as any)
+                        setShowFilterMenu(false)
+                      }}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+                        filterType === opt.id
+                          ? "bg-[#FA5D00] text-black font-bold"
+                          : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      {filterType === opt.id && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
           </div>
         </div>
 
