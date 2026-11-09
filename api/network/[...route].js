@@ -3163,14 +3163,14 @@ async function handleNetworkRequest(req, res) {
     </div>
     <div class="footer">
       Sent by Reco Labs Guild \xB7 <a href="https://recolabs.in" style="color: #a1a1aa;">recolabs.in</a><br>
-      Dispatched via noreply@recolabs.in
+      Dispatched via noreply@recolabs.in \xB7 Replies directed to devadibxr@gmail.com
     </div>
   </div>
 </body>
 </html>
 `;
       const fromLabel = senderName ? `${senderName} <noreply@recolabs.in>` : "Reco Labs <noreply@recolabs.in>";
-      const replyToAddress = replyTo || "noreply@recolabs.in";
+      const replyToAddress = replyTo || "devadibxr@gmail.com";
       if (resendApiKey) {
         try {
           const resendPayload = {
