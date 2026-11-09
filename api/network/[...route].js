@@ -3118,7 +3118,7 @@ async function handleNetworkRequest(req, res) {
         return;
       }
       const body = await parseBody();
-      const { to, subject, message, html, senderName, replyTo } = body;
+      const { to, subject, message, html, senderName, replyTo, resendApiKey: clientResendKey } = body;
       if (!to || !subject || !message && !html) {
         res.statusCode = 400;
         res.end(JSON.stringify({ error: "Recipient email (to), subject, and message content are required." }));
@@ -3133,7 +3133,7 @@ async function handleNetworkRequest(req, res) {
         res.end(JSON.stringify({ error: "No valid recipient email addresses found." }));
         return;
       }
-      const resendApiKey = process.env.RESEND_API_KEY || Buffer.from("cmVfYWdmNG9WTlRfMkxnUzFGQUJaZ0syQU5uMllYWEgxSlBI", "base64").toString("utf-8");
+      const resendApiKey = clientResendKey && String(clientResendKey).trim() || process.env.RESEND_API_KEY || Buffer.from("cmVfYWdmNG9WTlRfMkxnUzFGQUJaZ0syQU5uMllYWEgxSlBI", "base64").toString("utf-8");
       const emailHtml = html || `
 <!DOCTYPE html>
 <html>
@@ -3209,10 +3209,29 @@ async function handleNetworkRequest(req, res) {
             );
             return;
           } else {
-            console.warn("Resend API warning:", resendData);
+            console.error("Resend API error:", resendData);
+            res.statusCode = resendResponse.status || 400;
+            res.end(
+              JSON.stringify({
+                success: false,
+                error: `Resend API error (${resendResponse.status}): ${resendData.message || JSON.stringify(resendData)}`,
+                provider: "resend",
+                details: resendData
+              })
+            );
+            return;
           }
         } catch (resendErr) {
-          console.error("Resend API dispatch error:", resendErr);
+          console.error("Resend API dispatch exception:", resendErr);
+          res.statusCode = 500;
+          res.end(
+            JSON.stringify({
+              success: false,
+              error: `Resend API network failure: ${resendErr.message || String(resendErr)}`,
+              provider: "resend"
+            })
+          );
+          return;
         }
       }
       const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
