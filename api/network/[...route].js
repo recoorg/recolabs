@@ -3125,9 +3125,19 @@ async function handleNetworkRequest(req, res) {
         return;
       }
       const rawRecipients = Array.isArray(to) ? to : [to];
-      const recipients = Array.from(
-        new Set(rawRecipients.map((e) => String(e).trim().toLowerCase()))
-      ).filter((e) => e.includes("@"));
+      const extractedEmails = [];
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+      for (const item of rawRecipients) {
+        if (!item) continue;
+        const str = String(item).trim();
+        const matches = str.match(emailRegex);
+        if (matches) {
+          for (const m of matches) {
+            extractedEmails.push(m.toLowerCase().trim());
+          }
+        }
+      }
+      const recipients = Array.from(new Set(extractedEmails));
       if (recipients.length === 0) {
         res.statusCode = 400;
         res.end(JSON.stringify({ error: "No valid recipient email addresses found." }));
