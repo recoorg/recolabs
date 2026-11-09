@@ -24,6 +24,7 @@
     "html2canvas": "^1.4.1",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.63.0",
+    "motion": "^14.11.1",
     "nodemailer": "^10.3.1",
     "pg": "^8.23.1",
     "qrcode": "^1.5.4",
