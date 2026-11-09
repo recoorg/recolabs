@@ -32,3 +32,6 @@ android-build/
 *.idsig
 /recolabs.apk
 
+
+.agents/
+.codex/

@@ -28,6 +28,7 @@ import { networkApi, type UserProfile, type StartupItem } from "@/services/netwo
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
 import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
 import { VerifiedBadge } from "@/components/VerifiedBadge"
+import { BuilderLinearCard } from "@/components/BuilderLinearCard"
 import { usePageMeta } from "@/hooks/usePageMeta"
 
 export function BuilderProfilePage() {
@@ -335,58 +336,19 @@ export function BuilderProfilePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {startups.map((item) => (
-                <div
+                <BuilderLinearCard
                   key={item.id}
-                  className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl border editorial-hairline bg-white/60 dark:bg-zinc-900/40 flex flex-col justify-between shadow-sm hover:border-[#FA5D00] transition-all"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-orange-100/70 dark:bg-orange-950/40 text-[#FA5D00] font-mono text-[10px] font-bold uppercase tracking-wider">
-                        {item.category}
-                      </span>
-                      <span className="font-mono text-[10px] text-zinc-400 uppercase">
-                        {item.stage}
-                      </span>
-                    </div>
-
-                    <h3 className="font-serif text-xl sm:text-2xl text-zinc-950 dark:text-zinc-50 font-normal">
-                      {item.name}
-                    </h3>
-
-                    <div className="mt-1 font-mono text-xs text-zinc-400 truncate">
-                      <a
-                        href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:text-[#FA5D00] transition-colors underline underline-offset-2"
-                      >
-                        {item.url.replace(/^https?:\/\//, "")}
-                      </a>
-                    </div>
-
-                    <div className="mt-4 p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/60 border editorial-hairline">
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 font-bold block mb-1">
-                        PROBLEM SOLVED:
-                      </span>
-                      <p className="font-sans text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                        {item.problem_solving}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t editorial-hairline flex items-center justify-between">
-                    <button onClick={() => setScreenshotStartup({ ...item, founder_name: profile.name, founder_username: profile.username, avatar_url: profile.avatar_url } as any)} title="Create Shareable Screenshot Card" className="p-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-[#FA5D00] hover:border-[#FA5D00] active:scale-95 transition-all cursor-pointer shadow-2xs"><Camera className="w-3.5 h-3.5 text-[#FA5D00]" /></button>
-                    <a
-                      href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 font-mono text-xs font-bold text-black dark:text-white hover:text-[#FA5D00] transition-colors"
-                    >
-                      <span>Open Website</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                </div>
+                  item={item}
+                  profile={profile}
+                  onScreenshot={() =>
+                    setScreenshotStartup({
+                      ...item,
+                      founder_name: profile.name,
+                      founder_username: profile.username,
+                      avatar_url: profile.avatar_url,
+                    } as any)
+                  }
+                />
               ))}
             </div>
           )}
