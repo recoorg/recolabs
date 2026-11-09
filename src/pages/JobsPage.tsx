@@ -159,7 +159,7 @@ export function JobsPage() {
         <div className="text-center max-w-3xl mx-auto pb-10 border-b editorial-hairline">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border-2 border-black dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono text-[11px] font-bold uppercase tracking-wider text-[#FA5D00] shadow-sm mb-4">
             <span className="w-2 h-2 rounded-full bg-[#FA5D00] animate-pulse" />
-            <span>DIRECT BUILDER ROLES & CURATED JOBS</span>
+            <span>DEVELOPER OPPORTUNITIES & ROLES</span>
           </div>
 
           <h1 className="font-serif text-5xl sm:text-7xl lg:text-8xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-none">
@@ -256,7 +256,6 @@ export function JobsPage() {
                 <div className="space-y-1 font-mono text-xs">
                   {[
                     { id: "ALL", label: "All Roles" },
-                    { id: "DIRECT", label: `✨ Direct Guild (${builderJobs.length})` },
                     { id: "REMOTE", label: "Remote Only" },
                     { id: "FULL_TIME", label: "Full-Time" },
                     { id: "INTERNSHIP", label: "Internships" },
@@ -304,12 +303,10 @@ export function JobsPage() {
             filteredJobs.map((job) => (
               <div
                 key={job.id}
-                className={`rounded-3xl border p-6 transition-all shadow-xs hover:shadow-md ${
+                className={`rounded-3xl border editorial-hairline p-6 transition-all shadow-xs hover:shadow-md hover:border-[#FA5D00] ${
                   job.is_featured
-                    ? "bg-orange-500/[0.04] dark:bg-orange-500/[0.07] border-[#FA5D00] shadow-md shadow-[#FA5D00]/10" :
-                  job.source === "builder"
-                    ? "bg-white dark:bg-zinc-900/60 border-orange-300 dark:border-orange-800/80 hover:border-[#FA5D00]"
-                    : "bg-white dark:bg-zinc-900/40 editorial-hairline hover:border-black dark:hover:border-zinc-600"
+                    ? "bg-orange-500/[0.04] dark:bg-orange-500/[0.07] border-[#FA5D00] shadow-md shadow-[#FA5D00]/10"
+                    : "bg-white dark:bg-zinc-900/40"
                 }`}
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">

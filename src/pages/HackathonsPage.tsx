@@ -309,61 +309,30 @@ export function HackathonsPage() {
                   )}
                 </div>
 
-                <div className="space-y-1.5 font-mono text-xs mb-3">
-                  <span className="text-[10px] uppercase font-bold text-zinc-400">Source:</span>
-                  <div className="grid grid-cols-1 gap-1">
-                    {[
-                      { id: "ALL", label: "All Sources" },
-                      { id: "BUILDER", label: `✨ Builder Hosted (${builderEvents.length})` },
-                      { id: "HACKCLUB", label: "Hack Club Aggregate" },
-                    ].map((opt) => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => {
-                          setSourceFilter(opt.id as SourceFilter)
-                          setShowFilterMenu(false)
-                        }}
-                        className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-                          sourceFilter === opt.id
-                            ? "bg-[#FA5D00] text-black font-bold"
-                            : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-                        }`}
-                      >
-                        <span>{opt.label}</span>
-                        {sourceFilter === opt.id && <Check className="w-3.5 h-3.5" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 font-mono text-xs">
-                  <span className="text-[10px] uppercase font-bold text-zinc-400">Attendance:</span>
-                  <div className="grid grid-cols-1 gap-1">
-                    {[
-                      { id: "ALL", label: "Any Attendance" },
-                      { id: "VIRTUAL", label: "Virtual / Online" },
-                      { id: "IN_PERSON", label: "In-Person (IRL)" },
-                      { id: "APAC", label: "APAC / India Region" },
-                    ].map((opt) => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => {
-                          setAttendanceFilter(opt.id as AttendanceFilter)
-                          setShowFilterMenu(false)
-                        }}
-                        className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-                          attendanceFilter === opt.id
-                            ? "bg-[#FA5D00] text-black font-bold"
-                            : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-                        }`}
-                      >
-                        <span>{opt.label}</span>
-                        {attendanceFilter === opt.id && <Check className="w-3.5 h-3.5" />}
-                      </button>
-                    ))}
-                  </div>
+                <div className="space-y-1 font-mono text-xs">
+                  {[
+                    { id: "ALL", label: "All Hackathons" },
+                    { id: "VIRTUAL", label: "Virtual / Online" },
+                    { id: "IN_PERSON", label: "In-Person (IRL)" },
+                    { id: "APAC", label: "APAC / India Region" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setAttendanceFilter(opt.id as AttendanceFilter)
+                        setShowFilterMenu(false)
+                      }}
+                      className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+                        attendanceFilter === opt.id
+                          ? "bg-[#FA5D00] text-black font-bold"
+                          : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      {attendanceFilter === opt.id && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  ))}
                 </div>
               </div>
             </>
@@ -373,7 +342,7 @@ export function HackathonsPage() {
 
         {/* Counter Info */}
         <div className="mt-4 flex items-center justify-between font-mono text-xs text-zinc-500">
-          <span>Showing {filteredEvents.length} hackathons ({builderEvents.length} Community Hosted)</span>
+          <span>Showing {filteredEvents.length} hackathons</span>
           
         </div>
 
@@ -417,15 +386,9 @@ export function HackathonsPage() {
                         }}
                       />
                       <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                        {event.source === "builder" ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-black text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                            BUILDER HOSTED
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-0.5 rounded-full bg-black/80 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider">
-                            HACK CLUB
-                          </span>
-                        )}
+                        <span className="px-2.5 py-0.5 rounded-full bg-black/80 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider">
+                          VERIFIED
+                        </span>
                         {event.virtual && (
                           <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase">
                             VIRTUAL
