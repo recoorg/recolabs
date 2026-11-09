@@ -1200,5 +1200,64 @@ export const networkApi = {
       return false
     }
   },
-};
+  async adminListBuilders(adminKey?: string): Promise<{
+    success: boolean;
+    count: number;
+    builders: Array<{
+      id: number;
+      name: string;
+      username: string;
+      email: string;
+      is_verified: boolean;
+      is_pro: boolean;
+      plan?: string;
+      avatar_url?: string;
+      created_at: string;
+    }>;
+  }> {
+    try {
+      const token = this.getToken();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (adminKey) headers["x-admin-key"] = adminKey;
+      const res = await safeJsonFetch<any>("/api/network/admin/builders", { headers });
+      return res || { success: false, count: 0, builders: [] };
+    } catch {
+      return { success: false, count: 0, builders: [] };
+    }
+  },
 
+  async adminSendEmail(
+    data: {
+      to: string[];
+      subject: string;
+      html: string;
+      message?: string;
+      senderName?: string;
+      replyTo?: string;
+    },
+    adminKey?: string
+  ): Promise<{
+    success: boolean;
+    error?: string;
+    count?: number;
+    provider?: string;
+    messageId?: string;
+    sender?: string;
+  }> {
+    try {
+      const token = this.getToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (adminKey) headers["x-admin-key"] = adminKey;
+      const res = await safeJsonFetch<any>("/api/network/admin/send-email", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data),
+      });
+      return res || { success: false, error: "Empty server response." };
+    } catch (e: any) {
+      return { success: false, error: e?.message || "Failed to dispatch email." };
+    }
+  },
+};

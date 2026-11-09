@@ -3118,13 +3118,21 @@ async function handleNetworkRequest(req, res) {
         return;
       }
       const body = await parseBody();
-      const { to, subject, message, html } = body;
+      const { to, subject, message, html, senderName, replyTo } = body;
       if (!to || !subject || !message && !html) {
         res.statusCode = 400;
         res.end(JSON.stringify({ error: "Recipient email (to), subject, and message content are required." }));
         return;
       }
-      const recipients = Array.isArray(to) ? to : [to];
+      const rawRecipients = Array.isArray(to) ? to : [to];
+      const recipients = Array.from(
+        new Set(rawRecipients.map((e) => String(e).trim().toLowerCase()))
+      ).filter((e) => e.includes("@"));
+      if (recipients.length === 0) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: "No valid recipient email addresses found." }));
+        return;
+      }
       const resendApiKey = process.env.RESEND_API_KEY || Buffer.from("cmVfYWdmNG9WTlRfMkxnUzFGQUJaZ0syQU5uMllYWEgxSlBI", "base64").toString("utf-8");
       const emailHtml = html || `
 <!DOCTYPE html>
@@ -3161,22 +3169,30 @@ async function handleNetworkRequest(req, res) {
 </body>
 </html>
 `;
+      const fromLabel = senderName ? `${senderName} <noreply@recolabs.in>` : "Reco Labs <noreply@recolabs.in>";
+      const replyToAddress = replyTo || "noreply@recolabs.in";
       if (resendApiKey) {
         try {
+          const resendPayload = {
+            from: fromLabel,
+            reply_to: replyToAddress,
+            subject,
+            html: emailHtml,
+            text: message || ""
+          };
+          if (recipients.length === 1) {
+            resendPayload.to = recipients;
+          } else {
+            resendPayload.to = ["noreply@recolabs.in"];
+            resendPayload.bcc = recipients;
+          }
           const resendResponse = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
               "Authorization": "Bearer " + resendApiKey,
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-              from: "Reco Labs <noreply@recolabs.in>",
-              reply_to: "noreply@recolabs.in",
-              to: recipients,
-              subject,
-              html: emailHtml,
-              text: message || ""
-            })
+            body: JSON.stringify(resendPayload)
           });
           const resendData = await resendResponse.json();
           if (resendResponse.ok && resendData.id) {
@@ -3186,8 +3202,9 @@ async function handleNetworkRequest(req, res) {
                 success: true,
                 provider: "resend",
                 id: resendData.id,
+                count: recipients.length,
                 to: recipients,
-                sender: "Reco Labs <noreply@recolabs.in>"
+                sender: fromLabel
               })
             );
             return;
@@ -3214,22 +3231,29 @@ async function handleNetworkRequest(req, res) {
             pass: smtpPass
           }
         });
-        const info = await transporter.sendMail({
-          from: `"Reco Labs" <${smtpUser}>`,
-          replyTo: "noreply@recolabs.in",
-          to: recipients,
+        const mailOptions = {
+          from: `"${senderName || "Reco Labs"}" <${smtpUser}>`,
+          replyTo: replyToAddress,
           subject,
           text: message || "",
           html: emailHtml
-        });
+        };
+        if (recipients.length === 1) {
+          mailOptions.to = recipients[0];
+        } else {
+          mailOptions.to = `"${senderName || "Reco Labs Community"}" <${smtpUser}>`;
+          mailOptions.bcc = recipients;
+        }
+        const info = await transporter.sendMail(mailOptions);
         res.statusCode = 200;
         res.end(
           JSON.stringify({
             success: true,
             provider: "gmail_smtp",
             messageId: info.messageId,
+            count: recipients.length,
             to: recipients,
-            sender: `Reco Labs <${smtpUser}>`
+            sender: `${senderName || "Reco Labs"} <${smtpUser}>`
           })
         );
         return;
@@ -3239,6 +3263,30 @@ async function handleNetworkRequest(req, res) {
         res.end(JSON.stringify({ success: false, error: "Delivery failed: " + (smtpErr?.message || String(smtpErr)) }));
         return;
       }
+    }
+    if (req.method === "GET" && (pathname === "/api/network/admin/builders" || pathname === "/api/admin/builders")) {
+      if (!checkAdminAuth(req)) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ error: "Unauthorized: Admin credentials required." }));
+        return;
+      }
+      const client = await pool.connect();
+      try {
+        const resDb = await client.query(`
+          SELECT id, name, username, email, is_verified, is_pro, plan, avatar_url, created_at
+          FROM users
+          WHERE email IS NOT NULL AND email != ''
+          ORDER BY created_at DESC
+        `);
+        res.statusCode = 200;
+        res.end(JSON.stringify({ success: true, count: resDb.rows.length, builders: resDb.rows }));
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: err.message || "Failed to list builders." }));
+      } finally {
+        client.release();
+      }
+      return;
     }
     if (req.method === "GET" && (pathname === "/api/network/jobs" || pathname === "/api/jobs")) {
       const urlObj = new URL(req.url, "http://localhost");

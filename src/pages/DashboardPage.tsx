@@ -734,6 +734,20 @@ export function DashboardPage() {
                 </span>
               </button>
             )}
+
+            {/* Admin Console Link */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="w-11 h-11 rounded-2xl flex items-center justify-center transition-all group relative cursor-pointer text-[#FA5D00] hover:text-black hover:bg-[#FA5D00] dark:hover:text-black border border-[#FA5D00]/30 hover:border-[#FA5D00]"
+                title="Admin Master Console"
+              >
+                <ShieldCheck className="w-5 h-5" />
+                <span className="hidden group-hover:block absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-black text-[#FA5D00] dark:bg-zinc-800 text-[11px] font-mono whitespace-nowrap z-50 shadow-md border border-[#FA5D00]/40">
+                  ⚡ Admin Console & Email Broadcast
+                </span>
+              </Link>
+            )}
           </nav>
         </div>
 
