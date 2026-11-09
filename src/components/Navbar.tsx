@@ -125,10 +125,10 @@ export function Navbar() {
             <div className="relative group/navuser hidden sm:block">
               <Link
                 to={`/builder/${currentUser.username}`}
-                className="flex items-center gap-2 p-1 pl-1 pr-3 rounded-full bg-white/95 dark:bg-[#121216]/95 border-2 border-black dark:border-zinc-700 hover:border-[#ccff00] shadow-sm transition-all"
+                className="flex items-center gap-2 p-1 pl-1 pr-3 rounded-full bg-white/95 dark:bg-[#121216]/95 border-2 border-black dark:border-zinc-700 hover:border-[#FA5D00] shadow-sm transition-all"
                 title={`@${currentUser.username}`}
               >
-                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[#ccff00]/20 flex items-center justify-center font-serif font-bold text-xs text-black border border-black/10 dark:border-white/10 flex-none">
+                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[#FA5D00]/20 flex items-center justify-center font-serif font-bold text-xs text-black border border-black/10 dark:border-white/10 flex-none">
                   {currentUser.avatar_url ? (
                     <img
                       src={currentUser.avatar_url}
@@ -142,11 +142,11 @@ export function Navbar() {
                     (currentUser.name || currentUser.username).charAt(0).toUpperCase()
                   )}
                 </div>
-                <span className="font-mono text-xs font-bold text-zinc-950 dark:text-zinc-50 group-hover/navuser:text-[#ccff00] transition-colors truncate max-w-[110px]">
+                <span className="font-mono text-xs font-bold text-zinc-950 dark:text-zinc-50 group-hover/navuser:text-[#FA5D00] transition-colors truncate max-w-[110px]">
                   @{currentUser.username}
                 </span>
                 {currentUser.is_verified && <VerifiedBadge size="xs" />}
-                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover/navuser:text-[#ccff00] transition-transform duration-200 group-hover/navuser:rotate-180" />
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover/navuser:text-[#FA5D00] transition-transform duration-200 group-hover/navuser:rotate-180" />
               </Link>
 
               {/* Hover Dropdown Menu */}
@@ -169,7 +169,7 @@ export function Navbar() {
                       ) : (
                         <Link
                           to="/pricing"
-                          className="text-[#ccff00] font-black uppercase hover:underline"
+                          className="text-[#FA5D00] font-black uppercase hover:underline"
                         >
                           ⚡ Get Blue Tick
                         </Link>
@@ -183,7 +183,7 @@ export function Navbar() {
                       to="/dashboard"
                       className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 font-bold transition-colors"
                     >
-                      <LayoutDashboard className="w-4 h-4 text-[#ccff00]" />
+                      <LayoutDashboard className="w-4 h-4 text-[#FA5D00]" />
                       <span>Console &amp; Dashboard</span>
                     </Link>
 

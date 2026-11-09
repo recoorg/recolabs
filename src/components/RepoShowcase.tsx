@@ -27,11 +27,11 @@ export function RepoShowcase() {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-16 border-b editorial-hairline">
           <div>
-            <span className="font-mono text-xs uppercase tracking-widest text-lime-500 dark:text-[#ccff00] font-bold">
+            <span className="font-mono text-xs uppercase tracking-widest text-[#FA5D00] font-bold">
               FEATURED REPOSITORIES & VAULTS
             </span>
             <h2 className="mt-3 font-serif text-4xl sm:text-6xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight">
-              Selected works & codebases<span className="text-[#ccff00]">.</span>
+              Selected works & codebases<span className="text-[#FA5D00]">.</span>
             </h2>
           </div>
 
@@ -49,9 +49,9 @@ export function RepoShowcase() {
 
             <button
               onClick={() => handleCopyClone("recolabs")}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-mono text-xs hover:border-[#ccff00] transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border editorial-hairline bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-mono text-xs hover:border-[#FA5D00] transition-colors"
             >
-              <Terminal className="w-3.5 h-3.5 text-[#ccff00]" />
+              <Terminal className="w-3.5 h-3.5 text-[#FA5D00]" />
               <span>{copied ? "Copied clone URL!" : "git clone recolabs.git"}</span>
             </button>
           </div>
@@ -63,10 +63,10 @@ export function RepoShowcase() {
           <div className="flex flex-col items-center">
             <div className="mb-4 flex items-center justify-between w-[340px] px-2 font-mono text-xs text-zinc-500">
               <span className="flex items-center gap-1.5 font-bold text-zinc-800 dark:text-zinc-200">
-                <span className="w-2 h-2 rounded-full bg-[#ccff00]" />
+                <span className="w-2 h-2 rounded-full bg-[#FA5D00]" />
                 <span>recoorg / recolabs</span>
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-black bg-[#ccff00] font-bold px-2 py-0.5 rounded-full shadow-xs">PRIMARY</span>
+              <span className="text-[10px] uppercase tracking-wider text-white bg-[#FA5D00] font-bold px-2 py-0.5 rounded-full shadow-xs">PRIMARY</span>
             </div>
 
             <GlassFolder
@@ -121,7 +121,7 @@ export function RepoShowcase() {
                 <span className="w-2 h-2 rounded-full bg-amber-500" />
                 <span>hardware-workbench</span>
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-lime-400 border border-lime-400/30 bg-[#ccff00]/10 px-2 py-0.5 rounded-full font-bold">CAD & PCB</span>
+              <span className="text-[10px] uppercase tracking-wider text-[#FF8C42] border border-[#FA5D00]/30 bg-[#FA5D00]/10 px-2 py-0.5 rounded-full font-bold">CAD & PCB</span>
             </div>
 
             <GlassFolder
@@ -226,7 +226,7 @@ export function RepoShowcase() {
             href="https://github.com/recoorg"
             target="_blank"
             rel="noreferrer"
-            className="text-lime-500 dark:text-[#ccff00] font-bold hover:underline"
+            className="text-[#FA5D00] font-bold hover:underline"
           >
             Explore all branches on github.com/recoorg →
           </a>

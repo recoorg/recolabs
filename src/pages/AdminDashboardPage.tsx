@@ -103,7 +103,7 @@ const EMAIL_TEMPLATES = [
   {
     id: "hackathon",
     name: "Hackathon & Builder Invite",
-    description: "Event invite format with lime accent, dates, and RSVP CTA",
+    description: "Event invite format with orange accent, dates, and RSVP CTA",
     subject: "⚡ Exclusive Hackathon Invite for Reco Labs Builders",
     html: `<!DOCTYPE html>
 <html>
@@ -113,7 +113,7 @@ const EMAIL_TEMPLATES = [
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0c0c0e; color: #f4f4f5; margin: 0; padding: 40px 16px; }
     .wrapper { max-width: 580px; margin: 0 auto; background-color: #111113; border: 1px solid #27272a; border-radius: 20px; padding: 36px 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-    .tag { display: inline-block; background-color: rgba(204, 255, 0, 0.12); color: #ccff00; border: 1px solid rgba(204, 255, 0, 0.35); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; padding: 4px 10px; border-radius: 9999px; margin-bottom: 16px; font-family: monospace; }
+    .tag { display: inline-block; background-color: rgba(250, 93, 0, 0.12); color: #FA5D00; border: 1px solid rgba(250, 93, 0, 0.35); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; padding: 4px 10px; border-radius: 9999px; margin-bottom: 16px; font-family: monospace; }
     h1 { font-size: 26px; font-weight: 700; color: #ffffff; line-height: 1.25; margin: 0 0 16px 0; }
     p { font-size: 14px; line-height: 1.7; color: #a1a1aa; margin: 0 0 16px 0; }
     .event-card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 18px; margin: 24px 0; }
@@ -122,7 +122,7 @@ const EMAIL_TEMPLATES = [
     .event-label { color: #71717a; }
     .event-value { color: #ffffff; font-weight: bold; }
     .btn-container { text-align: center; margin: 32px 0 20px 0; }
-    .btn { display: inline-block; background-color: #ccff00; color: #000000 !important; font-weight: 800; text-decoration: none; padding: 12px 28px; border-radius: 9999px; font-size: 14px; font-family: monospace; }
+    .btn { display: inline-block; background-color: #FA5D00; color: #000000 !important; font-weight: 800; text-decoration: none; padding: 12px 28px; border-radius: 9999px; font-size: 14px; font-family: monospace; }
     .footer { margin-top: 36px; padding-top: 20px; border-top: 1px solid #27272a; font-size: 11px; color: #71717a; text-align: center; font-family: monospace; }
   </style>
 </head>
@@ -143,7 +143,7 @@ const EMAIL_TEMPLATES = [
       <a href="https://recolabs.in/hackathons" class="btn">Register Free ↗</a>
     </div>
     <div class="footer">
-      Reco Labs Guild · <a href="https://recolabs.in/hackathons" style="color: #ccff00;">recolabs.in/hackathons</a>
+      Reco Labs Guild · <a href="https://recolabs.in/hackathons" style="color: #FA5D00;">recolabs.in/hackathons</a>
     </div>
   </div>
 </body>

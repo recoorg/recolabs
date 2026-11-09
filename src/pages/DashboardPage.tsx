@@ -217,7 +217,7 @@ export function DashboardPage() {
           particleCount: 50,
           spread: 60,
           origin: { y: 0.6 },
-          colors: ["#ccff00", "#FA5D00", "#ffffff"],
+          colors: ["#FA5D00", "#FA5D00", "#ffffff"],
         })
       }
     } catch (err) {
@@ -723,13 +723,13 @@ export function DashboardPage() {
                 onClick={() => setSection("projects")}
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all group relative cursor-pointer ${
                   activeSection === "projects"
-                    ? "bg-[#ccff00] text-black shadow-md font-bold"
-                    : "text-lime-500 hover:text-black dark:hover:text-[#ccff00] hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    ? "bg-[#FA5D00] text-white shadow-md font-bold"
+                    : "text-[#FA5D00] hover:text-black dark:hover:text-[#FF8C42] hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 }`}
                 title="Vault Projects Pinning (Admin)"
               >
                 <Pin className={`w-5 h-5 ${activeSection === "projects" ? "fill-black rotate-45" : ""}`} />
-                <span className="hidden group-hover:block absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-black text-[#ccff00] dark:bg-zinc-800 text-[11px] font-mono whitespace-nowrap z-50 shadow-md border border-[#ccff00]/40">
+                <span className="hidden group-hover:block absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-black text-[#FA5D00] dark:bg-zinc-800 text-[11px] font-mono whitespace-nowrap z-50 shadow-md border border-[#FA5D00]/40">
                   📌 Vault Pins (Admin)
                 </span>
               </button>
@@ -844,8 +844,8 @@ export function DashboardPage() {
                 onClick={() => setSection("projects")}
                 className={`px-3 py-1.5 rounded-full transition-colors whitespace-nowrap ${
                   activeSection === "projects"
-                    ? "bg-[#ccff00] text-black font-bold shadow-xs"
-                    : "bg-lime-950/40 text-lime-400 border border-lime-500/30"
+                    ? "bg-[#FA5D00] text-white font-bold shadow-xs"
+                    : "bg-orange-950/40 text-[#FF8C42] border border-[#FA5D00]/30"
                 }`}
               >
                 📌 Vault Pins
@@ -1085,7 +1085,7 @@ export function DashboardPage() {
                         key={s.id}
                         className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between font-mono ${
                           s.is_featured
-                            ? "border-[#ccff00] bg-lime-400/[0.04] dark:bg-lime-950/20"
+                            ? "border-[#FA5D00] bg-orange-500/[0.04] dark:bg-orange-950/20"
                             : "editorial-hairline hover:border-[#FA5D00]"
                         }`}
                       >
@@ -1095,7 +1095,7 @@ export function DashboardPage() {
                               {s.category}
                             </span>
                             {s.is_featured && (
-                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-[#ccff00] text-black">
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-[#FA5D00] text-white">
                                 BOOSTED
                               </span>
                             )}
@@ -1463,12 +1463,12 @@ export function DashboardPage() {
                     key={startup.id}
                     className={`p-4 sm:p-5 rounded-2xl border-2 transition-all flex flex-col justify-between font-mono relative ${
                       startup.is_featured
-                        ? "border-[#ccff00] bg-lime-400/[0.04] dark:bg-lime-950/20 shadow-md shadow-lime-400/5 ring-1 ring-lime-400/20"
+                        ? "border-[#FA5D00] bg-orange-500/[0.04] dark:bg-orange-950/20 shadow-md shadow-orange-500/5 ring-1 ring-[#FA5D00]/20"
                         : "border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#FA5D00]"
                     }`}
                   >
                     {startup.is_featured && (
-                      <div className="absolute -top-3 left-4 px-2.5 py-0.5 rounded-full bg-[#ccff00] text-black font-mono text-[9px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 border border-black/20">
+                      <div className="absolute -top-3 left-4 px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-white font-mono text-[9px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 border border-black/20">
                         <Flame className="w-3 h-3 fill-black text-black" />
                         <span>BOOSTED · 1 WEEK PIN</span>
                       </div>
@@ -1519,7 +1519,7 @@ export function DashboardPage() {
                           onClick={() => setPromotingStartup(startup)}
                           className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95 ${
                             startup.is_featured
-                              ? "border-lime-400 bg-[#ccff00] text-black font-black"
+                              ? "border-[#FA5D00] bg-[#FA5D00] text-white font-black"
                               : "border-orange-300 dark:border-orange-800/80 bg-orange-100/80 dark:bg-orange-950/60 text-[#FA5D00] hover:bg-[#FA5D00] hover:text-black"
                           }`}
                         >
@@ -2394,8 +2394,8 @@ export function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b editorial-hairline">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#ccff00] animate-pulse" />
-                  <span className="font-mono text-xs uppercase tracking-wider text-lime-400 dark:text-[#ccff00] font-bold">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FA5D00] animate-pulse" />
+                  <span className="font-mono text-xs uppercase tracking-wider text-[#FA5D00] font-bold">
                     Admin Directory Control
                   </span>
                 </div>
@@ -2403,7 +2403,7 @@ export function DashboardPage() {
                   Vault Projects Pinning
                 </h2>
                 <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  Pinned projects strictly anchor to the top of /projects with high-contrast yellow-lime priority styling.
+                  Pinned projects strictly anchor to the top of /projects with high-contrast signature orange priority styling.
                 </p>
               </div>
 
@@ -2411,7 +2411,7 @@ export function DashboardPage() {
                 <Link
                   to="/projects"
                   target="_blank"
-                  className="px-4 py-2 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-xs font-semibold hover:border-[#ccff00] transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-xs font-semibold hover:border-[#FA5D00] transition-colors flex items-center gap-1.5"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>View Live Directory</span>
@@ -2436,7 +2436,7 @@ export function DashboardPage() {
                   placeholder="Search project by name, tags, or category..."
                   value={projectSearchQuery}
                   onChange={(e) => setProjectSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#ccff00]"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 focus:outline-none focus:border-[#FA5D00]"
                 />
                 {projectSearchQuery && (
                   <button
@@ -2466,8 +2466,8 @@ export function DashboardPage() {
                   onClick={() => setProjectPinFilter("pinned")}
                   className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
                     projectPinFilter === "pinned"
-                      ? "bg-[#ccff00] text-black font-bold shadow-xs"
-                      : "text-lime-500 hover:text-black dark:hover:text-[#ccff00]"
+                      ? "bg-[#FA5D00] text-white font-bold shadow-xs"
+                      : "text-[#FA5D00] hover:text-black dark:hover:text-[#FF8C42]"
                   }`}
                 >
                   <Pin className="w-3 h-3 fill-current" />
@@ -2521,7 +2521,7 @@ export function DashboardPage() {
                         key={project.id}
                         className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                           isPinned
-                            ? "border-lime-400/60 bg-[#ccff00]/5 dark:bg-[#ccff00]/[0.03] shadow-xs"
+                            ? "border-[#FA5D00]/60 bg-[#FA5D00]/5 dark:bg-[#FA5D00]/[0.03] shadow-xs"
                             : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20"
                         }`}
                       >
@@ -2546,7 +2546,7 @@ export function DashboardPage() {
                                 </span>
                               )}
                               {isPinned && (
-                                <span className="font-mono text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#ccff00] text-black border border-lime-400 flex items-center gap-1 shadow-xs">
+                                <span className="font-mono text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FA5D00] text-white border border-[#FA5D00] flex items-center gap-1 shadow-xs">
                                   <Pin className="w-2.5 h-2.5 fill-black" />
                                   <span>PINNED TO TOP</span>
                                 </span>
@@ -2579,7 +2579,7 @@ export function DashboardPage() {
                             className={`px-4 py-2 rounded-xl font-mono text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95 ${
                               isPinned
                                 ? "bg-zinc-900 text-zinc-300 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/40 border border-zinc-700"
-                                : "bg-[#ccff00] text-black hover:bg-[#b8e600] border border-lime-400 shadow-md shadow-[#ccff00]/30"
+                                : "bg-[#FA5D00] text-white hover:bg-[#ff7524] border border-[#FA5D00] shadow-md shadow-[#FA5D00]/30"
                             }`}
                           >
                             <Pin className={`w-3.5 h-3.5 ${isPinned ? "fill-current" : ""}`} />

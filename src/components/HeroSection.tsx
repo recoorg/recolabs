@@ -18,27 +18,25 @@ import {
   CheckCircle2,
   Cpu,
   Radio,
-  Calendar,
-  Briefcase,
-  Users,
-  Compass,
+  ChevronRight,
 } from "lucide-react"
 import { api } from "@/services/api"
-import { GithubIcon, DiscordIcon } from "@/components/icons"
+import { TimelineAnimation } from "@/components/ui/timeline-animation"
 
-// Floating Background Icon Pattern (Low-opacity branded texture)
+// Floating Background Icon Pattern (Audited Recipe Lines 119-125)
 const BACKGROUND_ICONS = [
-  { Icon: Terminal, x: "8%", y: "14%", size: 28 },
-  { Icon: Cpu, x: "88%", y: "18%", size: 32 },
-  { Icon: Code2, x: "14%", y: "45%", size: 24 },
-  { Icon: ShieldCheck, x: "92%", y: "52%", size: 30 },
-  { Icon: Zap, x: "6%", y: "78%", size: 26 },
+  { Icon: Terminal, x: "7%", y: "15%", size: 28 },
+  { Icon: Cpu, x: "89%", y: "19%", size: 32 },
+  { Icon: Code2, x: "13%", y: "45%", size: 24 },
+  { Icon: ShieldCheck, x: "93%", y: "50%", size: 30 },
+  { Icon: Zap, x: "6%", y: "76%", size: 26 },
   { Icon: Layers, x: "86%", y: "82%", size: 28 },
-  { Icon: Rocket, x: "50%", y: "8%", size: 22 },
-  { Icon: Globe, x: "78%", y: "35%", size: 26 },
+  { Icon: Rocket, x: "50%", y: "7%", size: 22 },
+  { Icon: Globe, x: "78%", y: "34%", size: 26 },
 ]
 
 export function HeroSection() {
+  const timelineRef = React.useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const [email, setEmail] = React.useState("")
   const [loading, setLoading] = React.useState(false)
@@ -92,28 +90,103 @@ export function HeroSection() {
   return (
     <section
       id="hero-sec"
+      ref={timelineRef}
       className="relative min-h-[92vh] w-full flex flex-col justify-between overflow-hidden bg-[#07090e] text-zinc-100 pt-32 sm:pt-36 lg:pt-42 pb-20 select-none"
     >
       {/* ============================================================ */}
-      {/* 1. FINANCIAL DASHBOARD GLOW ATMOSPHERE & LOW-OPACITY PATTERN */}
+      {/* 1. CANONICAL AUDITED SVG GAUSSIAN BLUR TUBES (ui-layouts)    */}
       {/* ============================================================ */}
+      <svg
+        width="358"
+        height="483"
+        viewBox="0 0 358 483"
+        className="absolute top-0 z-0 left-0 pointer-events-none opacity-80"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g filter="url(#filter0_f_hero)">
+          <rect
+            x="-86.9961"
+            y="-33.114"
+            width="72"
+            height="541"
+            rx="36"
+            transform="rotate(-30.8182 -86.9961 -33.114)"
+            fill="url(#paint0_linear_hero)"
+          />
+        </g>
+        <g filter="url(#filter1_f_hero)">
+          <rect
+            x="-17"
+            y="-135.113"
+            width="50.0937"
+            height="541"
+            rx="25.0469"
+            transform="rotate(-30.8182 -17 -135.113)"
+            fill="url(#paint1_linear_hero)"
+          />
+        </g>
+        <defs>
+          <filter
+            id="filter0_f_hero"
+            x="-137.641"
+            y="-120.646"
+            width="440.285"
+            height="602.787"
+            filterUnits="userSpaceOnUse"
+            colorInterpolationFilters="sRGB"
+          >
+            <feGaussianBlur stdDeviation="32" result="effect1_foregroundBlur_hero" />
+          </filter>
+          <filter
+            id="filter1_f_hero"
+            x="-71.707"
+            y="-215.486"
+            width="429.598"
+            height="599.69"
+            filterUnits="userSpaceOnUse"
+            colorInterpolationFilters="sRGB"
+          >
+            <feGaussianBlur stdDeviation="32" result="effect1_foregroundBlur_hero" />
+          </filter>
+          <linearGradient
+            id="paint0_linear_hero"
+            x1="-50.9961"
+            y1="-33.114"
+            x2="-50.9961"
+            y2="507.886"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor="#FA5D00" stopOpacity="0.45" />
+            <stop offset="1" stopColor="#FF8C42" stopOpacity="0.05" />
+          </linearGradient>
+          <linearGradient
+            id="paint1_linear_hero"
+            x1="8.04686"
+            y1="-135.113"
+            x2="8.04686"
+            y2="405.887"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor="#ff7a1a" stopOpacity="0.35" />
+            <stop offset="1" stopColor="#ffa65c" stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* Atmospheric depth halos */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Subtle coordinate blueprint grid */}
         <div className="absolute inset-0 bg-[radial-gradient(#293244_1px,transparent_1px)] [background-size:28px_28px] [mask-image:radial-gradient(ellipse_at_center,black_45%,transparent_90%)] opacity-35" />
-
-        {/* Primary Warm Reco Orange Glow Halo */}
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[480px] bg-[#FA5D00]/[0.08] rounded-full blur-[130px]" />
-
-        {/* Cool Azure Corner Glow for Financial-Grade Depth Contrast */}
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[850px] h-[500px] bg-[#FA5D00]/[0.08] rounded-full blur-[140px]" />
         <div className="absolute top-1/4 -right-40 w-[600px] h-[500px] bg-blue-600/[0.04] rounded-full blur-[140px]" />
         <div className="absolute bottom-1/3 -left-40 w-[550px] h-[450px] bg-amber-500/[0.035] rounded-full blur-[140px]" />
 
-        {/* Low-Opacity Icon Watermark Pattern (Audited Recipe Lines 119-125) */}
+        {/* Low-Opacity Icon Pattern (Audited Recipe Lines 119-125) */}
         {BACKGROUND_ICONS.map(({ Icon, x, y, size }, index) => (
           <div
             key={index}
             style={{ left: x, top: y }}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 text-zinc-400/[0.04] dark:text-zinc-500/[0.05] transition-transform duration-700"
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 text-zinc-400/[0.04] dark:text-zinc-500/[0.05]"
           >
             <Icon size={size} strokeWidth={1.5} />
           </div>
@@ -121,32 +194,51 @@ export function HeroSection() {
       </div>
 
       {/* ============================================================ */}
-      {/* 2. TOP HERO STAGE: KICKER, HEADLINE & MACHINED ACTION BAR   */}
+      {/* 2. TIMELINE ANIMATED HERO CONTENT                            */}
       {/* ============================================================ */}
       <div className="relative z-10 mx-auto max-w-5xl px-6 text-center flex flex-col items-center">
-        {/* Kicker Pill Badge */}
-        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-[#FA5D00]/30 bg-[#FA5D00]/[0.08] backdrop-blur-md font-mono text-[11px] font-bold uppercase tracking-wider text-[#FF8C42] shadow-[0_0_20px_rgba(250,93,0,0.15)] mb-7 animate-in fade-in duration-500">
+        
+        {/* Kicker Pill Badge (Timeline Step 1) */}
+        <TimelineAnimation
+          animationNum={1}
+          timelineRef={timelineRef}
+          className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-[#FA5D00]/30 bg-[#FA5D00]/[0.08] backdrop-blur-md font-mono text-[11px] font-bold uppercase tracking-wider text-[#FF8C42] shadow-[0_0_20px_rgba(250,93,0,0.15)] mb-7"
+        >
           <span className="w-2 h-2 rounded-full bg-[#FA5D00] animate-pulse shadow-[0_0_8px_#FA5D00]" />
           <span>THE SKILL EXCHANGE &amp; OPEN-SOURCE GUILD</span>
           <span className="text-zinc-500">·</span>
           <span className="text-white font-bold">EST. 2024</span>
-        </div>
+        </TimelineAnimation>
 
-        {/* Headline in Signature Instrument Serif Display */}
-        <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-[98px] leading-[1.01] tracking-[-0.03em] text-white font-normal drop-shadow-sm">
+        {/* Master Headline (Timeline Step 2) */}
+        <TimelineAnimation
+          as="h1"
+          animationNum={2}
+          timelineRef={timelineRef}
+          className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-[98px] leading-[1.01] tracking-[-0.03em] text-white font-normal drop-shadow-sm"
+        >
           The Skill Exchange <br />
           <span className="italic">
             for curious Mind<span className="text-[#FA5D00] not-italic drop-shadow-[0_0_25px_rgba(250,93,0,0.6)]">.</span>
           </span>
-        </h1>
+        </TimelineAnimation>
 
-        {/* Supporting Copy */}
-        <p className="mt-5 max-w-2xl text-center font-sans text-sm sm:text-base md:text-lg text-zinc-400 leading-relaxed font-normal">
+        {/* Supporting Copy (Timeline Step 3) */}
+        <TimelineAnimation
+          as="p"
+          animationNum={3}
+          timelineRef={timelineRef}
+          className="mt-5 max-w-2xl text-center font-sans text-sm sm:text-base md:text-lg text-zinc-400 leading-relaxed font-normal"
+        >
           An open collective of young hackers, builders, and makers shipping high-impact software, reverse engineering vaults, and 900+ global hackathons without paywalls.
-        </p>
+        </TimelineAnimation>
 
-        {/* Machined Input & CTA Control (Audited Inset Shadows) */}
-        <div className="mt-8 sm:mt-10 w-full flex justify-center">
+        {/* Machined Input & CTA Control (Timeline Step 4 - Audited Inset Shadows) */}
+        <TimelineAnimation
+          animationNum={4}
+          timelineRef={timelineRef}
+          className="mt-8 sm:mt-10 w-full flex justify-center"
+        >
           <form
             onSubmit={handleJoin}
             className="relative inline-flex items-center justify-between w-full max-w-[380px] sm:max-w-[430px] p-1.5 rounded-full bg-[#0d1017] border border-zinc-800/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_10px_30px_-5px_rgba(0,0,0,0.5)] focus-within:border-[#FA5D00]/80 focus-within:ring-2 focus-within:ring-[#FA5D00]/30 transition-all"
@@ -163,12 +255,13 @@ export function HeroSection() {
             <button
               type="submit"
               disabled={loading || joined}
-              className="flex-none px-6 py-2.5 rounded-full bg-[#FA5D00] hover:bg-[#ff6e1a] text-black font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer active:scale-95 disabled:opacity-75 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-1px_0_rgba(0,0,0,0.4),0_8px_20px_-4px_rgba(250,93,0,0.45)]"
+              className="flex-none px-6 py-2.5 rounded-full bg-[#FA5D00] hover:bg-[#ff6e1a] text-black font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer active:scale-95 disabled:opacity-75 shadow-[inset_2px_2px_5px_0px_rgba(0,0,0,0.5),inset_-2px_-2px_6px_1px_rgba(255,255,255,0.25)] flex items-center gap-1"
             >
-              {loading ? "..." : joined ? "Joined!" : "Join Guild"}
+              <span>{loading ? "..." : joined ? "Joined!" : "Join Guild"}</span>
+              {!joined && <ChevronRight className="w-3.5 h-3.5" />}
             </button>
           </form>
-        </div>
+        </TimelineAnimation>
 
         {/* Fast Action Coordinates Strip */}
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:gap-4 font-mono text-xs text-zinc-400">
@@ -200,12 +293,14 @@ export function HeroSection() {
       </div>
 
       {/* ============================================================ */}
-      {/* 3. SIGNATURE VISUALIZATION: FLOATING DASHBOARD SLAB           */}
+      {/* 3. TIMELINE ANIMATED DASHBOARD SLAB (Timeline Step 5)        */}
       {/* ============================================================ */}
       <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 mt-14 sm:mt-18 w-full">
-        {/* Outer Translucent Dashboard Slab (Audited Recipe Lines 256-270) */}
-        <div className="relative rounded-3xl border border-zinc-800/90 bg-[#0e121a]/85 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),0_0_40px_-10px_rgba(250,93,0,0.12)] p-4 sm:p-7 overflow-hidden">
-          
+        <TimelineAnimation
+          animationNum={5}
+          timelineRef={timelineRef}
+          className="relative rounded-3xl border border-zinc-800/90 bg-[#0e121a]/85 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),0_0_40px_-10px_rgba(250,93,0,0.12)] p-4 sm:p-7 overflow-hidden"
+        >
           {/* Subtle Top Gradient Accent Edge */}
           <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#FA5D00]/70 to-transparent" />
 
@@ -269,9 +364,7 @@ export function HeroSection() {
 
           </div>
 
-          {/* ========================================================== */}
-          {/* TAB 1: FOUNDER NETWORK LAUNCHPAD CARDS                     */}
-          {/* ========================================================== */}
+          {/* TAB 1: FOUNDER NETWORK LAUNCHPAD CARDS */}
           {activeTab === "network" && (
             <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-300">
               
@@ -371,7 +464,7 @@ export function HeroSection() {
                 </div>
               </div>
 
-              {/* Project Card 3: Reco Tools */}
+              {/* Project Card 3: Reco DevKit */}
               <div className="p-4 rounded-2xl border border-zinc-800/90 bg-[#121622]/70 hover:border-[#FA5D00]/60 transition-all group flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2.5">
@@ -422,9 +515,7 @@ export function HeroSection() {
             </div>
           )}
 
-          {/* ========================================================== */}
-          {/* TAB 2: GLOBAL YOUTH HACKATHONS RADAR                      */}
-          {/* ========================================================== */}
+          {/* TAB 2: GLOBAL YOUTH HACKATHONS RADAR */}
           {activeTab === "hackathons" && (
             <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-300">
               
@@ -438,7 +529,7 @@ export function HeroSection() {
                   </div>
                   <h3 className="font-serif text-base font-bold text-white">Hack Club Global Sprint</h3>
                   <p className="font-sans text-xs text-zinc-400 mt-1 leading-relaxed">
-                    High school & collegiate 48-hour build sprint across AI, hardware hacks, and creative tooling.
+                    High school &amp; collegiate 48-hour build sprint across AI, hardware hacks, and creative tooling.
                   </p>
                 </div>
                 <div className="mt-4 pt-3 border-t border-zinc-800/60 flex items-center justify-between font-mono text-[10px] text-zinc-400">
@@ -494,9 +585,7 @@ export function HeroSection() {
             </div>
           )}
 
-          {/* ========================================================== */}
-          {/* TAB 3: GUILD CAREERS & ROLES MATRIX                       */}
-          {/* ========================================================== */}
+          {/* TAB 3: GUILD CAREERS & ROLES MATRIX */}
           {activeTab === "jobs" && (
             <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-300">
               
@@ -587,7 +676,7 @@ export function HeroSection() {
             </div>
           </div>
 
-        </div>
+        </TimelineAnimation>
       </div>
     </section>
   )

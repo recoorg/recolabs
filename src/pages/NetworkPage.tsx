@@ -143,7 +143,7 @@ export function NetworkPage() {
         particleCount: 50,
         spread: 60,
         origin: { y: 0.5 },
-        colors: ["#ccff00", "#FA5D00", "#ffffff"],
+        colors: ["#FA5D00", "#FA5D00", "#ffffff"],
       })
     } catch (err: any) {
       setAiSearchError(err.message || "Failed to generate AI suggestion.")
@@ -572,8 +572,8 @@ export function NetworkPage() {
     <div className="relative w-full pt-28 sm:pt-32 pb-24 px-4 sm:px-8 bg-transparent overflow-hidden">
       {/* Seamless ambient blurred glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#ccff00]/[0.025] dark:bg-[#ccff00]/[0.035] rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/3 -left-40 w-[600px] h-[600px] bg-lime-400/[0.02] dark:bg-lime-400/[0.03] rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#FA5D00]/[0.025] dark:bg-[#FA5D00]/[0.035] rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/3 -left-40 w-[600px] h-[600px] bg-orange-500/10 dark:bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl">
@@ -586,7 +586,7 @@ export function NetworkPage() {
             <div className="max-w-2xl space-y-3">
               {/* Minimal Editorial Title */}
               <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-[1.08]">
-                Ship with pride<span className="text-[#ccff00]">.</span>
+                Ship with pride<span className="text-[#FA5D00]">.</span>
                 <br />
                 <span className="italic font-light text-zinc-500 dark:text-zinc-400">
                   Backed by peer proof.
@@ -601,7 +601,7 @@ export function NetworkPage() {
               {/* Guest Claim Strip (Only if not logged in) */}
               {!currentUser && (
                 <div className="pt-2 flex flex-wrap items-center gap-2.5 font-mono text-xs">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 shadow-xs focus-within:border-[#ccff00] transition-colors">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 shadow-xs focus-within:border-[#FA5D00] transition-colors">
                     <span className="text-zinc-400 text-[11px] select-none">recolabs.in/builder/</span>
                     <input
                       type="text"
@@ -616,7 +616,7 @@ export function NetworkPage() {
                     <button
                       type="button"
                       onClick={() => handleClaimUsername()}
-                      className="w-5 h-5 rounded-full bg-[#ccff00] text-black flex items-center justify-center hover:bg-[#b8e600] active:scale-95 transition-all cursor-pointer"
+                      className="w-5 h-5 rounded-full bg-[#FA5D00] text-white flex items-center justify-center hover:bg-[#ff7524] active:scale-95 transition-all cursor-pointer"
                       title="Claim builder profile"
                     >
                       <ArrowRight className="w-3 h-3" />
@@ -628,7 +628,7 @@ export function NetworkPage() {
                       setAuthMode("login")
                       setShowAuthModal(true)
                     }}
-                    className="px-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 hover:border-[#ccff00] bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-bold transition-all cursor-pointer text-xs"
+                    className="px-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 hover:border-[#FA5D00] bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-bold transition-all cursor-pointer text-xs"
                   >
                     Sign In
                   </button>
@@ -644,7 +644,7 @@ export function NetworkPage() {
                   onClick={() => setActiveDirectoryTab("startups")}
                   className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
                     activeDirectoryTab === "startups"
-                      ? "bg-[#ccff00] text-black shadow-sm font-black"
+                      ? "bg-[#FA5D00] text-white shadow-sm font-black"
                       : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100"
                   }`}
                 >
@@ -657,7 +657,7 @@ export function NetworkPage() {
                   onClick={() => setActiveDirectoryTab("builders")}
                   className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer flex items-center gap-2 ${
                     activeDirectoryTab === "builders"
-                      ? "bg-[#ccff00] text-black shadow-sm font-black"
+                      ? "bg-[#FA5D00] text-white shadow-sm font-black"
                       : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100"
                   }`}
                 >
@@ -799,7 +799,7 @@ export function NetworkPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search projects, or describe a problem to ask AI..."
-                className="w-full pl-10 pr-24 py-2.5 rounded-full border editorial-hairline bg-white/70 dark:bg-zinc-900/60 font-mono text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#ccff00] transition-colors"
+                className="w-full pl-10 pr-24 py-2.5 rounded-full border editorial-hairline bg-white/70 dark:bg-zinc-900/60 font-mono text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#FA5D00] transition-colors"
               />
               <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center">
                 <button
@@ -810,7 +810,7 @@ export function NetworkPage() {
                     aiSearching
                       ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-500 animate-pulse"
                       : searchQuery.trim()
-                      ? "bg-[#ccff00] text-black font-black shadow-xs hover:bg-[#b8e600] active:scale-95 cursor-pointer"
+                      ? "bg-[#FA5D00] text-white font-black shadow-xs hover:bg-[#ff7524] active:scale-95 cursor-pointer"
                       : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 opacity-60 cursor-not-allowed"
                   }`}
                 >
@@ -829,8 +829,8 @@ export function NetworkPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
                   selectedCategory === cat
-                    ? "bg-[#ccff00] text-black font-bold shadow-xs border border-lime-400"
-                    : "border editorial-hairline bg-white/50 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:border-[#ccff00]"
+                    ? "bg-[#FA5D00] text-white font-bold shadow-xs border border-[#FA5D00]"
+                    : "border editorial-hairline bg-white/50 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:border-[#FA5D00]"
                 }`}
               >
                 {cat}
@@ -841,15 +841,15 @@ export function NetworkPage() {
 
         {/* Gemini AI Recommendation Banner */}
         {aiStartupSuggestion && (
-          <div className="mt-6 p-4 rounded-2xl border-2 border-lime-400/50 bg-gradient-to-br from-[#ccff00]/[0.08] via-zinc-900/40 to-transparent dark:from-[#ccff00]/[0.12] dark:via-zinc-900/60 relative overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 shadow-lg shadow-[#ccff00]/10">
+          <div className="mt-6 p-4 rounded-2xl border-2 border-[#FA5D00] bg-gradient-to-br from-[#FA5D00]/[0.08] via-zinc-900/40 to-transparent dark:from-[#FA5D00]/[0.12] dark:via-zinc-900/60 relative overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 shadow-lg shadow-[#FA5D00]/10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-[#ccff00] text-black flex items-center justify-center font-bold flex-none shadow-sm mt-0.5 sm:mt-0">
+                <div className="w-9 h-9 rounded-xl bg-[#FA5D00] text-white flex items-center justify-center font-bold flex-none shadow-sm mt-0.5 sm:mt-0">
                   <Sparkles className="w-5 h-5 fill-black" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#ccff00] text-black border border-lime-400">
+                    <span className="font-mono text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FA5D00] text-white border border-[#FA5D00]">
                       Gemini 2.5 Matchmaker
                     </span>
                     <h3 className="font-serif text-lg font-bold text-zinc-950 dark:text-zinc-50 truncate">
@@ -867,7 +867,7 @@ export function NetworkPage() {
                           key={i}
                           type="button"
                           onClick={() => setSearchQuery(kw)}
-                          className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-black hover:bg-[#ccff00] transition-colors cursor-pointer"
+                          className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-black hover:bg-[#FA5D00] transition-colors cursor-pointer"
                         >
                           #{kw}
                         </button>
@@ -880,7 +880,7 @@ export function NetworkPage() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery(aiStartupSuggestion.suggested_startup_name)}
-                  className="px-3.5 py-1.5 rounded-full bg-[#ccff00] text-black font-mono text-[11px] font-black uppercase tracking-wider hover:bg-[#b8e600] transition-colors cursor-pointer shadow-sm shadow-[#ccff00]/30"
+                  className="px-3.5 py-1.5 rounded-full bg-[#FA5D00] text-white font-mono text-[11px] font-black uppercase tracking-wider hover:bg-[#ff7524] transition-colors cursor-pointer shadow-sm shadow-[#FA5D00]/30"
                 >
                   Isolate Project
                 </button>
@@ -927,7 +927,7 @@ export function NetworkPage() {
                   if (!currentUser) setShowAuthModal(true)
                   else setShowPostModal(true)
                 }}
-                className="mt-5 inline-flex items-center gap-2 px-6 py-2 rounded-full bg-[#ccff00] text-black font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#b8e600] transition-colors cursor-pointer"
+                className="mt-5 inline-flex items-center gap-2 px-6 py-2 rounded-full bg-[#FA5D00] text-white font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#ff7524] transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>List a Project</span>
@@ -952,19 +952,19 @@ export function NetworkPage() {
                     onClick={() => selectStartupWithUrl(item)}
                     className={`group relative p-6 sm:p-7 rounded-3xl border-2 transition-all flex flex-col justify-between shadow-sm hover:shadow-md cursor-pointer ${
                       isAiMatch
-                        ? "border-[#ccff00] ring-2 ring-[#ccff00]/60 bg-lime-400/[0.06] shadow-xl shadow-[#ccff00]/20"
+                        ? "border-[#FA5D00] ring-2 ring-[#FA5D00]/60 bg-orange-500/10 shadow-xl shadow-[#FA5D00]/20"
                         : item.is_featured
-                        ? "border-[#ccff00] dark:border-[#ccff00] bg-lime-400/[0.04] dark:bg-lime-950/20 shadow-xl shadow-lime-400/10 ring-2 ring-lime-400/20"
-                        : "border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#ccff00] dark:hover:border-[#ccff00]"
+                        ? "border-[#FA5D00] dark:border-[#FA5D00] bg-orange-500/10 dark:bg-orange-500/10 shadow-xl shadow-orange-400/10 ring-2 ring-orange-400/20"
+                        : "border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:border-[#FA5D00] dark:hover:border-[#FA5D00]"
                     }`}
                   >
                     {isAiMatch ? (
-                      <div className="absolute -top-3.5 left-6 px-3 py-0.5 rounded-full bg-[#ccff00] text-black font-mono text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 border border-black/20">
+                      <div className="absolute -top-3.5 left-6 px-3 py-0.5 rounded-full bg-[#FA5D00] text-white font-mono text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 border border-black/20">
                         <Sparkles className="w-3 h-3 fill-black text-black" />
                         <span>AI RECOMMENDED</span>
                       </div>
                     ) : item.is_featured && (
-                      <div className="absolute -top-3.5 left-6 px-3 py-0.5 rounded-full bg-[#ccff00] text-black font-mono text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 border border-black/20">
+                      <div className="absolute -top-3.5 left-6 px-3 py-0.5 rounded-full bg-[#FA5D00] text-white font-mono text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 border border-black/20">
                         <Flame className="w-3.5 h-3.5 fill-black text-black" />
                         <span>BOOSTED · 1 WEEK PIN</span>
                       </div>
@@ -1000,7 +1000,7 @@ export function NetworkPage() {
                             title="Boost this startup for 1 week"
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border font-mono text-[10px] font-bold uppercase transition-all shadow-2xs active:scale-95 ${
                               item.is_featured
-                                ? "border-lime-400 bg-[#ccff00] text-black font-black"
+                                ? "border-[#FA5D00] bg-[#FA5D00] text-white font-black"
                                 : "border-orange-300 dark:border-orange-800/80 bg-orange-100/80 dark:bg-orange-950/60 text-[#FA5D00] hover:bg-[#FA5D00] hover:text-black"
                             }`}
                           >
@@ -1323,14 +1323,14 @@ export function NetworkPage() {
                     PROJECT URL / REPOSITORY *
                   </label>
                   {inspectingLink ? (
-                    <span className="text-[10px] text-lime-500 font-bold flex items-center gap-1 animate-pulse">
+                    <span className="text-[10px] text-[#FA5D00] font-bold flex items-center gap-1 animate-pulse">
                       <RefreshCw className="w-3 h-3 animate-spin" /> Fetching details...
                     </span>
                   ) : startupForm.url && (
                     <button
                       type="button"
                       onClick={() => handleInspectUrl(startupForm.url)}
-                      className="text-[10px] text-lime-400 dark:text-[#ccff00] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                      className="text-[10px] text-[#FF8C42] dark:text-[#FA5D00] hover:underline font-bold flex items-center gap-1 cursor-pointer"
                     >
                       <Sparkles className="w-3 h-3 fill-current" /> Auto-fetch details
                     </button>
@@ -1355,7 +1355,7 @@ export function NetworkPage() {
                       }
                     }}
                     placeholder="https://myproject.com or github.com/user/repo"
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#ccff00]"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                   />
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                     {startupForm.url && (startupForm.url.startsWith("http") || startupForm.url.includes(".")) ? (
@@ -1375,7 +1375,7 @@ export function NetworkPage() {
                   </div>
                 </div>
                 {inspectNotice && (
-                  <p className="mt-1 text-[11px] text-lime-400 dark:text-[#ccff00] font-mono animate-in fade-in">
+                  <p className="mt-1 text-[11px] text-[#FF8C42] dark:text-[#FA5D00] font-mono animate-in fade-in">
                     {inspectNotice}
                   </p>
                 )}
@@ -1389,7 +1389,7 @@ export function NetworkPage() {
                   value={startupForm.name}
                   onChange={(e) => setStartupForm({ ...startupForm, name: e.target.value })}
                   placeholder="e.g. PulseKit"
-                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#ccff00]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
@@ -1401,7 +1401,7 @@ export function NetworkPage() {
                   value={startupForm.problem_solving}
                   onChange={(e) => setStartupForm({ ...startupForm, problem_solving: e.target.value })}
                   placeholder="Explain the technical problem and how your build solves it..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#ccff00]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-[#FA5D00]"
                 />
               </div>
 
@@ -1832,15 +1832,15 @@ export function NetworkPage() {
                       <button
                         type="button"
                         onClick={() => setShowAuthModal(true)}
-                        className="px-4 py-2 rounded-full bg-[#ccff00] text-black font-bold uppercase tracking-wider hover:bg-[#b8e600] transition-colors cursor-pointer flex-none text-[11px]"
+                        className="px-4 py-2 rounded-full bg-[#FA5D00] text-white font-bold uppercase tracking-wider hover:bg-[#ff7524] transition-colors cursor-pointer flex-none text-[11px]"
                       >
                         Sign In
                       </button>
                     </div>
                   ) : (
                     <form onSubmit={handlePostStartupComment} className="mt-4">
-                      <div className="flex items-center gap-2 p-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/90 shadow-2xs focus-within:ring-2 focus-within:ring-[#ccff00]/60 transition-all">
-                        <div className="w-7 h-7 rounded-full bg-[#ccff00] text-black font-mono text-xs font-black flex items-center justify-center flex-none ml-1 overflow-hidden">
+                      <div className="flex items-center gap-2 p-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/90 shadow-2xs focus-within:ring-2 focus-within:ring-[#FA5D00]/60 transition-all">
+                        <div className="w-7 h-7 rounded-full bg-[#FA5D00] text-white font-mono text-xs font-black flex items-center justify-center flex-none ml-1 overflow-hidden">
                           {currentUser.avatar_url ? (
                             <img src={currentUser.avatar_url} alt={currentUser.name} className="w-full h-full object-cover" />
                           ) : (
@@ -1857,7 +1857,7 @@ export function NetworkPage() {
                         <button
                           type="submit"
                           disabled={submittingComment || !commentText.trim()}
-                          className="w-8 h-8 rounded-full bg-[#ccff00] text-black hover:bg-[#b8e600] active:scale-95 flex items-center justify-center transition-all cursor-pointer flex-none disabled:opacity-40"
+                          className="w-8 h-8 rounded-full bg-[#FA5D00] text-white hover:bg-[#ff7524] active:scale-95 flex items-center justify-center transition-all cursor-pointer flex-none disabled:opacity-40"
                         >
                           <Send className="w-3.5 h-3.5" />
                         </button>
@@ -1873,7 +1873,7 @@ export function NetworkPage() {
                   {/* Comments Header */}
                   <div className="border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between font-mono text-xs font-bold tracking-wider pt-3 pb-2">
                     <div className="text-zinc-900 dark:text-zinc-100 uppercase flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-[#ccff00]" />
+                      <MessageSquare className="w-4 h-4 text-[#FA5D00]" />
                       <span>Peer Reviews ({startupComments.length})</span>
                     </div>
                   </div>
@@ -1882,7 +1882,7 @@ export function NetworkPage() {
                   <div className="space-y-3 pt-2">
                     {loadingComments ? (
                       <div className="py-6 text-center text-xs font-mono text-zinc-400 flex items-center justify-center gap-2">
-                        <RefreshCw className="w-4 h-4 animate-spin text-[#ccff00]" />
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#FA5D00]" />
                         <span>Loading feedback...</span>
                       </div>
                     ) : startupComments.length === 0 ? (
@@ -1899,7 +1899,7 @@ export function NetworkPage() {
                         return (
                           <div
                             key={c.id}
-                            className="p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/50 border border-zinc-200/90 dark:border-zinc-800/90 space-y-2 hover:border-[#ccff00]/40 transition-colors"
+                            className="p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-900/50 border border-zinc-200/90 dark:border-zinc-800/90 space-y-2 hover:border-[#FA5D00]/40 transition-colors"
                           >
                             <div className="flex items-center justify-between text-xs font-mono">
                               <div className="flex items-center gap-2">
@@ -1916,7 +1916,7 @@ export function NetworkPage() {
                                 {c.author_username ? (
                                   <Link
                                     to={`/builder/${c.author_username}`}
-                                    className="font-bold text-zinc-900 dark:text-zinc-100 hover:text-[#ccff00] transition-colors"
+                                    className="font-bold text-zinc-900 dark:text-zinc-100 hover:text-[#FA5D00] transition-colors"
                                   >
                                     {c.author_name}
                                   </Link>
@@ -1947,7 +1947,7 @@ export function NetworkPage() {
                     {/* Real Launchpad Header */}
                     <div className="text-center pt-1">
                       <div className="flex items-center justify-center gap-1.5 text-zinc-900 dark:text-zinc-100">
-                        <Award className="w-4 h-4 text-[#ccff00]" />
+                        <Award className="w-4 h-4 text-[#FA5D00]" />
                         <h3 className="font-serif text-lg font-normal tracking-tight">
                           Builder <span className="font-sans font-light text-zinc-500 italic text-sm">Evaluation</span>
                         </h3>
@@ -1993,11 +1993,11 @@ export function NetworkPage() {
                             <div className="font-serif text-3xl font-normal text-zinc-950 dark:text-zinc-50 leading-none">
                               {Number(startupRatings.overall).toFixed(1)}
                             </div>
-                            <div className="flex items-center justify-center gap-0.5 text-[#ccff00] mt-1.5">
+                            <div className="flex items-center justify-center gap-0.5 text-[#FA5D00] mt-1.5">
                               {[1, 2, 3, 4, 5].map((s) => (
                                 <Star
                                   key={s}
-                                  className={`w-3 h-3 ${s <= Math.round(Number(startupRatings.overall)) ? 'fill-[#ccff00] text-[#ccff00]' : 'text-zinc-300 dark:text-zinc-700'}`}
+                                  className={`w-3 h-3 ${s <= Math.round(Number(startupRatings.overall)) ? 'fill-[#FA5D00] text-[#FA5D00]' : 'text-zinc-300 dark:text-zinc-700'}`}
                                 />
                               ))}
                             </div>
@@ -2016,7 +2016,7 @@ export function NetworkPage() {
                               <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                                 <div
                                   style={{ width: `${(Number(startupRatings.idea) / 5) * 100}%` }}
-                                  className="h-full bg-[#ccff00] rounded-full"
+                                  className="h-full bg-[#FA5D00] rounded-full"
                                 />
                               </div>
                             </div>
@@ -2029,7 +2029,7 @@ export function NetworkPage() {
                               <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                                 <div
                                   style={{ width: `${(Number(startupRatings.execution) / 5) * 100}%` }}
-                                  className="h-full bg-[#ccff00] rounded-full"
+                                  className="h-full bg-[#FA5D00] rounded-full"
                                 />
                               </div>
                             </div>
@@ -2042,7 +2042,7 @@ export function NetworkPage() {
                               <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                                 <div
                                   style={{ width: `${(Number(startupRatings.design) / 5) * 100}%` }}
-                                  className="h-full bg-[#ccff00] rounded-full"
+                                  className="h-full bg-[#FA5D00] rounded-full"
                                 />
                               </div>
                             </div>
@@ -2181,9 +2181,9 @@ export function NetworkPage() {
         }}
         title="List Project"
         aria-label="List Project"
-        className="fixed bottom-6 right-6 z-40 group w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#ccff00] text-black hover:bg-[#b8e600] flex items-center justify-center shadow-2xl shadow-[#ccff00]/40 border-2 border-black dark:border-zinc-800 transition-all hover:scale-110 active:scale-95 cursor-pointer"
+        className="fixed bottom-6 right-6 z-40 group w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#FA5D00] text-white hover:bg-[#ff7524] flex items-center justify-center shadow-2xl shadow-[#FA5D00]/40 border-2 border-black dark:border-zinc-800 transition-all hover:scale-110 active:scale-95 cursor-pointer"
       >
-        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-black text-[#ccff00] flex items-center justify-center font-mono font-black text-base sm:text-lg border border-black/30 group-hover:rotate-90 transition-transform duration-200">
+        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-black text-[#FA5D00] flex items-center justify-center font-mono font-black text-base sm:text-lg border border-black/30 group-hover:rotate-90 transition-transform duration-200">
           +
         </div>
       </button>

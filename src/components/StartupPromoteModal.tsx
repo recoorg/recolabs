@@ -173,12 +173,12 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
         {/* Header */}
         <div className="p-5 pb-3 border-b editorial-hairline flex items-start justify-between gap-3 flex-none">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ccff00] text-black border border-black/20 font-mono text-[10px] font-black uppercase tracking-wider mb-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FA5D00] text-white border border-black/20 font-mono text-[10px] font-black uppercase tracking-wider mb-1">
               <Flame className="w-3.5 h-3.5 fill-black text-black" />
               <span>1-WEEK SPOTLIGHT PIN</span>
             </div>
             <h2 className="font-serif text-2xl sm:text-3xl text-zinc-950 dark:text-zinc-50 font-normal">
-              Boost <span className="font-bold underline decoration-[#ccff00]">{startup.name}</span> to #1
+              Boost <span className="font-bold underline decoration-[#FA5D00]">{startup.name}</span> to #1
             </h2>
           </div>
 
@@ -194,20 +194,20 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
         <div className="flex-1 overflow-y-auto p-5 space-y-4 text-left">
           {pinned ? (
             <div className="py-8 text-center font-mono space-y-3">
-              <div className="w-14 h-14 mx-auto rounded-full bg-[#ccff00]/20 border border-[#ccff00] flex items-center justify-center text-black dark:text-[#ccff00]">
+              <div className="w-14 h-14 mx-auto rounded-full bg-[#FA5D00]/20 border border-[#FA5D00] flex items-center justify-center text-black dark:text-[#FA5D00]">
                 <CheckCircle2 className="w-8 h-8 text-[#a3cc00]" />
               </div>
               <h3 className="font-serif text-2xl sm:text-3xl text-zinc-950 dark:text-zinc-50 font-normal">
                 {startup.name} Boosted to #1!
               </h3>
               <p className="font-sans text-xs text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto leading-relaxed">
-                Your startup holds the <strong>Lime Yellow Spotlight Pin</strong> at the top of the Founder Network feed for 7 days.
+                Your startup holds the <strong>Signature Orange Spotlight Pin</strong> at the top of the Founder Network feed for 7 days.
               </p>
 
               <div className="pt-2">
                 <button
                   onClick={onClose}
-                  className="px-6 py-2.5 rounded-full bg-[#ccff00] text-black font-mono text-xs font-black uppercase tracking-wider hover:opacity-90 shadow-md cursor-pointer border border-black/20"
+                  className="px-6 py-2.5 rounded-full bg-[#FA5D00] text-white font-mono text-xs font-black uppercase tracking-wider hover:opacity-90 shadow-md cursor-pointer border border-black/20"
                 >
                   View Feed
                 </button>
@@ -220,7 +220,7 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                 className={`p-4 rounded-2xl border font-mono text-xs space-y-1 ${
                   isQuotaFull
                     ? "bg-rose-500/10 border-rose-500/30 text-rose-500"
-                    : "bg-[#ccff00]/10 border-[#ccff00]/40 text-zinc-900 dark:text-zinc-100"
+                    : "bg-[#FA5D00]/10 border-[#FA5D00]/40 text-zinc-900 dark:text-zinc-100"
                 }`}
               >
                 <div className="flex items-center justify-between font-bold">
@@ -230,7 +230,7 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                   </div>
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                      isQuotaFull ? "bg-rose-500 text-white" : "bg-[#ccff00] text-black"
+                      isQuotaFull ? "bg-rose-500 text-white" : "bg-[#FA5D00] text-white"
                     }`}
                   >
                     {loadingQuota ? "Checking..." : `${activeCount} / ${limit} ACTIVE`}
@@ -252,7 +252,7 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
               )}
 
               {/* Tier Details Card */}
-              <div className="p-4 rounded-2xl border-2 border-[#ccff00] bg-lime-400/[0.04] dark:bg-lime-950/20 font-mono space-y-3">
+              <div className="p-4 rounded-2xl border-2 border-[#FA5D00] bg-orange-500/[0.04] dark:bg-orange-950/20 font-mono space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-xs font-black uppercase text-zinc-900 dark:text-zinc-100 tracking-wider">
@@ -268,17 +268,17 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
 
                 <ul className="space-y-1.5 text-[11px] font-sans text-zinc-700 dark:text-zinc-300">
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-lime-500 flex-none" />
+                    <Check className="w-3.5 h-3.5 text-[#FA5D00] flex-none" />
                     <span>
-                      High-visibility <strong>Lime Yellow (#ccff00)</strong> glowing border &amp; badge
+                      High-visibility <strong>Signature Orange (#FA5D00)</strong> glowing border &amp; badge
                     </span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-lime-500 flex-none" />
+                    <Check className="w-3.5 h-3.5 text-[#FA5D00] flex-none" />
                     <span>Fixed #1 placement on the Founder Network directory feed</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-lime-500 flex-none" />
+                    <Check className="w-3.5 h-3.5 text-[#FA5D00] flex-none" />
                     <span>Automatic expiration after 7 full days (168 hours)</span>
                   </li>
                 </ul>
@@ -296,7 +296,7 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                     onClick={() => setPaymentMode("instant")}
                     className={`py-2 px-1 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
                       paymentMode === "instant"
-                        ? "border-[#ccff00] bg-lime-400/10 text-zinc-900 dark:text-[#ccff00]"
+                        ? "border-[#FA5D00] bg-orange-500/10 text-zinc-900 dark:text-[#FA5D00]"
                         : "editorial-hairline text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
@@ -309,7 +309,7 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                     onClick={() => setPaymentMode("upi")}
                     className={`py-2 px-1 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
                       paymentMode === "upi"
-                        ? "border-[#ccff00] bg-lime-400/10 text-zinc-900 dark:text-[#ccff00]"
+                        ? "border-[#FA5D00] bg-orange-500/10 text-zinc-900 dark:text-[#FA5D00]"
                         : "editorial-hairline text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
@@ -327,7 +327,7 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                       type="button"
                       disabled={loading || isQuotaFull}
                       onClick={handleExecutePin}
-                      className="w-full py-2.5 rounded-full bg-[#ccff00] hover:bg-[#b8e600] text-black font-mono text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed border border-black/20"
+                      className="w-full py-2.5 rounded-full bg-[#FA5D00] hover:bg-[#ff7524] text-black font-mono text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed border border-black/20"
                     >
                       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flame className="w-3.5 h-3.5 fill-black" />}
                       <span>{isQuotaFull ? "Quota Full (3/3 Active)" : `Pin for 1 Week (${priceInr})`}</span>
@@ -346,7 +346,7 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                       <div className="p-2.5 rounded-2xl bg-white border border-zinc-200 shadow-sm relative min-w-[180px] min-h-[180px] flex items-center justify-center">
                         {loadingQr ? (
                           <div className="flex flex-col items-center gap-2 text-zinc-400 text-[11px] py-8">
-                            <Loader2 className="w-5 h-5 animate-spin text-[#ccff00]" />
+                            <Loader2 className="w-5 h-5 animate-spin text-[#FA5D00]" />
                             <span>Generating Razorpay QR...</span>
                           </div>
                         ) : rzpQrImage ? (
@@ -376,7 +376,7 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
                       type="button"
                       disabled={checkingPayment || !rzpQrId || isQuotaFull}
                       onClick={handleCheckQrPaid}
-                      className="w-full py-2.5 rounded-xl bg-[#ccff00] text-black font-mono text-xs font-black uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed border border-black/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                      className="w-full py-2.5 rounded-xl bg-[#FA5D00] text-white font-mono text-xs font-black uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed border border-black/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
                     >
                       {checkingPayment ? (
                         <>
@@ -407,7 +407,7 @@ export function StartupPromoteModal({ startup, onClose, onBoostSuccess }: Startu
               type="button"
               disabled={loading || isQuotaFull}
               onClick={handleExecutePin}
-              className="px-5 py-2 rounded-full bg-[#ccff00] hover:bg-[#b8e600] text-black font-black text-xs uppercase tracking-wider transition-all shadow-sm active:scale-95 inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border border-black/20"
+              className="px-5 py-2 rounded-full bg-[#FA5D00] hover:bg-[#ff7524] text-black font-black text-xs uppercase tracking-wider transition-all shadow-sm active:scale-95 inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border border-black/20"
             >
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flame className="w-3.5 h-3.5 fill-black" />}
               <span>{isQuotaFull ? "Quota Full" : "Pin to #1"}</span>
