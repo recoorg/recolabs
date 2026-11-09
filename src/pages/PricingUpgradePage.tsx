@@ -25,6 +25,7 @@ import {
 import { VerifiedBadge } from "@/components/VerifiedBadge"
 import { networkApi, type UserProfile, type CouponValidationResult } from "@/services/networkApi"
 import { usePageMeta } from "@/hooks/usePageMeta"
+import PixelCard from "@/components/ui/PixelCard"
 
 export function PricingUpgradePage() {
   const navigate = useNavigate()
@@ -440,10 +441,17 @@ export function PricingUpgradePage() {
           </div>
         </div>
 
-        {/* Pricing Cards Grid */}
+        {/* Pricing Cards Grid with PixelCard */}
         <div className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
           {/* Card 1: Free Starter */}
-          <div className="rounded-3xl p-6 sm:p-8 bg-zinc-50 dark:bg-[#0f0f12] border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between">
+          <PixelCard
+            variant="default"
+            colors={["#94a3b8", "#64748b", "#475569"]}
+            glowColor="#94a3b8"
+            gap={8}
+            speed={25}
+            className="rounded-3xl p-6 sm:p-8 flex flex-col justify-between border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-[#0f0f12]"
+          >
             <div>
               <div className="font-mono text-xs uppercase tracking-wider text-zinc-400 font-bold mb-2">
                 Hobby / Explorer
@@ -481,142 +489,160 @@ export function PricingUpgradePage() {
                 Current Default Tier
               </span>
             </div>
-          </div>
+          </PixelCard>
 
           {/* Card 2: Verified Pro Builder (Highlighted) */}
           <div
             onClick={() => setSelectedPlan("pro")}
-            className={`relative rounded-3xl p-6 sm:p-8 flex flex-col justify-between cursor-pointer transition-all duration-200 ${
-              selectedPlan === "pro"
-                ? "bg-white dark:bg-[#121216] border-2 border-[#FA5D00] shadow-2xl scale-[1.02] ring-4 ring-orange-500/10"
-                : "bg-zinc-50/80 dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400"
-            }`}
+            className="relative h-full cursor-pointer"
           >
             {/* Pill Tag */}
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-extrabold uppercase tracking-widest shadow-md">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full bg-[#FA5D00] text-black font-mono text-[10px] font-extrabold uppercase tracking-widest shadow-md">
               MOST POPULAR FOR BUILDERS
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="font-mono text-xs uppercase tracking-wider text-[#FA5D00] font-bold">
-                  Indie & Solo Founders
-                </div>
-                <VerifiedBadge size="md" />
-              </div>
-
-              <h3 className="font-serif text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-                <span>Verified Pro</span>
-              </h3>
-              <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
-                Everything you need to prove authentic credibility, earn trust, and get your prototypes discovered.
-              </p>
-
-              <div className="mt-6 font-mono flex items-baseline gap-2">
-                <span className="text-4xl sm:text-5xl font-extrabold text-zinc-950 dark:text-zinc-50">
-                  {billing === "monthly" ? pricing.pro.monthly.display : pricing.pro.yearly.display}
-                </span>
-                <span className="text-xs text-zinc-400">
-                  {billing === "monthly" ? pricing.pro.monthly.period : pricing.pro.yearly.period}
-                </span>
-                {billing === "yearly" && pricing.pro.yearly.savings && (
-                  <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full ml-auto">
-                    {pricing.pro.yearly.savings}
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-8 space-y-3 font-mono text-xs">
-                {pricing.pro.features.map((feat, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 text-zinc-800 dark:text-zinc-200">
-                    <Check className="w-4 h-4 text-[#FA5D00] flex-none mt-0.5" />
-                    <span>{feat}</span>
+            <PixelCard
+              variant="default"
+              colors={["#FA5D00", "#FF8C42", "#ffa65c"]}
+              glowColor="#FA5D00"
+              gap={6}
+              speed={30}
+              className={`rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-200 ${
+                selectedPlan === "pro"
+                  ? "bg-white dark:bg-[#121216] border-2 border-[#FA5D00] shadow-2xl ring-4 ring-orange-500/15"
+                  : "bg-zinc-50/80 dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-mono text-xs uppercase tracking-wider text-[#FA5D00] font-bold">
+                    Indie & Solo Founders
                   </div>
-                ))}
-              </div>
-            </div>
+                  <VerifiedBadge size="md" />
+                </div>
 
-            <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setSelectedPlan("pro")
-                  setShowCheckoutModal(true)
-                }}
-                className="w-full py-3.5 rounded-full font-mono text-xs font-bold uppercase tracking-wider bg-[#FA5D00] text-black hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
-              >
-                <Zap className="w-4 h-4 fill-black" />
-                <span>Get Verified Pro</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                  <span>Verified Pro</span>
+                </h3>
+                <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
+                  Everything you need to prove authentic credibility, earn trust, and get your prototypes discovered.
+                </p>
+
+                <div className="mt-6 font-mono flex items-baseline gap-2">
+                  <span className="text-4xl sm:text-5xl font-extrabold text-zinc-950 dark:text-zinc-50">
+                    {billing === "monthly" ? pricing.pro.monthly.display : pricing.pro.yearly.display}
+                  </span>
+                  <span className="text-xs text-zinc-400">
+                    {billing === "monthly" ? pricing.pro.monthly.period : pricing.pro.yearly.period}
+                  </span>
+                  {billing === "yearly" && pricing.pro.yearly.savings && (
+                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full ml-auto">
+                      {pricing.pro.yearly.savings}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-8 space-y-3 font-mono text-xs">
+                  {pricing.pro.features.map((feat, idx) => (
+                    <div key={idx} className="flex items-start gap-2.5 text-zinc-800 dark:text-zinc-200">
+                      <Check className="w-4 h-4 text-[#FA5D00] flex-none mt-0.5" />
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedPlan("pro")
+                    setShowCheckoutModal(true)
+                  }}
+                  className="w-full py-3.5 rounded-full font-mono text-xs font-bold uppercase tracking-wider bg-[#FA5D00] text-black hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                >
+                  <Zap className="w-4 h-4 fill-black" />
+                  <span>Get Verified Pro</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </PixelCard>
           </div>
 
           {/* Card 3: Pro Founder Pass */}
           <div
             onClick={() => setSelectedPlan("founder")}
-            className={`relative rounded-3xl p-6 sm:p-8 flex flex-col justify-between cursor-pointer transition-all duration-200 ${
-              selectedPlan === "founder"
-                ? "bg-white dark:bg-[#121216] border-2 border-amber-500 shadow-2xl scale-[1.02] ring-4 ring-amber-500/10"
-                : "bg-zinc-50/80 dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400"
-            }`}
+            className="relative h-full cursor-pointer"
           >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="font-mono text-xs uppercase tracking-wider text-amber-500 font-bold flex items-center gap-1">
-                  <Crown className="w-3.5 h-3.5" />
-                  <span>VIP Collective</span>
-                </div>
-                <VerifiedBadge size="md" label="Pro Founder" />
-              </div>
-
-              <h3 className="font-serif text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-                Founder Pass
-              </h3>
-              <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
-                Maximum launch exposure, unlimited product pinning, hardware lab grants, and investor access.
-              </p>
-
-              <div className="mt-6 font-mono flex items-baseline gap-2">
-                <span className="text-4xl sm:text-5xl font-extrabold text-zinc-950 dark:text-zinc-50">
-                  {billing === "monthly" ? pricing.founder.monthly.display : pricing.founder.yearly.display}
-                </span>
-                <span className="text-xs text-zinc-400">
-                  {billing === "monthly" ? pricing.founder.monthly.period : pricing.founder.yearly.period}
-                </span>
-                {billing === "yearly" && pricing.founder.yearly.savings && (
-                  <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full ml-auto">
-                    {pricing.founder.yearly.savings}
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-8 space-y-3 font-mono text-xs">
-                {pricing.founder.features.map((feat, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 text-zinc-800 dark:text-zinc-200">
-                    <Check className="w-4 h-4 text-amber-500 flex-none mt-0.5" />
-                    <span>{feat}</span>
+            <PixelCard
+              variant="yellow"
+              colors={["#fbbf24", "#f59e0b", "#d97706"]}
+              glowColor="#f59e0b"
+              gap={6}
+              speed={30}
+              className={`rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-200 ${
+                selectedPlan === "founder"
+                  ? "bg-white dark:bg-[#121216] border-2 border-amber-500 shadow-2xl ring-4 ring-amber-500/15"
+                  : "bg-zinc-50/80 dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-mono text-xs uppercase tracking-wider text-amber-500 font-bold flex items-center gap-1">
+                    <Crown className="w-3.5 h-3.5" />
+                    <span>VIP Collective</span>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <VerifiedBadge size="md" label="Pro Founder" />
+                </div>
 
-            <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setSelectedPlan("founder")
-                  setShowCheckoutModal(true)
-                }}
-                className="w-full py-3.5 rounded-full font-mono text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
-              >
-                <Crown className="w-4 h-4 fill-black" />
-                <span>Get Founder Pass</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+                  Founder Pass
+                </h3>
+                <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
+                  Maximum launch exposure, unlimited product pinning, hardware lab grants, and investor access.
+                </p>
+
+                <div className="mt-6 font-mono flex items-baseline gap-2">
+                  <span className="text-4xl sm:text-5xl font-extrabold text-zinc-950 dark:text-zinc-50">
+                    {billing === "monthly" ? pricing.founder.monthly.display : pricing.founder.yearly.display}
+                  </span>
+                  <span className="text-xs text-zinc-400">
+                    {billing === "monthly" ? pricing.founder.monthly.period : pricing.founder.yearly.period}
+                  </span>
+                  {billing === "yearly" && pricing.founder.yearly.savings && (
+                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full ml-auto">
+                      {pricing.founder.yearly.savings}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-8 space-y-3 font-mono text-xs">
+                  {pricing.founder.features.map((feat, idx) => (
+                    <div key={idx} className="flex items-start gap-2.5 text-zinc-800 dark:text-zinc-200">
+                      <Check className="w-4 h-4 text-amber-500 flex-none mt-0.5" />
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedPlan("founder")
+                    setShowCheckoutModal(true)
+                  }}
+                  className="w-full py-3.5 rounded-full font-mono text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                >
+                  <Crown className="w-4 h-4 fill-black" />
+                  <span>Get Founder Pass</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </PixelCard>
           </div>
         </div>
 
