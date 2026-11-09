@@ -3133,7 +3133,7 @@ async function handleNetworkRequest(req, res) {
         res.end(JSON.stringify({ error: "No valid recipient email addresses found." }));
         return;
       }
-      const resendApiKey = clientResendKey && String(clientResendKey).trim() || process.env.RESEND_API_KEY || Buffer.from("cmVfYWdmNG9WTlRfMkxnUzFGQUJaZ0syQU5uMllYWEgxSlBI", "base64").toString("utf-8");
+      const resendApiKey = clientResendKey && String(clientResendKey).trim() || process.env.RESEND_API_KEY || Buffer.from("cmVfTEhBVVBSdHJfQ2ZwdGc5dUNCSjNyb0RKSHZhYld0WWJk", "base64").toString("utf-8");
       const emailHtml = html || `
 <!DOCTYPE html>
 <html>

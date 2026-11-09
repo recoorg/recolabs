@@ -1541,7 +1541,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const resendApiKey =
         (clientResendKey && String(clientResendKey).trim()) ||
         process.env.RESEND_API_KEY ||
-        Buffer.from("cmVfYWdmNG9WTlRfMkxnUzFGQUJaZ0syQU5uMllYWEgxSlBI", "base64").toString("utf-8");
+        Buffer.from("cmVfTEhBVVBSdHJfQ2ZwdGc5dUNCSjNyb0RKSHZhYld0WWJk", "base64").toString("utf-8");
 
       const emailHtml = html || `
 <!DOCTYPE html>
