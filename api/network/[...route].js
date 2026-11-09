@@ -36,6 +36,17 @@ async function initDb() {
   const client = await pool.connect();
   try {
     await client.query(`
+      UPDATE startups
+      SET is_featured = false, featured_until = NULL, boosted_at = NULL
+      WHERE is_featured = true
+        AND (
+          featured_until IS NULL
+          OR featured_until <= NOW()
+          OR boosted_at IS NULL
+          OR boosted_at < date_trunc('week', NOW())
+        )
+    `);
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username TEXT UNIQUE,
@@ -496,9 +507,20 @@ async function listStartups({
 } = {}) {
   const client = await pool.connect();
   try {
+    await client.query(`
+      UPDATE startups
+      SET is_featured = false, featured_until = NULL, boosted_at = NULL
+      WHERE is_featured = true
+        AND (
+          featured_until IS NULL
+          OR featured_until <= NOW()
+          OR boosted_at IS NULL
+          OR boosted_at < date_trunc('week', NOW())
+        )
+    `);
     let query = `
       SELECT s.id, s.name, s.url, s.problem_solving, s.category, s.stage, s.created_at,
-             (COALESCE(s.is_featured, false) AND (s.featured_until IS NULL OR s.featured_until > NOW())) as is_featured,
+             (COALESCE(s.is_featured, false) AND s.featured_until > NOW() AND s.boosted_at >= date_trunc('week', NOW())) as is_featured,
              s.featured_until, s.boosted_at,
              s.founder_name, s.founder_username, s.founder_email, s.founder_phone, s.founder_website, s.founder_discord,
              s.user_id,
@@ -528,7 +550,7 @@ async function listStartups({
       params.push(`%${search.trim().toLowerCase()}%`);
       query += ` AND (LOWER(s.name) LIKE $${params.length} OR LOWER(s.problem_solving) LIKE $${params.length} OR LOWER(s.founder_name) LIKE $${params.length} OR LOWER(s.founder_username) LIKE $${params.length})`;
     }
-    query += ` ORDER BY (COALESCE(s.is_featured, false) AND (s.featured_until IS NULL OR s.featured_until > NOW())) DESC, s.created_at DESC`;
+    query += ` ORDER BY (COALESCE(s.is_featured, false) AND s.featured_until > NOW() AND s.boosted_at >= date_trunc('week', NOW())) DESC, s.created_at DESC`;
     const res = await client.query(query, params);
     return res.rows;
   } finally {
@@ -3701,7 +3723,7 @@ async function handleNetworkRequest(req, res) {
                 `UPDATE startups SET 
                    is_featured = true, 
                    boosted_at = NOW(), 
-                   featured_until = (NOW() + INTERVAL '7 days') 
+                   featured_until = LEAST(NOW() + INTERVAL '7 days', date_trunc('week', NOW()) + INTERVAL '7 days') 
                  WHERE id = $1`,
                 [Number(notes.startup_id)]
               );
@@ -3855,8 +3877,19 @@ async function handleNetworkRequest(req, res) {
     if (req.method === "GET" && (pathname === "/api/network/boost-quota" || pathname === "/api/boost-quota")) {
       const client = await pool.connect();
       try {
+        await client.query(`
+          UPDATE startups
+          SET is_featured = false, featured_until = NULL, boosted_at = NULL
+          WHERE is_featured = true
+            AND (
+              featured_until IS NULL
+              OR featured_until <= NOW()
+              OR boosted_at IS NULL
+              OR boosted_at < date_trunc('week', NOW())
+            )
+        `);
         const resDb = await client.query(
-          "SELECT id, name, featured_until FROM startups WHERE is_featured = true AND (featured_until IS NULL OR featured_until > NOW())"
+          "SELECT id, name, featured_until, boosted_at FROM startups WHERE is_featured = true AND featured_until > NOW() AND boosted_at >= date_trunc('week', NOW())"
         );
         res.statusCode = 200;
         res.end(JSON.stringify({
@@ -3882,8 +3915,19 @@ async function handleNetworkRequest(req, res) {
       const startupId = Number(body.id);
       const client = await pool.connect();
       try {
+        await client.query(`
+          UPDATE startups
+          SET is_featured = false, featured_until = NULL, boosted_at = NULL
+          WHERE is_featured = true
+            AND (
+              featured_until IS NULL
+              OR featured_until <= NOW()
+              OR boosted_at IS NULL
+              OR boosted_at < date_trunc('week', NOW())
+            )
+        `);
         const activeBoosted = await client.query(
-          "SELECT id, name, featured_until FROM startups WHERE is_featured = true AND (featured_until IS NULL OR featured_until > NOW())"
+          "SELECT id, name, featured_until, boosted_at FROM startups WHERE is_featured = true AND featured_until > NOW() AND boosted_at >= date_trunc('week', NOW())"
         );
         const isAlreadyBoosted = activeBoosted.rows.some((s) => s.id === startupId);
         if (body.toggle && isAlreadyBoosted) {
@@ -3908,7 +3952,7 @@ async function handleNetworkRequest(req, res) {
           `UPDATE startups SET 
             is_featured = true, 
             boosted_at = NOW(), 
-            featured_until = (NOW() + INTERVAL '7 days') 
+            featured_until = LEAST(NOW() + INTERVAL '7 days', date_trunc('week', NOW()) + INTERVAL '7 days')
            WHERE id = $1 
            RETURNING id, name, is_featured, featured_until, boosted_at`,
           [startupId]

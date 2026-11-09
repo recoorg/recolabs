@@ -286,13 +286,6 @@ export function JobsPage() {
           </div>
         </div>
 
-        {/* Action Row */}
-        <div className="mt-4 flex items-center justify-end font-mono text-xs">
-          <Link to="/dashboard?tab=post-job" className="text-[#FA5D00] hover:underline font-bold">
-            + Post your opening
-          </Link>
-        </div>
-
         {/* Roles List */}
         <div className="mt-6 space-y-4 font-mono">
           {loading ? (

@@ -2219,7 +2219,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
                 `UPDATE startups SET 
                    is_featured = true, 
                    boosted_at = NOW(), 
-                   featured_until = (NOW() + INTERVAL '7 days') 
+                   featured_until = LEAST(NOW() + INTERVAL '7 days', date_trunc('week', NOW()) + INTERVAL '7 days') 
                  WHERE id = $1`,
                 [Number(notes.startup_id)]
               );
@@ -2395,8 +2395,20 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
     if (req.method === "GET" && (pathname === "/api/network/boost-quota" || pathname === "/api/boost-quota")) {
       const client = await pool.connect();
       try {
+        // Auto-remove expired or prior-week boosts so all slots reset and are available every Monday
+        await client.query(`
+          UPDATE startups
+          SET is_featured = false, featured_until = NULL, boosted_at = NULL
+          WHERE is_featured = true
+            AND (
+              featured_until IS NULL
+              OR featured_until <= NOW()
+              OR boosted_at IS NULL
+              OR boosted_at < date_trunc('week', NOW())
+            )
+        `);
         const resDb = await client.query(
-          "SELECT id, name, featured_until FROM startups WHERE is_featured = true AND (featured_until IS NULL OR featured_until > NOW())"
+          "SELECT id, name, featured_until, boosted_at FROM startups WHERE is_featured = true AND featured_until > NOW() AND boosted_at >= date_trunc('week', NOW())"
         );
         res.statusCode = 200;
         res.end(JSON.stringify({
@@ -2424,8 +2436,20 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const startupId = Number(body.id);
       const client = await pool.connect();
       try {
+        // Auto-remove expired or prior-week boosts so all slots reset and are available every Monday
+        await client.query(`
+          UPDATE startups
+          SET is_featured = false, featured_until = NULL, boosted_at = NULL
+          WHERE is_featured = true
+            AND (
+              featured_until IS NULL
+              OR featured_until <= NOW()
+              OR boosted_at IS NULL
+              OR boosted_at < date_trunc('week', NOW())
+            )
+        `);
         const activeBoosted = await client.query(
-          "SELECT id, name, featured_until FROM startups WHERE is_featured = true AND (featured_until IS NULL OR featured_until > NOW())"
+          "SELECT id, name, featured_until, boosted_at FROM startups WHERE is_featured = true AND featured_until > NOW() AND boosted_at >= date_trunc('week', NOW())"
         );
         const isAlreadyBoosted = activeBoosted.rows.some((s: any) => s.id === startupId);
 
@@ -2453,7 +2477,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
           `UPDATE startups SET 
             is_featured = true, 
             boosted_at = NOW(), 
-            featured_until = (NOW() + INTERVAL '7 days') 
+            featured_until = LEAST(NOW() + INTERVAL '7 days', date_trunc('week', NOW()) + INTERVAL '7 days')
            WHERE id = $1 
            RETURNING id, name, is_featured, featured_until, boosted_at`,
           [startupId]

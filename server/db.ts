@@ -46,6 +46,19 @@ async function generateUniqueUsername(client: any, base: string): Promise<string
 export async function initDb() {
   const client = await pool.connect()
   try {
+    // Auto-remove expired boosts: boosts expire after 1 week (featured_until <= NOW()),
+    // AND every Monday at 00:00 UTC all prior-week boosts reset so all 3 slots are fresh and available.
+    await client.query(`
+      UPDATE startups
+      SET is_featured = false, featured_until = NULL, boosted_at = NULL
+      WHERE is_featured = true
+        AND (
+          featured_until IS NULL
+          OR featured_until <= NOW()
+          OR boosted_at IS NULL
+          OR boosted_at < date_trunc('week', NOW())
+        )
+    `);
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -558,9 +571,21 @@ export async function listStartups({
 }: { search?: string; category?: string; username?: string; userId?: number } = {}) {
   const client = await pool.connect()
   try {
+    // Auto-remove expired or prior-week boosts so all slots reset and are available every Monday
+    await client.query(`
+      UPDATE startups
+      SET is_featured = false, featured_until = NULL, boosted_at = NULL
+      WHERE is_featured = true
+        AND (
+          featured_until IS NULL
+          OR featured_until <= NOW()
+          OR boosted_at IS NULL
+          OR boosted_at < date_trunc('week', NOW())
+        )
+    `);
     let query = `
       SELECT s.id, s.name, s.url, s.problem_solving, s.category, s.stage, s.created_at,
-             (COALESCE(s.is_featured, false) AND (s.featured_until IS NULL OR s.featured_until > NOW())) as is_featured,
+             (COALESCE(s.is_featured, false) AND s.featured_until > NOW() AND s.boosted_at >= date_trunc('week', NOW())) as is_featured,
              s.featured_until, s.boosted_at,
              s.founder_name, s.founder_username, s.founder_email, s.founder_phone, s.founder_website, s.founder_discord,
              s.user_id,
@@ -594,7 +619,7 @@ export async function listStartups({
       query += ` AND (LOWER(s.name) LIKE $${params.length} OR LOWER(s.problem_solving) LIKE $${params.length} OR LOWER(s.founder_name) LIKE $${params.length} OR LOWER(s.founder_username) LIKE $${params.length})`
     }
 
-    query += ` ORDER BY (COALESCE(s.is_featured, false) AND (s.featured_until IS NULL OR s.featured_until > NOW())) DESC, s.created_at DESC`
+    query += ` ORDER BY (COALESCE(s.is_featured, false) AND s.featured_until > NOW() AND s.boosted_at >= date_trunc('week', NOW())) DESC, s.created_at DESC`
     const res = await client.query(query, params)
     return res.rows
   } finally {

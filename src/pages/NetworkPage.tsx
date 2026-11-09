@@ -42,6 +42,7 @@ import {
   PlusSquare,
 } from "lucide-react"
 import { GithubIcon } from "@/components/icons"
+import { StartupFavicon } from "@/components/StartupFavicon"
 import { networkApi, type UserProfile, type StartupItem, type BuilderProfileWithStats } from "@/services/networkApi"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
@@ -583,21 +584,6 @@ export function NetworkPage() {
         <div className="relative pt-2 pb-8 sm:pb-10 border-b border-zinc-200/80 dark:border-zinc-800/80">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 sm:gap-8">
             <div className="max-w-2xl space-y-3">
-              {/* Animated Live Launchpad Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-xs font-mono text-[10px] sm:text-[11px] text-zinc-800 dark:text-zinc-200">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ccff00] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ccff00]" />
-                </span>
-                <span className="font-black uppercase tracking-wider text-[#ccff00]">
-                  LIVE LAUNCHPAD
-                </span>
-                <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                <span className="text-zinc-500 dark:text-zinc-400 font-semibold">
-                  Founder Network
-                </span>
-              </div>
-
               {/* Minimal Editorial Title */}
               <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight leading-[1.08]">
                 Ship with pride<span className="text-[#ccff00]">.</span>
@@ -1036,9 +1022,17 @@ export function NetworkPage() {
                       </div>
 
                       {/* Startup Name */}
-                      <h2 className="font-serif text-2xl sm:text-3xl font-normal text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors">
-                        {item.name}
-                      </h2>
+                      <div className="flex items-center gap-3">
+                        <StartupFavicon
+                          name={item.name}
+                          url={item.url}
+                          className="w-8 h-8 rounded-xl flex-none"
+                          textClassName="font-serif text-sm font-bold"
+                        />
+                        <h2 className="font-serif text-2xl sm:text-3xl font-normal text-zinc-950 dark:text-zinc-50 group-hover:text-[#FA5D00] transition-colors truncate">
+                          {item.name}
+                        </h2>
+                      </div>
 
                       {/* Clean URL Link */}
                       <div className="mt-1 font-mono text-xs text-zinc-400 truncate">
@@ -1639,9 +1633,12 @@ export function NetworkPage() {
               }}
               className="hidden xl:flex flex-col items-center gap-1.5 fixed left-6 top-1/2 -translate-y-1/2 z-50 cursor-pointer group select-none"
             >
-              <div className="w-12 h-12 rounded-2xl bg-[#18181b]/90 border border-zinc-700/80 p-2 flex items-center justify-center shadow-2xl backdrop-blur-md group-hover:scale-105 group-hover:border-[#FA5D00] transition-all text-white font-serif text-lg font-bold">
-                {prevStartup.name[0].toUpperCase()}
-              </div>
+              <StartupFavicon
+                name={prevStartup.name}
+                url={prevStartup.url}
+                className="w-12 h-12 rounded-2xl group-hover:scale-105 group-hover:border-[#FA5D00] transition-all"
+                textClassName="font-serif text-lg font-bold"
+              />
               <div className="px-2.5 py-1 rounded-full bg-black/80 border border-zinc-700 text-white font-mono text-[11px] font-medium flex items-center gap-1 group-hover:text-[#FA5D00] transition-colors shadow-md">
                 <ArrowLeft className="w-3 h-3" />
                 <span>Prev</span>
@@ -1658,9 +1655,12 @@ export function NetworkPage() {
               }}
               className="hidden xl:flex flex-col items-center gap-1.5 fixed right-6 top-1/2 -translate-y-1/2 z-50 cursor-pointer group select-none"
             >
-              <div className="w-12 h-12 rounded-2xl bg-[#18181b]/90 border border-zinc-700/80 p-2 flex items-center justify-center shadow-2xl backdrop-blur-md group-hover:scale-105 group-hover:border-[#FA5D00] transition-all text-white font-serif text-lg font-bold">
-                {nextStartup.name[0].toUpperCase()}
-              </div>
+              <StartupFavicon
+                name={nextStartup.name}
+                url={nextStartup.url}
+                className="w-12 h-12 rounded-2xl group-hover:scale-105 group-hover:border-[#FA5D00] transition-all"
+                textClassName="font-serif text-lg font-bold"
+              />
               <div className="px-2.5 py-1 rounded-full bg-black/80 border border-zinc-700 text-white font-mono text-[11px] font-medium flex items-center gap-1 group-hover:text-[#FA5D00] transition-colors shadow-md">
                 <span>Next</span>
                 <ArrowRight className="w-3 h-3" />
@@ -1697,9 +1697,12 @@ export function NetworkPage() {
               
               {/* Header: Icon, Startup Name, Problem Solved & Action Buttons */}
               <div className="flex flex-col items-center text-center space-y-3 pt-2">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-white font-serif text-3xl sm:text-4xl font-bold shadow-lg">
-                  {selectedStartup.name[0].toUpperCase()}
-                </div>
+                <StartupFavicon
+                  name={selectedStartup.name}
+                  url={selectedStartup.url}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl"
+                  textClassName="font-serif text-3xl sm:text-4xl font-bold"
+                />
 
                 <div>
                   <h2 className="font-serif text-3xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal tracking-tight">

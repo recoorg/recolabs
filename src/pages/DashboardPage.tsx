@@ -46,6 +46,7 @@ import {
 } from "lucide-react"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { networkApi, type UserProfile, type BuilderJob, type BuilderHackathon, type StartupItem } from "@/services/networkApi"
+import { StartupFavicon } from "@/components/StartupFavicon"
 import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
 import { StartupPromoteModal } from "@/components/StartupPromoteModal"
 import { VerifiedBadge } from "@/components/VerifiedBadge"
@@ -1471,9 +1472,17 @@ export function DashboardPage() {
                         </div>
                       </div>
 
-                      <h3 className="font-serif text-xl font-bold text-zinc-950 dark:text-zinc-50 truncate">
-                        {startup.name}
-                      </h3>
+                      <div className="flex items-center gap-2.5">
+                        <StartupFavicon
+                          name={startup.name}
+                          url={startup.url}
+                          className="w-7 h-7 rounded-lg flex-none"
+                          textClassName="font-serif text-xs font-bold"
+                        />
+                        <h3 className="font-serif text-xl font-bold text-zinc-950 dark:text-zinc-50 truncate">
+                          {startup.name}
+                        </h3>
+                      </div>
 
                       <p className="mt-2 text-xs font-sans text-zinc-600 dark:text-zinc-300 line-clamp-3 leading-relaxed">
                         {startup.problem_solving}

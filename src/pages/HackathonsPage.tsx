@@ -374,9 +374,7 @@ export function HackathonsPage() {
         {/* Counter Info */}
         <div className="mt-4 flex items-center justify-between font-mono text-xs text-zinc-500">
           <span>Showing {filteredEvents.length} hackathons ({builderEvents.length} Community Hosted)</span>
-          <Link to="/dashboard?tab=post-hackathon" className="text-[#FA5D00] hover:underline font-bold">
-            + Host your hackathon here
-          </Link>
+          
         </div>
 
         {/* Live Grid */}
