@@ -31,35 +31,59 @@ function GlobalOAuthListener() {
       (window.location.hash && window.location.hash.includes("access_token")) ||
       (window.location.search && window.location.search.includes("access_token"))
 
+    // Capture return_to before URL scrubbing
+    const initialSearch = new URLSearchParams(window.location.search);
+    const initialHash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const urlReturnTo = initialSearch.get("return_to") || initialHash.get("return_to");
+    if (urlReturnTo) {
+      try { localStorage.setItem("reco_return_to", urlReturnTo); } catch (_) {}
+    }
+
+    const effectiveReturnTo = urlReturnTo || localStorage.getItem("reco_return_to");
+
+    // Immediate forward if already authenticated
+    if (!hasAccessToken && effectiveReturnTo) {
+      const token = networkApi.getToken();
+      if (token) {
+        localStorage.removeItem("reco_return_to");
+        try {
+          const targetUrl = new URL(effectiveReturnTo);
+          targetUrl.searchParams.set("sso_token", token);
+          window.location.href = targetUrl.toString();
+          return;
+        } catch {
+          window.location.href = effectiveReturnTo;
+          return;
+        }
+      }
+    }
+
     if (hasAccessToken) {
       networkApi.handleOAuthCallback().then((res) => {
         if (res?.user) {
-          window.dispatchEvent(new Event("reco_auth_changed"))
+          window.dispatchEvent(new Event("reco_auth_changed"));
           
-          // Check if user came from Launchpad or external origin
-          const searchParams = new URLSearchParams(window.location.search)
-          const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""))
-          const returnTo = searchParams.get("return_to") || hashParams.get("return_to") || localStorage.getItem("reco_return_to")
+          const returnTo = effectiveReturnTo || localStorage.getItem("reco_return_to");
           
           if (returnTo) {
-            localStorage.removeItem("reco_return_to")
-            const token = networkApi.getToken()
+            localStorage.removeItem("reco_return_to");
+            const token = networkApi.getToken();
             try {
-              const targetUrl = new URL(returnTo)
-              if (token) targetUrl.searchParams.set("sso_token", token)
-              window.location.href = targetUrl.toString()
-              return
+              const targetUrl = new URL(returnTo);
+              if (token) targetUrl.searchParams.set("sso_token", token);
+              window.location.href = targetUrl.toString();
+              return;
             } catch {
-              window.location.href = returnTo
-              return
+              window.location.href = returnTo;
+              return;
             }
           }
 
           if (window.location.pathname === "/" || window.location.pathname === "") {
-            navigate("/network")
+            navigate("/network");
           }
         }
-      })
+      });
     }
   }, [navigate])
 
