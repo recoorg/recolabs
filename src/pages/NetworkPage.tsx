@@ -21,7 +21,6 @@ import {
   Check,
   RefreshCw,
   Sparkles,
-  Zap,
   Flame,
   ArrowUpRight,
   ArrowRight,
@@ -46,7 +45,6 @@ import { StartupFavicon } from "@/components/StartupFavicon"
 import { networkApi, type UserProfile, type StartupItem, type BuilderProfileWithStats } from "@/services/networkApi"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { StartupScreenshotModal } from "@/components/StartupScreenshotModal"
-import { StartupPromoteModal } from "@/components/StartupPromoteModal"
 import { ProfileUpgradeModal } from "@/components/ProfileUpgradeModal"
 import { VerifiedBadge } from "@/components/VerifiedBadge"
 import { NetworkAvatarCloud } from "@/components/NetworkAvatarCloud"
@@ -92,7 +90,6 @@ export function NetworkPage() {
   const [showPostModal, setShowPostModal] = React.useState(false)
   const [showProfileModal, setShowProfileModal] = React.useState(false)
   const [screenshotStartup, setScreenshotStartup] = React.useState<StartupItem | null>(null)
-  const [promoteStartup, setPromoteStartup] = React.useState<StartupItem | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false)
 
   // Selected Startup for Peerlist Launchpad Detail Modal
@@ -1009,24 +1006,8 @@ export function NetworkPage() {
                           </span>
                         </div>
 
-                        {/* Top Right Actions: Boost & Link */}
+                        {/* Top Right Action: External Link */}
                         <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPromoteStartup(item);
-                            }}
-                            title="Boost this startup for 1 week"
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border font-mono text-[10px] font-bold uppercase transition-all shadow-2xs active:scale-95 ${
-                              item.is_featured
-                                ? "border-[#FA5D00] bg-[#FA5D00] text-white font-black"
-                                : "border-orange-300 dark:border-orange-800/80 bg-orange-100/80 dark:bg-orange-950/60 text-[#FA5D00] hover:bg-[#FA5D00] hover:text-black"
-                            }`}
-                          >
-                            <Zap className="w-3 h-3" />
-                            <span>{item.is_featured ? "Boosted" : "Boost"}</span>
-                          </button>
-
                           <a
                             href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
                             target="_blank"
@@ -2165,22 +2146,7 @@ export function NetworkPage() {
         />
       )}
 
-      {/* MODAL 5: STARTUP SPOTLIGHT PROMOTION / PIN */}
-      {promoteStartup && (
-        <StartupPromoteModal
-          startup={promoteStartup}
-          onClose={() => setPromoteStartup(null)}
-          onBoostSuccess={(id) => {
-            setStartups((prev) => {
-              const updated = prev.map((item) =>
-                item.id === id ? { ...item, is_featured: true } : item
-              )
-              return updated.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
-            })
-            setPromoteStartup(null)
-          }}
-        />
-      )}
+
 
       {/* MODAL 6: PROFILE UPGRADE / BLUE TICK */}
       {showUpgradeModal && currentUser && (
