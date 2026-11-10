@@ -60,8 +60,8 @@ export function StatsBentoSection() {
             </div>
 
             <div className="relative z-10 mt-8 pt-6 border-t border-zinc-800/80 flex items-center justify-between font-mono text-xs">
-              <div className="flex items-center gap-2 text-emerald-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="flex items-center gap-2 text-zinc-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
                 <span>Live Feed Synced</span>
               </div>
               <Link to="/hackathons" className="text-[#FA5D00] hover:text-[#ff8c42] flex items-center gap-1 font-bold transition-colors">

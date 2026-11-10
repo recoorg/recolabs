@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import confetti from "canvas-confetti"
 import {
   Terminal,
@@ -177,42 +177,14 @@ export function HeroSection() {
           </form>
         </TimelineAnimation>
 
-        {/* Fast Action Coordinates Strip */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 font-mono text-xs text-zinc-400">
-          <Link to="/network" className="hover:text-[#FA5D00] transition-colors flex items-center gap-1 group">
-            <span>Founder Launchpad</span>
-            <span className="text-[10px] text-zinc-600 group-hover:text-[#FA5D00] transition-colors">↗</span>
-          </Link>
-          <span className="text-zinc-700">·</span>
-          <Link to="/hackathons" className="hover:text-[#FA5D00] transition-colors flex items-center gap-1 group">
-            <span>900+ Hackathons</span>
-            <span className="text-[10px] text-zinc-600 group-hover:text-[#FA5D00] transition-colors">↗</span>
-          </Link>
-          <span className="text-zinc-700">·</span>
-          <Link to="/jobs" className="hover:text-[#FA5D00] transition-colors flex items-center gap-1 group">
-            <span>Guild Roles</span>
-            <span className="text-[10px] text-zinc-600 group-hover:text-[#FA5D00] transition-colors">↗</span>
-          </Link>
-          <span className="text-zinc-700">·</span>
-          <a
-            href="https://github.com/recoorg"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-[#FA5D00] transition-colors flex items-center gap-1 group"
-          >
-            <span>GitHub</span>
-            <span className="text-[10px] text-zinc-600 group-hover:text-[#FA5D00] transition-colors">↗</span>
-          </a>
-        </div>
-
         {/* Minimal Machined Telemetry Status Bar */}
         <TimelineAnimation
           animationNum={5}
           timelineRef={timelineRef}
-          className="mt-12 inline-flex flex-wrap items-center justify-center gap-4 px-5 py-2 rounded-2xl bg-[#0c1018]/80 border border-zinc-800/80 backdrop-blur-xl shadow-lg font-mono text-xs text-zinc-400"
+          className="mt-8 sm:mt-10 inline-flex flex-wrap items-center justify-center gap-4 px-5 py-2 rounded-2xl bg-[#0c1018]/80 border border-zinc-800/80 backdrop-blur-xl shadow-lg font-mono text-xs text-zinc-400"
         >
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+          <div className="flex items-center gap-1.5 text-zinc-300">
+            <Activity className="w-3.5 h-3.5 text-[#FA5D00]" />
             <span className="text-zinc-200 font-bold">900+ Hackathons Synced</span>
           </div>
           <span className="text-zinc-700 hidden sm:inline">·</span>
@@ -221,8 +193,8 @@ export function HeroSection() {
             <span>500+ Guild Builders</span>
           </div>
           <span className="text-zinc-700 hidden sm:inline">·</span>
-          <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-            <ShieldCheck className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1.5 text-zinc-300">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#FA5D00]" />
             <span>0% Platform Take Rate</span>
           </div>
         </TimelineAnimation>
