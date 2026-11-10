@@ -1,6 +1,6 @@
 # Reco Labs Design System & Frontend Architecture Specification (`design.md`)
 
-> **Version**: 2.4.0  
+> **Version**: 2.5.0  
 > **Target**: `reco-labs` ([recolabs.in](https://www.recolabs.in))  
 > **Maintainers**: Aditya Raj (`@rawenergon`, `@adibxr`) & Tanish  
 > **Last Updated**: November 2026  
@@ -42,14 +42,14 @@ Reco Labs embodies a union between **high-end financial/editorial design systems
 
 ### Strict High-Contrast Rule
 > [!IMPORTANT]
-> **The Obsidian Surface Invariant**: When components (such as `PixelCard`) render dark obsidian canvas backgrounds regardless of user system mode, all internal text **must explicitly use light color tokens** (`text-white`, `text-zinc-200`, `text-zinc-300`, `text-zinc-400`). Never cascade generic theme-dependent `text-zinc-900` onto an obsidian element.
+> **The Obsidian Surface Invariant (The Black-on-Black Prevention Invariant)**:  
+> When components (such as `PixelCard`) render dark obsidian canvas backgrounds regardless of user system mode, all internal text **must explicitly use light color tokens** (`text-white`, `text-zinc-200`, `text-zinc-300`, `text-zinc-400`). Never cascade generic theme-dependent `text-zinc-900` onto an obsidian element.
 
 ---
 
-## 3. Typography Stack & Tokens
+## 3. Typography Hierarchy & Font Token Specs
 
-The typography stack balances editorial gravitas with engineer precision. Configured in `src/index.css` via Tailwind v4 `@theme`.
-
+Configured in `src/index.css` via Tailwind v4 `@theme`:
 ```css
 @theme {
   --font-serif: "Instrument Serif", Georgia, serif;
@@ -58,35 +58,81 @@ The typography stack balances editorial gravitas with engineer precision. Config
 }
 ```
 
-### Hierarchy & Application Rules
-1. **Display Headings (`font-serif`)**:
-   - Class: `font-serif tracking-tight font-normal sm:font-bold`
-   - Purpose: Hero section headlines, plan titles, manifesto intros, interview features.
-   - Example: *"Build in Public. Get Verified & Boosted."*
-2. **Technical Telemetry & Code (`font-mono`)**:
-   - Class: `font-mono tracking-wider uppercase text-xs font-bold`
-   - Purpose: Kicker badges, timestamps, pricing numerals (`₹199/month`), commit SHAs, stats cards.
-   - Example: `// INDIE & SOLO FOUNDERS`, `2.4k STARS`
-3. **Interface Copy & Descriptions (`font-sans`)**:
-   - Class: `font-sans text-sm sm:text-base leading-relaxed`
-   - Purpose: Paragraph body copy, form labels, card explanations, documentation text.
+| Token | Class | Weight | Letter Spacing | Line Height | Application |
+|---|---|---|---|---|---|
+| **Display Title (Hero)** | `font-serif text-4xl sm:text-6xl` | `400` / `700` | `-0.025em` (`tracking-tight`) | `1.1` (`leading-[1.1]`) | Hero titles, manifesto statements, interview headlines |
+| **Section Title** | `font-serif text-2xl sm:text-3xl` | `700` (`font-bold`) | `-0.02em` | `1.2` | Pricing plan headings, modal sheet titles, project names |
+| **Monospace Headline** | `font-mono text-xs sm:text-sm` | `700` (`font-bold`) | `0.05em` (`tracking-wider`) | `1.4` | Kicker tags (`// WAIT WAIT WAIT`, `INDIE & SOLO FOUNDERS`) |
+| **Price / Stat Numerals**| `font-mono text-4xl sm:text-5xl` | `800` (`font-extrabold`)| `0` (tabular) | `1.0` | Pricing cards (`₹0`, `₹199`, `₹499`), telemetry numbers |
+| **Monospace Body / Code**| `font-mono text-xs` (`12px`) | `400` / `500` | `0.025em` | `1.5` | Feature check items, terminal snippets, coupon inputs |
+| **Interface Body Copy** | `font-sans text-xs sm:text-sm` | `400` (`font-normal`)| `0` | `1.625` (`leading-relaxed`)| Descriptions, bio copy, FAQ explanations, guidelines |
+| **Micro Caption / Stamp**| `font-mono text-[10px]` (`10px`)| `700` / `900` | `0.1em` (`tracking-widest`)| `1.2` | Pill badges (`SAVE 20%`, `BOOSTED · 1 WEEK PIN`, `STEP 2`) |
 
 ---
 
-## 4. Key Component Systems
+## 4. Corner Radius & Border Geometry Matrix
 
-### 4.1 PixelCard (`src/components/ui/PixelCard.tsx`)
-Interactive HTML5 Canvas particle system embedded inside an obsidian card shell.
-- **Physics**: Tracks cursor coordinates via pointer events, wakes GPU-composited canvas loops on hover or focus, triggers radial shockwave ripples on click.
-- **Surface Elevation**: All text and button children live inside a `<div className="relative z-10">` wrapper to stay above the canvas and pseudo-border highlight layers.
-- **Palettes**:
-  - `Default`: Slate/zinc particles (`["#94a3b8", "#64748b", "#475569"]`)
-  - `Orange`: Reco brand particles (`["#FA5D00", "#FF8C42", "#ffa65c"]`)
-  - `Yellow`: Founder pass particles (`["#fbbf24", "#f59e0b", "#d97706"]`)
+Every corner radius in the system adheres to a strict 4-tier physical scale:
 
-### 4.2 Linear Modal & Spring Expanders (`src/components/ui/linear-modal.tsx`)
-Physics-modeled expanding dialogs inspired by Linear.
-- **Motion Spec**:
+| Class | Pixel Value | Rem Equiv | Component Applications |
+|---|---|---|---|
+| **`rounded-3xl`** | **`24px`** | `1.5rem` | • `PixelCard` outer containers (`--pixel-card-radius: 24px`)<br>• `LinearModal` dialog content sheets (`borderRadius: 24px`)<br>• Checkout & Upgrade modal containers<br>• Main project card boxes on `/network`<br>• Verified builder banner top strip |
+| **`rounded-2xl`** | **`16px`** | `1.0rem` | • Floating Action Button (FAB) outer container (`56px × 56px`)<br>• Sub-cards & Problem Statement containers (`p-4 rounded-2xl`)<br>• Machined telemetry status bar in Hero<br>• Instant Online / UPI QR payment selector tabs<br>• Coupon input and discount display boxes |
+| **`rounded-xl`** | **`12px`** | `0.75rem` | • Startup Favicon frames (`32px × 32px rounded-xl`)<br>• Standard form text inputs (`px-3.5 py-2.5 rounded-xl`)<br>• Billing switcher sub-buttons inside modals<br>• QR image display card wrapper |
+| **`rounded-lg`** | **`8px`** | `0.5rem` | • Inner FAB `+` icon badge (`28px × 28px rounded-lg`)<br>• Rating score selector buttons (`24px × 24px`)<br>• Code chips and tag indicators |
+| **`rounded-md`** | **`6px`** | `0.375rem` | • Numbered score toggles (1-5 star ratings) |
+| **`rounded-full`**| **`9999px`** | Pill | • Primary CTA buttons (`py-3.5 rounded-full`)<br>• Navigation pill bar & billing toggle pills<br>• Category tag badges (`px-2.5 py-0.5 rounded-full`)<br>• Builder profile avatars & custom scrollbar thumbs |
+
+---
+
+## 5. Pixel Dimensions & Component Layout Metrics
+
+### 5.1 Floating Action Button (FAB) — `/network`
+- Outer Container: `56px × 56px` (`w-14 h-14 sm:w-14 sm:h-14`), fixed position `bottom: 24px` (`bottom-6`), `right: 24px` (`right-6`), `z-index: 40`.
+- Outer Border: `2px solid #000000` (`border-2 border-black dark:border-zinc-800`).
+- Inner Badge: `28px × 28px` (`w-7 h-7 rounded-lg bg-black text-[#FA5D00]`), rotates `90deg` on hover.
+- Shadow: `shadow-2xl shadow-[#FA5D00]/40`.
+
+### 5.2 Startup Favicon Box
+- Dimensions: `32px × 32px` (`w-8 h-8 rounded-xl flex-none`).
+- Fallback Font: `font-serif text-sm font-bold`.
+- Border: `1px solid rgba(0, 0, 0, 0.08)` / `rgba(255, 255, 255, 0.08)`.
+
+### 5.3 Builder Avatars
+- Mini Avatars (Project Cards): `24px × 24px` (`w-6 h-6 rounded-full overflow-hidden`).
+- Navigation User Pill: `28px × 28px` (`w-7 h-7 rounded-full`).
+- Dashboard Header Avatar: `64px × 64px` (`w-16 h-16 rounded-full`).
+- Builder Profile Header Avatar: `96px × 96px` (`w-24 h-24 rounded-full`).
+
+### 5.4 VerifiedBadge (`src/components/VerifiedBadge.tsx`)
+12-point scalloped seal rendered via SVG geometry with embedded verification checkmark:
+- `xs`: `14px × 14px` (viewBox: `0 0 24 24`)
+- `sm`: `18px × 18px` (viewBox: `0 0 24 24`)
+- `md`: `22px × 22px` (viewBox: `0 0 24 24`)
+- `lg`: `28px × 28px` (viewBox: `0 0 24 24`)
+- Blue Fill: `url(#reco-blue-grad)` with stop `#3b82f6` to `#1d4ed8`.
+- Gold Fill: `url(#reco-gold-grad)` with stop `#fbbf24` to `#d97706`.
+
+### 5.5 PixelCard Canvas Engine Metrics
+- Canvas Layer: `position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;`.
+- Pseudo Edge Highlight: `::after` layer with `z-index: 2`, `box-shadow: inset 0 0 0 1px var(--pixel-card-edge), inset 0 1px 0 var(--pixel-card-highlight)`.
+- Content Elevation: All text/buttons wrapped in `<div className="relative z-10">` to guarantee layer separation.
+- Physics Parameters:
+  - `pixelSize`: `2px` (square/circle geometry).
+  - `gap`: `6px` (Pro/Founder) to `8px` (Hobby).
+  - `speed`: `25` to `30` (twinkle frequency).
+  - `spotRadius`: `Math.min(width, height) * 0.38 + 30px`.
+  - `spotlight`: `0.5` power multiplier.
+  - `glow`: `0.5` intensity.
+  - `opacity`: `1.0`.
+  - `revealDuration`: `600ms`.
+
+### 5.6 LinearModal Spring Dialog Metrics
+- Overlay: `position: fixed; inset: 0; z-index: 50; backdrop-filter: blur(16px);`.
+- Radial Overlay Gradient (Dark): `radial-gradient(125% 125% at 50% 10%, #050505 40%, #1b1b1b 100%)`.
+- Radial Overlay Gradient (Light): `radial-gradient(125% 125% at 50% 10%, #ffffff 40%, #b1b1b1 100%)`.
+- Dialog Dimensions: `max-w-5xl` (`1024px`), `lg:w-[900px]`, `w-[90%]`, `max-h-[92vh]`.
+- Spring Physics Config:
   ```ts
   transition: {
     type: 'spring',
@@ -94,42 +140,53 @@ Physics-modeled expanding dialogs inspired by Linear.
     duration: 0.5
   }
   ```
-- **Structure**:
-  - `DialogTrigger`: Container thumbnail that smoothly interpolates into fullscreen modal.
-  - `DialogContainer`: Radial gradient backdrop blur (`dark:bg-[radial-gradient(...)]`).
-  - `DialogContent`: Rounded sheet (`rounded-3xl` / `rounded-[24px]`) with spring transition.
 
-### 4.3 VerifiedBadge (`src/components/VerifiedBadge.tsx`)
-Authentic 12-scalloped seal badge rendering SVG geometry with embedded checkmark icon.
-- **Variants**:
-  - `Verified Pro`: Royal blue gradient (`#3b82f6` to `#1d4ed8`), blue glow filter.
-  - `Pro Founder`: Amber/gold gradient (`#f59e0b` to `#d97706`), golden crown accent.
-- **Sizes**: `xs` (14px), `sm` (18px), `md` (22px), `lg` (28px).
-
-### 4.4 Global Navigation & Header (`src/components/Navbar.tsx`)
-- Floating pill structure with backdrop blur (`backdrop-blur-xl bg-white/70 dark:bg-black/70`).
-- Direct communication channel: Top WhatsApp community join button (`https://chat.whatsapp.com/IApnk6YLM0l2j1nwcVzRR5`).
-- Footer links complete ecosystem: GitHub, Discord, WhatsApp, Twitter/X.
-
-### 4.5 PeepCrowd Interactive Engine (`src/components/PeepCrowd.tsx`)
-2D Canvas sprite simulation featuring animated builder avatars. Avatars accelerate and react to cursor proximity, scattering and reorganizing across the hero boundary without consuming main-thread DOM cycles.
+### 5.7 Container Width Constraints
+- Page Root Container: `max-w-7xl` (`1280px`) centered with `mx-auto px-4 sm:px-6 lg:px-8`.
+- Gallery & Content Max-Width: `max-w-5xl` (`1024px`).
+- Hero Machined Form: `max-w-[390px]` (mobile) / `max-w-[440px]` (desktop).
+- FAQ Accordion Section: `max-w-2xl` (`672px`).
+- Checkout & Action Modals: `max-w-lg` (`512px`).
+- Transactional Email Template: `520px` fixed table width.
 
 ---
 
-## 5. Animation Vocabulary & Curves
+## 6. Exact Box Shadows & Inset Bevel Ledger
 
-All UI animations must adhere to these mechanical timing functions:
-
-| Motion Type | Duration | Easing Curve | Use Case |
-|---|---|---|---|
-| **Micro-interaction** | `150ms` | `cubic-bezier(0.16, 1, 0.3, 1)` | Button press scale (`active:scale-95`), hover pills |
-| **Sheet / Modal Open**| `350ms - 500ms` | Spring (`stiffness: 300, damping: 28`) | Dialogs, drawer open, checkout popover |
-| **Canvas Particles**  | Frame-driven | `requestAnimationFrame` with delta time clamping | PixelCard twinkle and spotlight tracking |
-| **Page Transition**   | `200ms` | `ease-out` | Route switching, tab content crossfades |
+| Token / Layer | Exact CSS Definition | Purpose |
+|---|---|---|
+| **PixelCard Surface Shadow** | `0 24px 48px -24px rgba(0, 0, 0, 0.85), 0 8px 18px -10px rgba(0, 0, 0, 0.6)` | Floating depth for obsidian pricing cards |
+| **PixelCard Edge Inset** | `inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06)` | Beveled frosted edge lighting |
+| **PixelCard Edge Active**| `inset 0 0 0 1px rgba(255, 255, 255, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.06)` | Hover & pointer focus border highlight |
+| **Machined Hero Form** | `inset 0 2px 4px rgba(0,0,0,0.6), 0 10px 35px -5px rgba(0,0,0,0.7)` | Physical recessed chassis for newsletter input |
+| **Machined Button Bevel** | `inset 2px 2px 5px 0px rgba(0,0,0,0.5), inset -2px -2px 6px 1px rgba(255,255,255,0.25)` | Tactile metallic button click state |
+| **Active Pro Card Ring** | `border-2 border-[#FA5D00] shadow-2xl ring-4 ring-orange-500/20` | Most Popular tier emphasis |
+| **Active Founder Ring** | `border-2 border-amber-500 shadow-2xl ring-4 ring-amber-500/20` | VIP Collective tier emphasis |
+| **Floating FAB Glow** | `shadow-2xl shadow-[#FA5D00]/40` | High-visibility action anchor |
+| **Brand Text Glow** | `drop-shadow-[0_0_30px_rgba(250,93,0,0.7)]` | Hero period mark glow (`Mind.`) |
 
 ---
 
-## 6. Transactional Email System Architecture
+## 7. Scrollbars, Selection & Micro-Interactions
+
+- **Custom Scrollbar Width**: `7px` width and height.
+- **Scrollbar Track**: `transparent` (zero visual noise).
+- **Scrollbar Thumb**: `rgba(0, 0, 0, 0.2)` (light) / `rgba(255, 255, 255, 0.2)` (dark), `border-radius: 9999px`, `border: 1.5px solid transparent`, `background-clip: padding-box`.
+- **Scrollbar Thumb Hover**: `#FA5D00` (smooth 200ms transition).
+- **Selection Highlight**: `background-color: #FA5D00; color: #FFFFFF;`.
+- **Button Micro-interaction**: `active:scale-95 transition-all duration-150 ease-out`.
+
+---
+
+## 8. Interactive Canvas Engines
+
+1. **GSAP Peep Engine (`src/components/PeepCrowd.tsx`)**: Canvas2D sprite animation featuring walking characters that react dynamically to cursor speed and viewport bounds.
+2. **PixelCard Canvas Particle Engine (`src/components/ui/PixelCard.tsx`)**: Point grid spotlight with twinking sin waves and radial shockwaves.
+3. **Doodle Crew Footer (`src/components/Footer.tsx`)**: Animated mascots with dynamic cursor tracking and subtle physics floating effects.
+
+---
+
+## 9. Transactional Email System Architecture
 
 Automated emails triggered by user registration, post launches, and comments utilize an editorial layout mirroring the Reco platform aesthetic.
 
@@ -143,21 +200,11 @@ Automated emails triggered by user registration, post launches, and comments uti
 
 ---
 
-## 7. Responsive Breakpoint Rules
-
-| Breakpoint | Width | Behavior |
-|---|---|---|
-| **Mobile (`< 640px`)** | `100%` width | Single-column cards, bottom fixed navigation sheets, full-width checkout buttons. |
-| **Tablet (`640px - 1024px`)** | 2-column grid | Compact cards with truncated descriptions, scrollable bento items. |
-| **Desktop (`> 1024px`)** | 3-column grid | Max-width `1280px` centered canvas, side dock expansion, full PixelCard canvas effects. |
-
----
-
-## 8. File Structure Map
+## 10. File Structure Map
 
 ```
 reco-labs/
-├── design.md                  # This master design specification
+├── design.md                  # Master design system specification
 ├── src/
 │   ├── index.css              # Tailwind v4 theme, font imports, scrollbar, selection
 │   ├── components/
