@@ -197,7 +197,7 @@ export function ProfileUpgradeModal({
 
       const currentUser = networkApi.getCurrentUser()
       const options = {
-        key: orderData.keyId || "rzp_live_TwVFw0ACQFDbKn",
+        key: orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || "",
         amount: activePlanObj.amountPaise,
         currency: "INR",
         name: "Reco Labs",

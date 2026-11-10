@@ -158,9 +158,11 @@ export async function sendEmailViaResend(data: {
   text?: string
   replyTo?: string
 }): Promise<boolean> {
-  const apiKey =
-    process.env.RESEND_API_KEY ||
-    Buffer.from("cmVfTEhBVVBSdHJfQ2ZwdGc5dUNCSjNyb0RKSHZhYld0WWJk", "base64").toString("utf-8")
+  const apiKey = (process.env.RESEND_API_KEY || "").trim()
+  if (!apiKey) {
+    console.warn("[emailAutomation] Skipped sending: RESEND_API_KEY environment variable is not set.")
+    return false
+  }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!data.to || !emailRegex.test(data.to.trim())) {

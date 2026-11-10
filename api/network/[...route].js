@@ -6,8 +6,8 @@ import pg from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 var { Pool } = pg;
-var DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.zjpbrdbdkkzczdwsgizj:Aditya%401060A@aws-0-eu-west-1.pooler.supabase.com:6543/postgres";
-var JWT_SECRET = process.env.JWT_SECRET || "recolabs_jwt_secret_key_2026_super_secure";
+var DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.SUPABASE_DB_URL || "";
+var JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "recolabs_jwt_secret_guild";
 var pool = new Pool({
   connectionString: DATABASE_URL,
   ssl: { rejectUnauthorized: false },
@@ -606,9 +606,14 @@ async function getNetworkStats() {
     const usersCountRes = await client.query("SELECT COUNT(*) AS count FROM users");
     const startupsCountRes = await client.query("SELECT COUNT(*) AS count FROM startups");
     const featuredRes = await client.query(
-      `SELECT id, username, name, avatar_url, bio, created_at 
-       FROM users 
-       ORDER BY created_at DESC 
+      `SELECT 
+         u.id, u.username, u.name, u.avatar_url, u.bio, u.created_at,
+         (SELECT COUNT(*)::int FROM startups s WHERE s.user_id = u.id OR (s.founder_username IS NOT NULL AND LOWER(s.founder_username) = LOWER(u.username))) AS startups_count
+       FROM users u 
+       ORDER BY 
+         (CASE WHEN (SELECT COUNT(*) FROM startups s WHERE s.user_id = u.id OR (s.founder_username IS NOT NULL AND LOWER(s.founder_username) = LOWER(u.username))) > 0 THEN 1 ELSE 0 END) DESC,
+         u.is_verified DESC,
+         u.created_at DESC 
        LIMIT 40`
     );
     const queryTimeMs = Date.now() - start;
@@ -1719,15 +1724,30 @@ async function listBuildersWithContributions(limit = 100) {
         COALESCE(u.is_pro, false) as is_pro, 
         u.plan,
         u.created_at,
-        COUNT(DISTINCT s.id)::int AS startups_count,
-        COALESCE(SUM(s.upvotes_count), 0)::int AS upvotes_count,
-        COUNT(DISTINCT j.id)::int AS jobs_count,
-        (COUNT(DISTINCT s.id) * 10 + COALESCE(SUM(s.upvotes_count), 0) * 2 + COUNT(DISTINCT j.id) * 5 + (CASE WHEN u.is_verified THEN 25 ELSE 0 END))::int AS contributions
+        sub.startups_count,
+        sub.upvotes_count,
+        sub.jobs_count,
+        (
+          sub.startups_count * 100 +
+          sub.upvotes_count * 5 +
+          sub.jobs_count * 15 +
+          (CASE WHEN u.is_verified THEN 20 ELSE 0 END) +
+          (CASE WHEN u.is_pro THEN 25 ELSE 0 END)
+        )::int AS contributions
       FROM users u
-      LEFT JOIN startups s ON s.user_id = u.id OR LOWER(s.founder_username) = LOWER(u.username)
-      LEFT JOIN builder_jobs j ON j.user_id = u.id OR LOWER(j.author_username) = LOWER(u.username)
-      GROUP BY u.id
-      ORDER BY contributions DESC, u.is_verified DESC, u.created_at DESC
+      CROSS JOIN LATERAL (
+        SELECT 
+          (SELECT COUNT(*)::int FROM startups s WHERE s.user_id = u.id OR (s.founder_username IS NOT NULL AND LOWER(s.founder_username) = LOWER(u.username))) AS startups_count,
+          (SELECT COALESCE(SUM(s.upvotes_count), 0)::int FROM startups s WHERE s.user_id = u.id OR (s.founder_username IS NOT NULL AND LOWER(s.founder_username) = LOWER(u.username))) AS upvotes_count,
+          (SELECT COUNT(*)::int FROM builder_jobs j WHERE j.user_id = u.id OR (j.author_username IS NOT NULL AND LOWER(j.author_username) = LOWER(u.username))) AS jobs_count
+      ) sub
+      ORDER BY 
+        (CASE WHEN sub.startups_count > 0 THEN 1 ELSE 0 END) DESC,
+        contributions DESC,
+        sub.startups_count DESC,
+        sub.upvotes_count DESC,
+        u.is_verified DESC,
+        u.created_at DESC
       LIMIT $1`,
       [limit]
     );
@@ -2083,7 +2103,11 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 async function sendEmailViaResend(data) {
-  const apiKey = process.env.RESEND_API_KEY || Buffer.from("cmVfTEhBVVBSdHJfQ2ZwdGc5dUNCSjNyb0RKSHZhYld0WWJk", "base64").toString("utf-8");
+  const apiKey = (process.env.RESEND_API_KEY || "").trim();
+  if (!apiKey) {
+    console.warn("[emailAutomation] Skipped sending: RESEND_API_KEY environment variable is not set.");
+    return false;
+  }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!data.to || !emailRegex.test(data.to.trim())) {
     console.warn("[emailAutomation] Skipped sending: invalid recipient email", data.to);
@@ -2223,11 +2247,7 @@ function checkAdminAuth(req) {
   const provided = (headerKey || bearerKey || "").trim();
   const validKeys = [
     process.env.ADMIN_SECRET,
-    "Tanisha@1060",
-    "Tanisha@2026",
-    "rawenergon",
-    "Aditya@1060A",
-    "recolabs2026"
+    process.env.ADMIN_KEY
   ].filter(Boolean);
   if (validKeys.includes(provided)) return true;
   try {
@@ -3499,7 +3519,12 @@ async function handleNetworkRequest(req, res) {
         res.end(JSON.stringify({ error: "No valid recipient email addresses found." }));
         return;
       }
-      const resendApiKey = clientResendKey && String(clientResendKey).trim() || process.env.RESEND_API_KEY || Buffer.from("cmVfTEhBVVBSdHJfQ2ZwdGc5dUNCSjNyb0RKSHZhYld0WWJk", "base64").toString("utf-8");
+      const resendApiKey = clientResendKey && String(clientResendKey).trim() || process.env.RESEND_API_KEY || "";
+      if (!resendApiKey) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ success: false, error: "RESEND_API_KEY environment variable is required to dispatch emails." }));
+        return;
+      }
       const emailHtml = html || `
 <!DOCTYPE html>
 <html>
@@ -3599,54 +3624,6 @@ async function handleNetworkRequest(req, res) {
           );
           return;
         }
-      }
-      const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
-      const smtpPort = Number(process.env.SMTP_PORT || 587);
-      const smtpUser = process.env.SMTP_USER || "devadibxr@gmail.com";
-      const smtpPass = process.env.SMTP_PASS || "adzxxkjdxekhhjlr";
-      try {
-        const nodemailerPkg = await import("nodemailer");
-        const nodemailer = nodemailerPkg.default || nodemailerPkg;
-        const transporter = nodemailer.createTransport({
-          host: smtpHost,
-          port: smtpPort,
-          secure: smtpPort === 465,
-          auth: {
-            user: smtpUser,
-            pass: smtpPass
-          }
-        });
-        const mailOptions = {
-          from: `"${senderName || "Reco Labs"}" <${smtpUser}>`,
-          replyTo: replyToAddress,
-          subject,
-          text: message || "",
-          html: emailHtml
-        };
-        if (recipients.length === 1) {
-          mailOptions.to = recipients[0];
-        } else {
-          mailOptions.to = `"${senderName || "Reco Labs Community"}" <${smtpUser}>`;
-          mailOptions.bcc = recipients;
-        }
-        const info = await transporter.sendMail(mailOptions);
-        res.statusCode = 200;
-        res.end(
-          JSON.stringify({
-            success: true,
-            provider: "gmail_smtp",
-            messageId: info.messageId,
-            count: recipients.length,
-            to: recipients,
-            sender: `${senderName || "Reco Labs"} <${smtpUser}>`
-          })
-        );
-        return;
-      } catch (smtpErr) {
-        console.error("Gmail SMTP error:", smtpErr);
-        res.statusCode = 500;
-        res.end(JSON.stringify({ success: false, error: "Delivery failed: " + (smtpErr?.message || String(smtpErr)) }));
-        return;
       }
     }
     if (req.method === "GET" && (pathname === "/api/network/admin/builders" || pathname === "/api/admin/builders")) {
@@ -3883,8 +3860,8 @@ async function handleNetworkRequest(req, res) {
         return;
       }
       const paymentDetails = body?.paymentDetails;
-      const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
-      const rzpSecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "";
+      const rzpSecret = process.env.RAZORPAY_KEY_SECRET || "";
       let isRazorpayVerified = false;
       if (paymentDetails?.razorpay_payment_id && paymentDetails?.razorpay_order_id && paymentDetails?.razorpay_signature) {
         try {
@@ -4037,8 +4014,8 @@ async function handleNetworkRequest(req, res) {
       }
       const currency = body?.currency || "INR";
       const notes = body?.notes || {};
-      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
-      const keySecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "";
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || "";
       if (keySecret) {
         try {
           const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
@@ -4085,8 +4062,8 @@ async function handleNetworkRequest(req, res) {
       const name = body?.name || "Reco Labs";
       const description = (body?.description || "Reco Labs Payment").toString().slice(0, 30);
       const notes = body?.notes || {};
-      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
-      const keySecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "";
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || "";
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
       try {
         const qrRes = await fetch("https://api.razorpay.com/v1/payments/qr_codes", {
@@ -4133,8 +4110,8 @@ async function handleNetworkRequest(req, res) {
         res.end(JSON.stringify({ error: "qr_id query param is required." }));
         return;
       }
-      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
-      const keySecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "";
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || "";
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
       try {
         const checkRes = await fetch(`https://api.razorpay.com/v1/payments/qr_codes/${encodeURIComponent(qrId)}/payments`, {
@@ -4197,7 +4174,7 @@ async function handleNetworkRequest(req, res) {
     }
     if (req.method === "POST" && (pathname === "/api/network/webhooks/razorpay" || pathname === "/api/webhooks/razorpay")) {
       const body = await parseBody();
-      const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || "";
       const signature = req.headers["x-razorpay-signature"];
       if (secret && signature) {
         try {

@@ -6,8 +6,10 @@ const { Pool } = pg
 
 const DATABASE_URL =
   process.env.DATABASE_URL ||
-  "postgresql://postgres.zjpbrdbdkkzczdwsgizj:Aditya%401060A@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
-const JWT_SECRET = process.env.JWT_SECRET || "recolabs_jwt_secret_key_2026_super_secure"
+  process.env.POSTGRES_URL ||
+  process.env.SUPABASE_DB_URL ||
+  ""
+const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "recolabs_jwt_secret_guild"
 
 export const pool = new Pool({
   connectionString: DATABASE_URL,
@@ -692,9 +694,14 @@ export async function getNetworkStats() {
     const usersCountRes = await client.query("SELECT COUNT(*) AS count FROM users")
     const startupsCountRes = await client.query("SELECT COUNT(*) AS count FROM startups")
     const featuredRes = await client.query(
-      `SELECT id, username, name, avatar_url, bio, created_at 
-       FROM users 
-       ORDER BY created_at DESC 
+      `SELECT 
+         u.id, u.username, u.name, u.avatar_url, u.bio, u.created_at,
+         (SELECT COUNT(*)::int FROM startups s WHERE s.user_id = u.id OR (s.founder_username IS NOT NULL AND LOWER(s.founder_username) = LOWER(u.username))) AS startups_count
+       FROM users u 
+       ORDER BY 
+         (CASE WHEN (SELECT COUNT(*) FROM startups s WHERE s.user_id = u.id OR (s.founder_username IS NOT NULL AND LOWER(s.founder_username) = LOWER(u.username))) > 0 THEN 1 ELSE 0 END) DESC,
+         u.is_verified DESC,
+         u.created_at DESC 
        LIMIT 40`
     )
     const queryTimeMs = (Date.now() - start)
@@ -1932,15 +1939,30 @@ export async function listBuildersWithContributions(limit: number = 100) {
         COALESCE(u.is_pro, false) as is_pro, 
         u.plan,
         u.created_at,
-        COUNT(DISTINCT s.id)::int AS startups_count,
-        COALESCE(SUM(s.upvotes_count), 0)::int AS upvotes_count,
-        COUNT(DISTINCT j.id)::int AS jobs_count,
-        (COUNT(DISTINCT s.id) * 10 + COALESCE(SUM(s.upvotes_count), 0) * 2 + COUNT(DISTINCT j.id) * 5 + (CASE WHEN u.is_verified THEN 25 ELSE 0 END))::int AS contributions
+        sub.startups_count,
+        sub.upvotes_count,
+        sub.jobs_count,
+        (
+          sub.startups_count * 100 +
+          sub.upvotes_count * 5 +
+          sub.jobs_count * 15 +
+          (CASE WHEN u.is_verified THEN 20 ELSE 0 END) +
+          (CASE WHEN u.is_pro THEN 25 ELSE 0 END)
+        )::int AS contributions
       FROM users u
-      LEFT JOIN startups s ON s.user_id = u.id OR LOWER(s.founder_username) = LOWER(u.username)
-      LEFT JOIN builder_jobs j ON j.user_id = u.id OR LOWER(j.author_username) = LOWER(u.username)
-      GROUP BY u.id
-      ORDER BY contributions DESC, u.is_verified DESC, u.created_at DESC
+      CROSS JOIN LATERAL (
+        SELECT 
+          (SELECT COUNT(*)::int FROM startups s WHERE s.user_id = u.id OR (s.founder_username IS NOT NULL AND LOWER(s.founder_username) = LOWER(u.username))) AS startups_count,
+          (SELECT COALESCE(SUM(s.upvotes_count), 0)::int FROM startups s WHERE s.user_id = u.id OR (s.founder_username IS NOT NULL AND LOWER(s.founder_username) = LOWER(u.username))) AS upvotes_count,
+          (SELECT COUNT(*)::int FROM builder_jobs j WHERE j.user_id = u.id OR (j.author_username IS NOT NULL AND LOWER(j.author_username) = LOWER(u.username))) AS jobs_count
+      ) sub
+      ORDER BY 
+        (CASE WHEN sub.startups_count > 0 THEN 1 ELSE 0 END) DESC,
+        contributions DESC,
+        sub.startups_count DESC,
+        sub.upvotes_count DESC,
+        u.is_verified DESC,
+        u.created_at DESC
       LIMIT $1`,
       [limit]
     );

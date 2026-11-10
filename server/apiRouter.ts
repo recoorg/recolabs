@@ -100,12 +100,8 @@ function checkAdminAuth(req: IncomingMessage | any): boolean {
 
   const validKeys = [
     process.env.ADMIN_SECRET,
-    "Tanisha@1060",
-    "Tanisha@2026",
-    "rawenergon",
-    "Aditya@1060A",
-    "recolabs2026",
-  ].filter(Boolean)
+    process.env.ADMIN_KEY,
+  ].filter(Boolean) as string[]
 
   if (validKeys.includes(provided)) return true
 
@@ -1626,7 +1622,13 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const resendApiKey =
         (clientResendKey && String(clientResendKey).trim()) ||
         process.env.RESEND_API_KEY ||
-        Buffer.from("cmVfTEhBVVBSdHJfQ2ZwdGc5dUNCSjNyb0RKSHZhYld0WWJk", "base64").toString("utf-8");
+        "";
+
+      if (!resendApiKey) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ success: false, error: "RESEND_API_KEY environment variable is required to dispatch emails." }));
+        return;
+      }
 
       const emailHtml = html || `
 <!DOCTYPE html>
@@ -1734,60 +1736,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         }
       }
 
-      // 2. Fallback Dispatch: Gmail SMTP Delivery with devadibxr@gmail.com
-      const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
-      const smtpPort = Number(process.env.SMTP_PORT || 587);
-      const smtpUser = process.env.SMTP_USER || "devadibxr@gmail.com";
-      const smtpPass = process.env.SMTP_PASS || "adzxxkjdxekhhjlr";
 
-      try {
-        const nodemailerPkg = await import("nodemailer");
-        const nodemailer = nodemailerPkg.default || nodemailerPkg;
-        const transporter = nodemailer.createTransport({
-          host: smtpHost,
-          port: smtpPort,
-          secure: smtpPort === 465,
-          auth: {
-            user: smtpUser,
-            pass: smtpPass,
-          },
-        });
-
-        const mailOptions: any = {
-          from: `"${senderName || "Reco Labs"}" <${smtpUser}>`,
-          replyTo: replyToAddress,
-          subject: subject,
-          text: message || "",
-          html: emailHtml,
-        };
-
-        if (recipients.length === 1) {
-          mailOptions.to = recipients[0];
-        } else {
-          mailOptions.to = `"${senderName || "Reco Labs Community"}" <${smtpUser}>`;
-          mailOptions.bcc = recipients;
-        }
-
-        const info = await transporter.sendMail(mailOptions);
-
-        res.statusCode = 200;
-        res.end(
-          JSON.stringify({
-            success: true,
-            provider: "gmail_smtp",
-            messageId: info.messageId,
-            count: recipients.length,
-            to: recipients,
-            sender: `${senderName || "Reco Labs"} <${smtpUser}>`,
-          })
-        );
-        return;
-      } catch (smtpErr: any) {
-        console.error("Gmail SMTP error:", smtpErr);
-        res.statusCode = 500;
-        res.end(JSON.stringify({ success: false, error: "Delivery failed: " + (smtpErr?.message || String(smtpErr)) }));
-        return;
-      }
     }
 
     // 18B. ADMIN LIST ALL BUILDERS: GET /api/network/admin/builders
@@ -2075,8 +2024,8 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
 
       // Security check: Must be admin or carry valid payment verification
       const paymentDetails = body?.paymentDetails;
-      const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
-      const rzpSecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "";
+      const rzpSecret = process.env.RAZORPAY_KEY_SECRET || "";
 
       let isRazorpayVerified = false;
 
@@ -2249,8 +2198,8 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const currency = body?.currency || "INR";
       const notes = body?.notes || {};
 
-      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
-      const keySecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "";
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || "";
 
       if (keySecret) {
         try {
@@ -2303,8 +2252,8 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       const description = (body?.description || "Reco Labs Payment").toString().slice(0, 30);
       const notes = body?.notes || {};
 
-      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
-      const keySecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "";
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || "";
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
 
       try {
@@ -2355,8 +2304,8 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         return;
       }
 
-      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_live_TwVFw0ACQFDbKn";
-      const keySecret = process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "";
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || "";
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
 
       try {
@@ -2424,7 +2373,7 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
 
         if (req.method === "POST" && (pathname === "/api/network/webhooks/razorpay" || pathname === "/api/webhooks/razorpay")) {
       const body = await parseBody();
-      const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || "KrWC5wVHLo3PbiQ4K0ptf70e";
+      const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || "";
       const signature = req.headers["x-razorpay-signature"] as string | undefined;
 
       if (secret && signature) {

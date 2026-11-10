@@ -8,7 +8,7 @@ async function build() {
     platform: 'node',
     format: 'esm',
     target: 'node18',
-    external: ['pg', 'bcryptjs', 'jsonwebtoken', 'nodemailer'],
+    external: ['pg', 'bcryptjs', 'jsonwebtoken'],
     banner: {
       js: '// Auto-generated bundle for Vercel serverless function\nimport { createRequire } from "module"; const require = createRequire(import.meta.url);',
     },
