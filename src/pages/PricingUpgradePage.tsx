@@ -450,21 +450,21 @@ export function PricingUpgradePage() {
             glowColor="#94a3b8"
             gap={8}
             speed={25}
-            className="rounded-3xl p-6 sm:p-8 flex flex-col justify-between border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-[#0f0f12]"
+            className="rounded-3xl p-6 sm:p-8 flex flex-col justify-between border border-zinc-800/90 bg-[#0f0f13] text-zinc-100 shadow-2xl"
           >
-            <div>
+            <div className="relative z-10">
               <div className="font-mono text-xs uppercase tracking-wider text-zinc-400 font-bold mb-2">
                 Hobby / Explorer
               </div>
-              <h3 className="font-serif text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+              <h3 className="font-serif text-2xl font-bold text-white">
                 Community Builder
               </h3>
-              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 font-sans leading-relaxed">
+              <p className="mt-2 text-xs text-zinc-400 font-sans leading-relaxed">
                 Essential tools to showcase code, explore high-school hackathons, and connect with peers.
               </p>
 
               <div className="mt-6 font-mono">
-                <span className="text-4xl font-extrabold text-zinc-950 dark:text-zinc-50">₹0</span>
+                <span className="text-4xl font-extrabold text-white">₹0</span>
                 <span className="text-xs text-zinc-400 ml-1">/forever</span>
               </div>
 
@@ -476,7 +476,7 @@ export function PricingUpgradePage() {
                   "Join hackathons & view student jobs",
                   "Community Discord member role",
                 ].map((feat, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-zinc-600 dark:text-zinc-300">
+                  <div key={idx} className="flex items-start gap-2 text-zinc-200">
                     <Check className="w-4 h-4 text-zinc-400 flex-none mt-0.5" />
                     <span>{feat}</span>
                   </div>
@@ -484,8 +484,8 @@ export function PricingUpgradePage() {
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-              <span className="block text-center py-2.5 rounded-full border border-zinc-200 dark:border-zinc-800 font-mono text-xs text-zinc-400">
+            <div className="relative z-10 mt-8 pt-6 border-t border-zinc-800">
+              <span className="block text-center py-2.5 rounded-full border border-zinc-700/80 bg-zinc-900/60 font-mono text-xs text-zinc-300 font-semibold">
                 Current Default Tier
               </span>
             </div>
@@ -507,13 +507,13 @@ export function PricingUpgradePage() {
               glowColor="#FA5D00"
               gap={6}
               speed={30}
-              className={`rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-200 ${
+              className={`rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-200 text-zinc-100 shadow-2xl ${
                 selectedPlan === "pro"
-                  ? "bg-white dark:bg-[#121216] border-2 border-[#FA5D00] shadow-2xl ring-4 ring-orange-500/15"
-                  : "bg-zinc-50/80 dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400"
+                  ? "bg-[#121216] border-2 border-[#FA5D00] ring-4 ring-orange-500/20"
+                  : "bg-[#0f0f13] border border-zinc-800 hover:border-zinc-600"
               }`}
             >
-              <div>
+              <div className="relative z-10">
                 <div className="flex items-center justify-between mb-2">
                   <div className="font-mono text-xs uppercase tracking-wider text-[#FA5D00] font-bold">
                     Indie & Solo Founders
@@ -521,22 +521,22 @@ export function PricingUpgradePage() {
                   <VerifiedBadge size="md" />
                 </div>
 
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
                   <span>Verified Pro</span>
                 </h3>
-                <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
+                <p className="mt-2 text-xs text-zinc-300 font-sans leading-relaxed">
                   Everything you need to prove authentic credibility, earn trust, and get your prototypes discovered.
                 </p>
 
                 <div className="mt-6 font-mono flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl font-extrabold text-zinc-950 dark:text-zinc-50">
+                  <span className="text-4xl sm:text-5xl font-extrabold text-white">
                     {billing === "monthly" ? pricing.pro.monthly.display : pricing.pro.yearly.display}
                   </span>
                   <span className="text-xs text-zinc-400">
                     {billing === "monthly" ? pricing.pro.monthly.period : pricing.pro.yearly.period}
                   </span>
                   {billing === "yearly" && pricing.pro.yearly.savings && (
-                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full ml-auto">
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full ml-auto">
                       {pricing.pro.yearly.savings}
                     </span>
                   )}
@@ -544,7 +544,7 @@ export function PricingUpgradePage() {
 
                 <div className="mt-8 space-y-3 font-mono text-xs">
                   {pricing.pro.features.map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 text-zinc-800 dark:text-zinc-200">
+                    <div key={idx} className="flex items-start gap-2.5 text-zinc-200">
                       <Check className="w-4 h-4 text-[#FA5D00] flex-none mt-0.5" />
                       <span>{feat}</span>
                     </div>
@@ -552,7 +552,7 @@ export function PricingUpgradePage() {
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+              <div className="relative z-10 mt-8 pt-6 border-t border-zinc-800">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -581,37 +581,37 @@ export function PricingUpgradePage() {
               glowColor="#f59e0b"
               gap={6}
               speed={30}
-              className={`rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-200 ${
+              className={`rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-200 text-zinc-100 shadow-2xl ${
                 selectedPlan === "founder"
-                  ? "bg-white dark:bg-[#121216] border-2 border-amber-500 shadow-2xl ring-4 ring-amber-500/15"
-                  : "bg-zinc-50/80 dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400"
+                  ? "bg-[#121216] border-2 border-amber-500 ring-4 ring-amber-500/20"
+                  : "bg-[#0f0f13] border border-zinc-800 hover:border-zinc-600"
               }`}
             >
-              <div>
+              <div className="relative z-10">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="font-mono text-xs uppercase tracking-wider text-amber-500 font-bold flex items-center gap-1">
+                  <div className="font-mono text-xs uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1">
                     <Crown className="w-3.5 h-3.5" />
                     <span>VIP Collective</span>
                   </div>
                   <VerifiedBadge size="md" label="Pro Founder" />
                 </div>
 
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white">
                   Founder Pass
                 </h3>
-                <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
+                <p className="mt-2 text-xs text-zinc-300 font-sans leading-relaxed">
                   Maximum launch exposure, unlimited product pinning, hardware lab grants, and investor access.
                 </p>
 
                 <div className="mt-6 font-mono flex items-baseline gap-2">
-                  <span className="text-4xl sm:text-5xl font-extrabold text-zinc-950 dark:text-zinc-50">
+                  <span className="text-4xl sm:text-5xl font-extrabold text-white">
                     {billing === "monthly" ? pricing.founder.monthly.display : pricing.founder.yearly.display}
                   </span>
                   <span className="text-xs text-zinc-400">
                     {billing === "monthly" ? pricing.founder.monthly.period : pricing.founder.yearly.period}
                   </span>
                   {billing === "yearly" && pricing.founder.yearly.savings && (
-                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full ml-auto">
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full ml-auto">
                       {pricing.founder.yearly.savings}
                     </span>
                   )}
@@ -619,15 +619,15 @@ export function PricingUpgradePage() {
 
                 <div className="mt-8 space-y-3 font-mono text-xs">
                   {pricing.founder.features.map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 text-zinc-800 dark:text-zinc-200">
-                      <Check className="w-4 h-4 text-amber-500 flex-none mt-0.5" />
+                    <div key={idx} className="flex items-start gap-2.5 text-zinc-200">
+                      <Check className="w-4 h-4 text-amber-400 flex-none mt-0.5" />
                       <span>{feat}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+              <div className="relative z-10 mt-8 pt-6 border-t border-zinc-800">
                 <button
                   type="button"
                   onClick={(e) => {
