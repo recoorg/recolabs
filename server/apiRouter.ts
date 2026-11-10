@@ -81,7 +81,15 @@ import {
   togglePostUpvote,
   listPostComments,
   createPostComment,
+  getStartupOwner,
+  getCommunityPostOwner,
 } from "./db.js"
+import {
+  notifyUserSignup,
+  notifyUserLogin,
+  notifyPostPublished,
+  notifyNewComment,
+} from "./emailAutomation.js"
 
 // Anti-misuse security guard: Verifies admin master credentials
 function checkAdminAuth(req: IncomingMessage | any): boolean {
@@ -197,6 +205,13 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         return
       }
       const data = await createUser(body)
+      if (data?.user?.email) {
+        notifyUserSignup({
+          email: data.user.email,
+          name: data.user.name,
+          username: data.user.username,
+        })
+      }
       res.statusCode = 200
       res.end(JSON.stringify({ success: true, ...data }))
       return
@@ -211,6 +226,13 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         return
       }
       const data = await loginUser(body)
+      if (data?.user?.email) {
+        notifyUserLogin({
+          email: data.user.email,
+          name: data.user.name,
+          username: data.user.username,
+        })
+      }
       res.statusCode = 200
       res.end(JSON.stringify({ success: true, ...data }))
       return
@@ -231,6 +253,9 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         provider: body.provider === "github" ? "github" : "google",
         preferredUsername: body.preferredUsername,
       })
+      if (data?.user?.email) {
+        notifyUserLogin({ email: data.user.email, name: data.user.name, username: data.user.username })
+      }
       res.statusCode = 200
       res.end(JSON.stringify({ success: true, ...data }))
       return
@@ -368,6 +393,18 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         tags: Array.isArray(body.tags) ? body.tags : [],
         mediaUrl: body.mediaUrl || null,
       })
+      if (auth?.id) {
+        getUserById(auth.id).then((u) => {
+          if (u?.email) {
+            notifyPostPublished({
+              founderEmail: u.email,
+              founderName: u.name || undefined,
+              title: post.title || "Community Discussion",
+              postUrl: "https://recolabs.in/network",
+            })
+          }
+        }).catch(() => {})
+      }
       res.statusCode = 200
       res.end(JSON.stringify({ success: true, post }))
       return
@@ -438,6 +475,21 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
           isVerified,
           content: body.content.trim(),
         })
+        getCommunityPostOwner(postId).then((owner) => {
+          if (owner && owner.email) {
+            const commenter = authorUsername || authorName || "builder"
+            if (!owner.username || owner.username.toLowerCase() !== commenter.toLowerCase()) {
+              notifyNewComment({
+                postTitle: owner.title || "Community Discussion",
+                recipientEmail: owner.email,
+                recipientUsername: owner.username || undefined,
+                commenterUsername: commenter,
+                commentContent: body.content.trim(),
+                postUrl: "https://recolabs.in/network",
+              })
+            }
+          }
+        }).catch((err) => console.warn("[emailAutomation] Post comment lookup error:", err))
         res.statusCode = 200
         res.end(JSON.stringify({ success: true, comment }))
         return
@@ -673,7 +725,14 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         category: body.category || "Software",
         stage: body.stage || "Prototype",
       })
-
+      if (founderEmail) {
+        notifyPostPublished({
+          founderEmail,
+          founderName,
+          title: body.name,
+          postUrl: `https://recolabs.in/startup/${startup.id}`,
+        })
+      }
       res.statusCode = 201
       res.end(JSON.stringify({ success: true, startup }))
       return
@@ -1323,7 +1382,21 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         authorAvatar,
         content,
       });
-
+      getStartupOwner(startupId).then((owner) => {
+        if (owner && owner.email) {
+          const commenter = authorUsername || authorName || "builder"
+          if (!owner.username || owner.username.toLowerCase() !== commenter.toLowerCase()) {
+            notifyNewComment({
+              postTitle: owner.name,
+              recipientEmail: owner.email,
+              recipientUsername: owner.username || undefined,
+              commenterUsername: commenter,
+              commentContent: content,
+              postUrl: `https://recolabs.in/startup/${startupId}`,
+            })
+          }
+        }
+      }).catch((err) => console.warn("[emailAutomation] Startup comment lookup error:", err))
       res.statusCode = 201;
       res.end(JSON.stringify({ success: true, comment: created }));
       return;

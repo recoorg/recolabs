@@ -424,11 +424,19 @@ export function NetworkPage() {
     }
   }, [])
 
-  // Auto-trigger signup modal if navigated with ?signup=true or ?email=...
+  // Auto-trigger signup or login modal if navigated with query params or custom event
   React.useEffect(() => {
-    const shouldSignup = searchParams.get("signup") === "true"
+    const isLogin = searchParams.get("auth") === "login" || searchParams.get("login") === "true"
+    const shouldSignup = searchParams.get("signup") === "true" || searchParams.get("auth") === "signup"
     const prefillEmail = (searchParams.get("email") || "").trim()
-    if (shouldSignup || prefillEmail) {
+
+    if (isLogin) {
+      if (prefillEmail) {
+        setAuthForm((prev) => ({ ...prev, email: prefillEmail }))
+      }
+      setAuthMode("login")
+      setShowAuthModal(true)
+    } else if (shouldSignup || prefillEmail) {
       if (prefillEmail) {
         setAuthForm((prev) => ({ ...prev, email: prefillEmail }))
       }
@@ -436,6 +444,17 @@ export function NetworkPage() {
       setShowAuthModal(true)
     }
   }, [searchParams])
+
+  // Global event listener to open login / signup modal from anywhere (e.g. Navbar)
+  React.useEffect(() => {
+    const handleOpenAuth = (e: any) => {
+      const mode = e?.detail?.mode === "signup" ? "signup" : "login"
+      setAuthMode(mode)
+      setShowAuthModal(true)
+    }
+    window.addEventListener("reco_open_auth", handleOpenAuth)
+    return () => window.removeEventListener("reco_open_auth", handleOpenAuth)
+  }, [])
 
   const handleClaimUsername = (override?: string) => {
     const raw = (override || claimUsername).trim().toLowerCase().replace(/[^a-z0-9_-]/g, "")

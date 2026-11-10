@@ -2179,3 +2179,44 @@ export async function createPostComment({
   }
 }
 
+
+
+export async function getStartupOwner(startupId: number): Promise<{ id: number; name: string; email: string | null; username: string | null } | null> {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT s.id, s.name, COALESCE(u.email, s.founder_email) as email, COALESCE(u.username, s.founder_username) as username
+       FROM startups s
+       LEFT JOIN users u ON s.user_id = u.id
+       WHERE s.id = $1`,
+      [startupId]
+    );
+    if (!res.rows[0]) return null;
+    return res.rows[0];
+  } catch (err) {
+    console.warn("Failed to get startup owner:", err);
+    return null;
+  } finally {
+    client.release();
+  }
+}
+
+export async function getCommunityPostOwner(postId: number): Promise<{ id: number; title: string | null; content?: string; email: string | null; username: string | null } | null> {
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `SELECT p.id, p.title, p.content, u.email, COALESCE(u.username, p.author_username) as username
+       FROM community_posts p
+       LEFT JOIN users u ON p.user_id = u.id
+       WHERE p.id = $1`,
+      [postId]
+    );
+    if (!res.rows[0]) return null;
+    return res.rows[0];
+  } catch (err) {
+    console.warn("Failed to get community post owner:", err);
+    return null;
+  } finally {
+    client.release();
+  }
+}

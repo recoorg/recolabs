@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Link, useLocation } from "react-router-dom"
 import { Menu, X, ArrowUpRight, MessageSquare, Terminal, User, LogOut, ChevronDown, Zap, LayoutDashboard, Rocket, ShieldCheck, ExternalLink } from "lucide-react"
-import { GithubIcon } from "@/components/icons"
+import { GithubIcon, WhatsAppIcon } from "@/components/icons"
 import { networkApi, type UserProfile } from "@/services/networkApi"
 import { VerifiedBadge } from "@/components/VerifiedBadge"
 
@@ -233,7 +233,12 @@ export function Navbar() {
           ) : (
             <Link
               to="/network?auth=login"
-              className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-full border-2 border-black dark:border-white bg-black dark:bg-white text-white dark:text-black font-mono text-xs font-bold hover:bg-[#FA5D00] hover:border-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:border-[#FA5D00] dark:hover:text-black transition-all shadow-xs"
+              onClick={() => {
+                if (window.location.pathname.startsWith("/network")) {
+                  window.dispatchEvent(new CustomEvent("reco_open_auth", { detail: { mode: "login" } }))
+                }
+              }}
+              className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-full border-2 border-black dark:border-white bg-black dark:bg-white text-white dark:text-black font-mono text-xs font-bold hover:bg-[#FA5D00] hover:border-[#FA5D00] dark:hover:bg-[#FA5D00] dark:hover:border-[#FA5D00] dark:hover:text-black transition-all shadow-xs cursor-pointer active:scale-95"
             >
               Sign In
             </Link>
@@ -242,12 +247,13 @@ export function Navbar() {
           {isHomePage && !currentUser && (
             <div className="hidden md:flex items-center gap-3">
               <a
-                href="https://discord.com/invite/7dk4w37BhP"
+                href="https://chat.whatsapp.com/IApnk6YLM0l2j1nwcVzRR5"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-1.5 rounded-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-sans text-xs font-semibold tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center"
+                className="px-3.5 py-1.5 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-black font-mono text-xs font-bold tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5"
               >
-                Discord
+                <WhatsAppIcon className="w-3.5 h-3.5 fill-black" />
+                <span>WhatsApp</span>
               </a>
             </div>
           )}
@@ -338,8 +344,13 @@ export function Navbar() {
               <div className="pb-3 border-b editorial-hairline mb-2">
                 <Link
                   to="/network?auth=login"
-                  onClick={() => setMobileOpen(false)}
-                  className="w-full py-2.5 rounded-full bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center"
+                  onClick={() => {
+                    setMobileOpen(false)
+                    if (window.location.pathname.startsWith("/network")) {
+                      window.dispatchEvent(new CustomEvent("reco_open_auth", { detail: { mode: "login" } }))
+                    }
+                  }}
+                  className="w-full py-2.5 rounded-full bg-black text-white dark:bg-white dark:text-black font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center cursor-pointer"
                 >
                   Sign In to Reco Guild
                 </Link>
@@ -397,6 +408,16 @@ export function Navbar() {
               >
                 <span>Verified Pass & Pricing</span>
               </Link>
+
+              <a
+                href="https://chat.whatsapp.com/IApnk6YLM0l2j1nwcVzRR5"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-[#25D366] text-black font-bold uppercase tracking-wider shadow-sm"
+              >
+                <WhatsAppIcon className="w-4 h-4 fill-black" />
+                <span>WhatsApp Guild</span>
+              </a>
 
               <a
                 href="https://discord.com/invite/7dk4w37BhP"

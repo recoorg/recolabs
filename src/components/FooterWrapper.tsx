@@ -4,7 +4,7 @@ import * as React from "react"
 import { Link, useLocation } from "react-router-dom"
 import { CrowdCanvas } from "@/components/CrowdCanvas"
 import { networkApi } from "@/services/networkApi"
-import { GithubIcon, DiscordIcon, TwitterIcon } from "@/components/icons"
+import { GithubIcon, DiscordIcon, TwitterIcon, WhatsAppIcon } from "@/components/icons"
 
 export function FooterWrapper() {
   const location = useLocation()
@@ -70,6 +70,7 @@ export function FooterWrapper() {
       title: "Community",
       links: [
         { label: "Sponsor Reco Labs", href: "/sponsors" },
+        { label: "WhatsApp Guild ↗", href: "https://chat.whatsapp.com/IApnk6YLM0l2j1nwcVzRR5" },
         { label: "Discord Guild ↗", href: "https://discord.com/invite/7dk4w37BhP" },
         { label: "Founder X (@adibxr) ↗", href: "https://x.com/adibxr" },
         { label: "Instagram (@rawenergon) ↗", href: "https://instagram.com/rawenergon" },
@@ -102,7 +103,16 @@ export function FooterWrapper() {
             <p className="font-mono text-[11px] text-[#FA5D00] font-semibold">
               Built by hackers, for hackers. 100% open source.
             </p>
-            <div className="flex items-center gap-2.5 pt-2">
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
+              <a
+                href="https://chat.whatsapp.com/IApnk6YLM0l2j1nwcVzRR5"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-black font-mono text-xs font-bold transition-all shadow-sm active:scale-95"
+              >
+                <WhatsAppIcon className="w-4 h-4 fill-black" />
+                <span>WhatsApp</span>
+              </a>
               <a
                 href="https://discord.com/invite/7dk4w37BhP"
                 target="_blank"
