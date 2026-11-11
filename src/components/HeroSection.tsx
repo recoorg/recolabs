@@ -112,22 +112,12 @@ export function HeroSection() {
       {/* ============================================================ */}
       <div className="relative z-10 mx-auto max-w-5xl px-6 text-center flex flex-col items-center">
         
-        {/* Kicker Pill Badge (Timeline Step 1) */}
-        <TimelineAnimation
-          animationNum={1}
-          timelineRef={timelineRef}
-          className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-[#FA5D00]/30 bg-[#0c1018]/80 backdrop-blur-md font-mono text-[11px] font-bold uppercase tracking-wider text-[#FF8C42] shadow-[0_0_20px_rgba(250,93,0,0.2)] mb-7"
-        >
-          <span className="w-2 h-2 rounded-full bg-[#FA5D00] animate-pulse shadow-[0_0_8px_#FA5D00]" />
-          <span>THE SKILL EXCHANGE &amp; OPEN-SOURCE GUILD</span>
-          <span className="text-zinc-500">·</span>
-          <span className="text-white font-bold">EST. 2024</span>
-        </TimelineAnimation>
+
 
         {/* Master Headline (Timeline Step 2) */}
         <TimelineAnimation
           as="h1"
-          animationNum={2}
+          animationNum={1}
           timelineRef={timelineRef}
           className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-[96px] leading-[1.01] tracking-[-0.03em] text-white font-normal drop-shadow-md"
         >
@@ -140,7 +130,7 @@ export function HeroSection() {
         {/* Supporting Copy (Timeline Step 3) */}
         <TimelineAnimation
           as="p"
-          animationNum={3}
+          animationNum={2}
           timelineRef={timelineRef}
           className="mt-6 max-w-2xl text-center font-sans text-sm sm:text-base md:text-lg text-zinc-300 leading-relaxed font-normal drop-shadow-sm"
         >
@@ -149,7 +139,7 @@ export function HeroSection() {
 
         {/* Machined Input & CTA Control (Timeline Step 4 - Audited Inset Shadows) */}
         <TimelineAnimation
-          animationNum={4}
+          animationNum={3}
           timelineRef={timelineRef}
           className="mt-8 sm:mt-10 w-full flex justify-center"
         >
@@ -179,7 +169,7 @@ export function HeroSection() {
 
         {/* Minimal Machined Telemetry Status Bar */}
         <TimelineAnimation
-          animationNum={5}
+          animationNum={4}
           timelineRef={timelineRef}
           className="mt-8 sm:mt-10 inline-flex flex-wrap items-center justify-center gap-4 px-5 py-2 rounded-2xl bg-[#0c1018]/80 border border-zinc-800/80 backdrop-blur-xl shadow-lg font-mono text-xs text-zinc-400"
         >

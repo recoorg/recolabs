@@ -1,3 +1,5 @@
+const profileMemoryCache = new Map<string, { data: { user: UserProfile; startups: StartupItem[] }; timestamp: number }>();
+
 export interface BuilderProfileWithStats {
   id: number
   name: string
@@ -490,10 +492,18 @@ export const networkApi = {
   },
 
     async getBuilderProfile(username: string): Promise<{ user: UserProfile; startups: StartupItem[] }> {
+    const key = username.toLowerCase().trim()
+    const cached = profileMemoryCache.get(key)
+    const now = Date.now()
+    if (cached && (now - cached.timestamp < 60000)) {
+      return cached.data
+    }
     const json = await safeJsonFetch<{ success: boolean; user: UserProfile; startups: StartupItem[] }>(
       `/api/network/builder/${encodeURIComponent(username)}`
     )
-    return { user: json.user, startups: json.startups || [] }
+    const result = { user: json.user, startups: json.startups || [] }
+    profileMemoryCache.set(key, { data: result, timestamp: now })
+    return result
   },
 
   async getStartups(params?: { search?: string; category?: string; username?: string; userId?: number }): Promise<StartupItem[]> {

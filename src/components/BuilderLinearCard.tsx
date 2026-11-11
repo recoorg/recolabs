@@ -53,7 +53,7 @@ export function BuilderLinearCard({ item, profile, onScreenshot }: BuilderLinear
             <span className="px-2.5 py-0.5 rounded-full bg-orange-100/70 dark:bg-orange-950/40 text-[#FA5D00] font-mono text-[10px] font-bold uppercase tracking-wider">
               {item.category}
             </span>
-            <span className="font-mono text-[10px] text-zinc-400 uppercase">
+            <span className="font-mono text-[10px] text-zinc-600 dark:text-zinc-300 uppercase font-bold">
               {item.stage}
             </span>
           </div>
@@ -64,17 +64,17 @@ export function BuilderLinearCard({ item, profile, onScreenshot }: BuilderLinear
           </DialogTitle>
 
           {/* Website domain tag */}
-          <div className="mt-1 font-mono text-xs text-zinc-400 truncate flex items-center gap-1">
+          <div className="mt-1 font-mono text-xs text-zinc-600 dark:text-zinc-400 truncate flex items-center gap-1 font-medium">
             <Globe className="w-3 h-3 opacity-60" />
             <span>{cleanUrl}</span>
           </div>
 
           {/* Problem Solved Teaser */}
           <div className="mt-4 p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 font-bold block mb-1">
+            <span className="font-mono text-[9px] uppercase tracking-wider text-[#FA5D00] font-bold block mb-1">
               PROBLEM SOLVED
             </span>
-            <p className="font-sans text-xs text-zinc-700 dark:text-zinc-300 line-clamp-3 leading-relaxed">
+            <p className="font-sans text-xs text-zinc-800 dark:text-zinc-200 line-clamp-3 leading-relaxed font-normal">
               {item.problem_solving}
             </p>
           </div>
@@ -126,10 +126,10 @@ export function BuilderLinearCard({ item, profile, onScreenshot }: BuilderLinear
                   profile.name.charAt(0)
                 )}
               </div>
-              <span className="text-zinc-900 dark:text-zinc-100 font-semibold">{profile.name}</span>
-              <span>(@{profile.username})</span>
+              <span className="text-zinc-950 dark:text-zinc-50 font-bold">{profile.name}</span>
+              <span className="text-zinc-600 dark:text-zinc-400 font-medium">(@{profile.username})</span>
             </div>
-            <span className="text-[11px] text-zinc-400">Reco Labs Verified</span>
+            <span className="text-[11px] text-zinc-600 dark:text-zinc-300 font-bold">Reco Labs Verified</span>
           </div>
 
           {/* Full Description & Problem Solved */}
@@ -146,15 +146,15 @@ export function BuilderLinearCard({ item, profile, onScreenshot }: BuilderLinear
               <span className="font-mono text-xs font-bold text-[#FA5D00] uppercase tracking-wider block mb-2">
                 PROBLEM &amp; MISSION
               </span>
-              <p className="font-sans text-sm sm:text-base text-zinc-700 dark:text-zinc-300 leading-relaxed">
+              <p className="font-sans text-sm sm:text-base text-zinc-800 dark:text-zinc-200 leading-relaxed font-normal">
                 {item.problem_solving}
               </p>
             </div>
 
-            <div className="pt-2 font-mono text-xs text-zinc-500 space-y-1">
-              <div><span className="text-zinc-400">CATEGORY:</span> <span className="text-zinc-200 font-bold">{item.category}</span></div>
-              <div><span className="text-zinc-400">STAGE:</span> <span className="text-zinc-200 font-bold">{item.stage}</span></div>
-              <div><span className="text-zinc-400">LIVE URL:</span> <span className="text-[#FA5D00]">{cleanUrl}</span></div>
+            <div className="pt-3 font-mono text-xs space-y-1.5 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center gap-2"><span className="text-zinc-500 dark:text-zinc-400 font-bold">CATEGORY:</span> <span className="text-zinc-900 dark:text-zinc-100 font-bold">{item.category}</span></div>
+              <div className="flex items-center gap-2"><span className="text-zinc-500 dark:text-zinc-400 font-bold">STAGE:</span> <span className="text-zinc-900 dark:text-zinc-100 font-bold">{item.stage}</span></div>
+              <div className="flex items-center gap-2"><span className="text-zinc-500 dark:text-zinc-400 font-bold">LIVE URL:</span> <span className="text-[#FA5D00] font-bold">{cleanUrl}</span></div>
             </div>
           </DialogDescription>
 
@@ -183,7 +183,7 @@ export function BuilderLinearCard({ item, profile, onScreenshot }: BuilderLinear
           </div>
 
           {/* Close Button */}
-          <DialogClose className="text-zinc-500 hover:text-black dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 p-2.5 rounded-full transition-colors" />
+          <DialogClose className="text-zinc-700 dark:text-zinc-200 hover:text-black dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 p-2.5 rounded-full transition-colors" />
         </DialogContent>
       </DialogContainer>
     </Dialog>

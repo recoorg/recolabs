@@ -127,9 +127,52 @@ export function BuilderProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-40 pb-20 px-6 flex items-center justify-center">
-        <div className="font-mono text-xs text-zinc-500 animate-pulse">
-          Loading builder profile...
+      <div className="relative w-full pt-20 sm:pt-36 pb-16 sm:pb-24 px-3 sm:px-8 bg-transparent">
+        <div className="mx-auto max-w-4xl space-y-8 animate-pulse">
+          {/* Breadcrumb Skeleton */}
+          <div className="w-36 h-4 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+
+          {/* Builder Hero Card Skeleton */}
+          <div className="p-4 sm:p-10 rounded-2xl sm:rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+              <div className="flex items-start gap-3.5 sm:gap-5 min-w-0">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-zinc-200 dark:bg-zinc-800 flex-none" />
+                <div className="space-y-2.5">
+                  <div className="w-48 sm:w-64 h-7 sm:h-9 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+                  <div className="w-36 h-4 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+                  <div className="w-64 sm:w-80 h-3.5 bg-zinc-200 dark:bg-zinc-800 rounded-md" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <div className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                <div className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+              </div>
+            </div>
+
+            {/* Contact Pills Skeleton */}
+            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-wrap gap-2">
+              <div className="w-28 h-7 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+              <div className="w-32 h-7 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+              <div className="w-24 h-7 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+          </div>
+
+          {/* Projects Section Skeleton */}
+          <div className="space-y-4">
+            <div className="w-40 h-6 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="h-48 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/40 p-6 space-y-4">
+                <div className="w-24 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                <div className="w-40 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+                <div className="w-full h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800/60" />
+              </div>
+              <div className="h-48 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/40 p-6 space-y-4">
+                <div className="w-24 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                <div className="w-40 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+                <div className="w-full h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800/60" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -171,7 +214,7 @@ export function BuilderProfilePage() {
         <div className="mb-6">
           <Link
             to="/network"
-            className="inline-flex items-center gap-2 font-mono text-xs text-zinc-500 hover:text-[#FA5D00] transition-colors"
+            className="inline-flex items-center gap-2 font-mono text-xs text-zinc-600 dark:text-zinc-400 hover:text-[#FA5D00] transition-colors font-semibold"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Founder Network</span>
@@ -179,12 +222,12 @@ export function BuilderProfilePage() {
         </div>
 
         {/* Builder Hero Card */}
-        <div className="p-4 sm:p-10 rounded-2xl sm:rounded-3xl border-2 border-black dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-md shadow-xl">
+        <div className="p-4 sm:p-10 rounded-2xl sm:rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/60 backdrop-blur-md shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
             
             {/* Left: Avatar & Identity */}
             <div className="flex items-start gap-3.5 sm:gap-5 min-w-0">
-              <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl border-2 border-black dark:border-zinc-700 bg-[#FA5D00]/10 flex items-center justify-center font-serif text-2xl sm:text-3xl font-bold text-[#FA5D00] flex-none overflow-hidden">
+              <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-[#FA5D00]/10 flex items-center justify-center font-serif text-2xl sm:text-3xl font-bold text-[#FA5D00] flex-none overflow-hidden">
                 {profile.avatar_url ? (
                   <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
                 ) : (
@@ -194,10 +237,10 @@ export function BuilderProfilePage() {
 
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="font-serif text-2xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-normal leading-tight">
+                  <h1 className="font-serif text-2xl sm:text-4xl text-zinc-950 dark:text-zinc-50 font-bold leading-tight">
                     {profile.name}
                   </h1>
-                  <span className="font-mono text-[11px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-[#FA5D00] font-bold">
+                  <span className="font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/70 text-[#FA5D00] font-bold border border-orange-200 dark:border-orange-900/60">
                     @{profile.username}
                   </span>
                   {(profile.is_verified || profile.is_pro) && (
@@ -209,14 +252,14 @@ export function BuilderProfilePage() {
                   )}
                 </div>
 
-                <div className="mt-1 font-mono text-[11px] sm:text-xs text-zinc-400 flex items-center gap-1.5 flex-wrap">
+                <div className="mt-1.5 font-mono text-[11px] sm:text-xs text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5 flex-wrap font-medium">
                   <span>Verified Builder</span>
                   <span>·</span>
-                  <span className="truncate">recolabs.in/builder/{profile.username}</span>
+                  <span className="truncate text-zinc-800 dark:text-zinc-300">recolabs.in/builder/{profile.username}</span>
                 </div>
 
                 {profile.bio && (
-                  <p className="mt-2.5 font-sans text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 max-w-lg leading-relaxed">
+                  <p className="mt-3 font-sans text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 max-w-lg leading-relaxed font-normal">
                     {profile.bio}
                   </p>
                 )}
@@ -262,7 +305,7 @@ export function BuilderProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowEditModal(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border editorial-hairline bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono text-[11px] sm:text-xs font-semibold hover:border-[#FA5D00] transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-[11px] sm:text-xs font-bold hover:border-[#FA5D00] transition-colors cursor-pointer"
                   >
                     <Edit3 className="w-3 h-3 text-[#FA5D00]" />
                     <span>Edit Profile</span>
@@ -280,7 +323,7 @@ export function BuilderProfilePage() {
             {profile.phone && (
               <a
                 href={`tel:${profile.phone}`}
-                className="inline-flex items-center gap-1 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors text-[10px] sm:text-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors text-[10px] sm:text-xs"
               >
                 <Phone className="w-3.5 h-3.5 text-emerald-500" />
                 <span>{profile.phone}</span>
@@ -292,7 +335,7 @@ export function BuilderProfilePage() {
                 href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors text-[10px] sm:text-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors text-[10px] sm:text-xs"
               >
                 <Globe className="w-3.5 h-3.5 text-blue-500" />
                 <span>{profile.website.replace(/^https?:\/\//, "")}</span>
@@ -303,7 +346,7 @@ export function BuilderProfilePage() {
             {profile.email && (
               <a
                 href={`mailto:${profile.email}`}
-                className="inline-flex items-center gap-1 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors text-[10px] sm:text-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold hover:text-[#FA5D00] hover:border-[#FA5D00] transition-colors text-[10px] sm:text-xs"
               >
                 <Mail className="w-3.5 h-3.5 text-[#FA5D00]" />
                 <span>{profile.email}</span>
@@ -311,7 +354,7 @@ export function BuilderProfilePage() {
             )}
 
             {profile.discord && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full border editorial-hairline bg-zinc-50 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 text-[10px] sm:text-xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold text-[10px] sm:text-xs">
                 <MessageSquare className="w-3.5 h-3.5 text-[#5865F2]" />
                 <span>{profile.discord}</span>
               </span>
@@ -323,14 +366,14 @@ export function BuilderProfilePage() {
         {/* Startups by this Builder */}
         <div className="mt-8 sm:mt-14">
           <div className="flex items-center justify-between pb-4 border-b editorial-hairline mb-6">
-            <h2 className="font-serif text-2xl sm:text-3xl text-zinc-950 dark:text-zinc-50 font-normal">
-              Built by {profile.name} <span className="font-mono text-xs text-zinc-400 font-normal">({startups.length})</span>
+            <h2 className="font-serif text-2xl sm:text-3xl text-zinc-950 dark:text-zinc-50 font-bold">
+              Built by {profile.name} <span className="font-mono text-xs text-zinc-600 dark:text-zinc-400 font-bold">({startups.length})</span>
             </h2>
-            <span className="font-mono text-xs text-zinc-400">PUBLIC ROSTER</span>
+            <span className="font-mono text-xs text-zinc-600 dark:text-zinc-400 font-bold tracking-wider">PUBLIC ROSTER</span>
           </div>
 
           {startups.length === 0 ? (
-            <div className="p-8 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 text-center font-mono text-xs text-zinc-500">
+            <div className="p-8 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-center font-mono text-xs text-zinc-600 dark:text-zinc-400 font-medium">
               No startups listed yet by @{profile.username}.
             </div>
           ) : (
@@ -376,18 +419,18 @@ export function BuilderProfilePage() {
 
             <form onSubmit={handleEditSubmit} className="mt-4 space-y-3 font-mono text-xs">
               <div>
-                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">DISPLAY NAME</label>
+                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">DISPLAY NAME</label>
                 <input
                   type="text"
                   required
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-zinc-50 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">UNIQUE USERNAME</label>
+                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">UNIQUE USERNAME</label>
                 <div className="flex items-center rounded-xl border editorial-hairline bg-zinc-50 dark:bg-zinc-900 px-3">
                   <span className="text-zinc-400 mr-1">@</span>
                   <input
@@ -405,7 +448,7 @@ export function BuilderProfilePage() {
               </div>
 
               <div>
-                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">PHONE NUMBER</label>
+                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">PHONE NUMBER</label>
                 <input
                   type="text"
                   value={editForm.phone}
@@ -416,7 +459,7 @@ export function BuilderProfilePage() {
               </div>
 
               <div>
-                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">WEBSITE</label>
+                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">WEBSITE</label>
                 <input
                   type="text"
                   value={editForm.website}
@@ -427,7 +470,7 @@ export function BuilderProfilePage() {
               </div>
 
               <div>
-                <label className="block text-zinc-600 dark:text-zinc-400 mb-1">BIO</label>
+                <label className="block text-zinc-700 dark:text-zinc-300 font-bold mb-1">BIO</label>
                 <textarea
                   rows={2}
                   value={editForm.bio}

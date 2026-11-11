@@ -286,8 +286,8 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
       return
     }
 
-    // 6. GET BUILDER BY USERNAME: GET /api/network/builder/:username
-    if (req.method === "GET" && pathname.startsWith("/api/network/builder/")) {
+    // 6. GET BUILDER BY USERNAME: GET or HEAD /api/network/builder/:username (Cached on edge for speed)
+    if ((req.method === "GET" || req.method === "HEAD") && pathname.startsWith("/api/network/builder/")) {
       const username = pathname.replace("/api/network/builder/", "").trim()
       if (!username) {
         res.statusCode = 400
@@ -301,7 +301,12 @@ export async function handleNetworkRequest(req: IncomingMessage | any, res: Serv
         return
       }
       const startups = await listStartups({ username })
+      res.setHeader("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120")
       res.statusCode = 200
+      if (req.method === "HEAD") {
+        res.end()
+        return
+      }
       res.end(JSON.stringify({ success: true, user, startups }))
       return
     }
