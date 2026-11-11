@@ -2406,7 +2406,7 @@ async function handleNetworkRequest(req, res) {
       res.end(JSON.stringify({ success: true, user: updated }));
       return;
     }
-    if (req.method === "GET" && pathname.startsWith("/api/network/builder/")) {
+    if ((req.method === "GET" || req.method === "HEAD") && pathname.startsWith("/api/network/builder/")) {
       const username = pathname.replace("/api/network/builder/", "").trim();
       if (!username) {
         res.statusCode = 400;
@@ -2420,7 +2420,12 @@ async function handleNetworkRequest(req, res) {
         return;
       }
       const startups = await listStartups({ username });
+      res.setHeader("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
       res.statusCode = 200;
+      if (req.method === "HEAD") {
+        res.end();
+        return;
+      }
       res.end(JSON.stringify({ success: true, user, startups }));
       return;
     }
